@@ -1,9 +1,23 @@
 # AGENTS.md — IBAN Validator SPA
 
-## Projektübersicht
+> Kontext-Datei für Coding-Agents (GitHub Copilot, Cursor, etc.).
+> Projektfakten (Setup, API, Struktur) stehen in der [README.md](README.md) — hier nicht dupliziert.
 
-Single-Page-App (React + Spring Boot) zur Validierung und Speicherung von IBANs.
-Coding-Challenge für eine Bewerbung als Softwareentwickler.
+---
+
+## Dokumentations-Landkarte
+
+Dieses Projekt hat mehrere Markdown-Dateien mit unterschiedlichen Zwecken. **Lies die richtige Datei für die richtige Aufgabe:**
+
+| Datei                                   | Inhalt                                                                   | Wann relevant?                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| [README.md](README.md)                  | Projekt-Setup, Architektur, API-Endpunkte, Test-Befehle, Projektstruktur | **Immer** — Single Source of Truth für Projektfakten              |
+| [AGENTS.md](AGENTS.md) _(diese Datei)_  | Entwicklerprofil, Kommunikationsregeln, Coding-Konventionen              | **Immer** — regelt WIE du mit dem Entwickler kommunizierst        |
+| [iban.md](docs/iban.md)                 | Fachliches Wissen: IBAN-Aufbau, Modulo-97-Algorithmus, BLZ, SEPA         | Änderungen an **Validierungslogik**, IBAN-Parsing, Fachbegriffe   |
+| [decisions.md](docs/decisions.md)       | Architecture Decision Records (ADRs) mit Begründungen                    | **Architektur-Fragen**, warum etwas so ist wie es ist             |
+| [lernfragen.md](docs/lernfragen.md)     | Java/Spring-Boot-Lernguide mit TS/Node/Go-Analogien                      | **Backend-Code verstehen**, Konzepte erklären, Annotations deuten |
+| [future.md](docs/future.md)             | Backlog möglicher Erweiterungen (Auth, HTTPS, CI/CD, Dark Mode etc.)     | Neue Features planen, Erweiterbarkeit diskutieren                 |
+| [presentation.md](docs/presentation.md) | Präsentations-Skript für das Vorstellungsgespräch                        | Präsentation vorbereiten oder überarbeiten                        |
 
 ---
 
@@ -70,11 +84,13 @@ Nico will **alles verstehen und im Vorstellungsgespräch erklären können**:
 3. Wie JPA/Hibernate Entitäten auf DB-Tabellen mappt.
 4. Wie Maven das Projekt baut und Abhängigkeiten verwaltet.
 5. Wie die Modulo-97-Validierung intern funktioniert (BigInteger).
-6. Wie der externe API-Aufruf (RestTemplate/WebClient) an openiban.com funktioniert.
+6. Wie der externe API-Aufruf (RestClient) an openiban.com funktioniert.
 7. Wie die Tests (JUnit 5, MockMvc) strukturiert sind und was sie testen.
 8. Wie Docker Compose alle drei Services (Frontend, Backend, DB) zusammenbringt.
 
-### Kommunikationspräferenzen für Agents
+---
+
+## Kommunikationspräferenzen
 
 - **Sprache**: Code und Kommentare auf Englisch, Erklärungen gerne auf Deutsch oder Englisch.
 - **Erklärtiefe**: Bei Java/Spring-Code immer kurz erklären, was Annotationen und Patterns bedeuten.
@@ -85,124 +101,13 @@ Nico will **alles verstehen und im Vorstellungsgespräch erklären können**:
 
 ---
 
-## Anforderungen
-
-1. **Freie Benutzereingabe**: IBAN-Feld erlaubt Leerzeichen/Trennzeichen, diese werden vor dem Senden ans Backend entfernt.
-2. **Backend-Validierung**: IBAN wird im Backend ohne Trennzeichen via eigener Prüfziffer-Logik (Modulo 97) validiert.
-3. **Externe API als Fallback**: Zusätzlich Anbindung an openiban.com zur Validierung/Bankauflösung.
-4. **Banknamen-Auflösung**: Für 3 bekannte Banken den Namen anzeigen (BLZ-basiert):
-   - Deutsche Bank (BLZ: 50070010)
-   - Commerzbank (BLZ: 50040000)
-   - Sparkasse (z.B. Berliner Sparkasse, BLZ: 10050000)
-5. **IBAN-Speicherung**: Validierte IBANs in PostgreSQL persistieren.
-6. **Gespeicherte IBANs auflisten**: Liste der gespeicherten IBANs im Frontend anzeigen.
-
-## Tech-Stack
-
-| Komponente        | Technologie                     |
-| ----------------- | ------------------------------- |
-| Backend           | Java 21, Spring Boot 3.x, Maven |
-| Frontend          | React 18+ (Vite, TypeScript)    |
-| Datenbank         | PostgreSQL 17                   |
-| API-Kommunikation | REST (JSON)                     |
-| Containerisierung | Docker Compose                  |
-
-## Projektstruktur
-
-```
-/
-├── backend/                  # Spring Boot App
-│   ├── pom.xml
-│   ├── src/main/java/com/iban/
-│   │   ├── IbanApplication.java
-│   │   ├── controller/
-│   │   │   └── IbanController.java
-│   │   ├── service/
-│   │   │   ├── IbanValidationService.java
-│   │   │   └── ExternalIbanApiService.java
-│   │   ├── model/
-│   │   │   └── Iban.java
-│   │   └── repository/
-│   │       └── IbanRepository.java
-│   └── src/test/java/com/iban/
-│       ├── controller/IbanControllerTest.java
-│       └── service/IbanValidationServiceTest.java
-├── frontend/                 # React SPA (also serves as reverse proxy in prod)
-│   ├── package.json
-│   ├── nginx.conf            # Serves SPA + proxies /api to backend
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   │   └── IbanInput.tsx  # Contains IbanInput + IbanList
-│   │   ├── services/
-│   │   │   └── api.ts
-│   │   └── __tests__/
-│   │       └── IbanInput.test.tsx
-│   └── vite.config.ts
-├── docker-compose.yml        # 3 services: postgres, backend, frontend
-├── AGENTS.md
-├── DECISIONS.md
-└── README.md
-```
-
-## API-Endpunkte
-
-| Methode | Pfad                  | Beschreibung                       |
-| ------- | --------------------- | ---------------------------------- |
-| POST    | `/api/ibans/validate` | IBAN validieren (ohne Speicherung) |
-| POST    | `/api/ibans`          | IBAN validieren und speichern      |
-| GET     | `/api/ibans`          | Alle gespeicherten IBANs abrufen   |
-
-### POST `/api/ibans/validate` — Request/Response
-
-```json
-// Request
-{ "iban": "DE89370400440532013000" }
-
-// Response
-{
-  "valid": true,
-  "iban": "DE89370400440532013000",
-  "bankName": "Commerzbank",
-  "bankIdentifier": "37040044",
-  "validationMethod": "local"
-}
-```
-
-## Implementierungsdetails
-
-### Backend — IBAN-Validierung (eigene Implementierung)
-
-1. Trennzeichen (Leerzeichen, Bindestriche, Punkte) entfernen und uppercase.
-2. Länge prüfen (DE = 22 Zeichen).
-3. Modulo-97-Prüfung: Ersten 4 Zeichen ans Ende verschieben, Buchstaben in Zahlen umwandeln (A=10, B=11, ...), Modulo 97 == 1.
-4. BLZ extrahieren (Stellen 5–12 bei DE-IBANs) und gegen bekannte Banken matchen.
-
-### Backend — Externe API (Fallback)
-
-- `GET https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true`
-- Wird aufgerufen wenn lokale Validierung keine Bank findet oder als zusätzliche Verifikation.
-
-### Frontend — Eingabeformat
-
-- Eingabe: Freitext, automatisches Formatting zu 4er-Gruppen (DE89 3704 0044 0532 0130 00).
-- Vor API-Aufruf: Alle Nicht-Alphanumerischen Zeichen entfernen.
-
-## Tests
-
-- **Backend**: JUnit 5 + MockMvc für Controller-Tests, Unit-Tests für Validierungslogik.
-- **Frontend**: Vitest + React Testing Library für Komponenten-Tests.
-
-## Docker Compose Setup
-
-Drei Services: `postgres` (PostgreSQL 17), `backend` (Java 21), `frontend` (Nginx).
-Frontend wird als Static Build via Nginx ausgeliefert und proxied `/api` ans Backend.
-Kein separater Reverse-Proxy-Container nötig — die Frontend-Nginx übernimmt beides.
-
 ## Coding-Konventionen
 
 - Kein Lombok — plain Java Records für DTOs.
 - Spring Data JPA für Persistenz.
+- Constructor Injection (kein `@Autowired` auf Feldern).
 - CORS nur in Dev-Profil offen, in Prod via Nginx-Proxy.
 - Fehlerbehandlung: `@RestControllerAdvice` mit konsistenten Error-Responses.
 - Environment-Variablen für DB-Credentials (nicht hardcoded).
+- Frontend: Strict TypeScript, ESLint mit `--max-warnings=0`, Tailwind CSS + shadcn/ui.
+- Schema-Quelle: Flyway SQL-Migrations (nicht Hibernate `ddl-auto`). Hibernate validiert nur.
