@@ -1,5 +1,14 @@
 package com.iban.controller;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.iban.model.Iban;
 import com.iban.repository.IbanRepository;
 import com.iban.service.ExternalIbanApiService;
@@ -9,53 +18,13 @@ import com.iban.service.IbanValidationService.ValidationResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-
 /**
  * REST controller for IBAN validation and persistence.
- *
- * ── Analogy ──
- * This is the equivalent of an Express Router or a Go http.Handler.
- * In Express: const router = express.Router(); router.post('/validate', ...)
- * In Go: http.HandleFunc("/api/ibans/validate", handler)
- *
- * @RestController combines two annotations:
- *                 - @Controller — marks this class as a web request handler (≈
- *                 router)
- *                 - @ResponseBody — every method return value is serialized to
- *                 JSON
- *                 automatically (≈ res.json(...) in Express)
- *
- *                 @RequestMapping("/api/ibans") — sets the base path for all
- *                 endpoints in this
- *                 controller, like Express's router.use('/api/ibans', ...) or a
- *                 Go route group.
+ * Base path: /api/ibans
  */
 @RestController
 @RequestMapping("/api/ibans")
 public class IbanController {
-
-    // ── Dependency Injection (Constructor Injection) ──
-    // Spring automatically passes ("injects") these dependencies when creating
-    // the controller. This is similar to Angular's constructor DI or manually
-    // wiring dependencies in a Go main() function:
-    //
-    // // Go equivalent:
-    // validationSvc := service.NewIbanValidationService()
-    // externalSvc := service.NewExternalIbanApiService()
-    // controller := NewIbanController(validationSvc, externalSvc, repo)
-    //
-    // Spring does this automatically because those classes are annotated with
-    // @Service / @Repository (which registers them as "beans" — managed objects).
-    // The "final" keyword means these fields can only be assigned once (≈ readonly
-    // in TS).
 
     private final IbanValidationService validationService;
     private final ExternalIbanApiService externalApiService;
@@ -70,19 +39,7 @@ public class IbanController {
         this.ibanRepository = ibanRepository;
     }
 
-    // ── DTOs as Java Records ──
-    // Java Records are immutable data classes — like TypeScript `type` /
-    // `interface`
-    // or Go `struct`. The compiler auto-generates constructor, getters, equals(),
-    // hashCode(), and toString(). No Lombok needed.
-    //
-    // TS equivalent: type IbanRequest = { iban: string }
-    // Go equivalent: type IbanRequest struct { Iban string `json:"iban"` }
-    //
-    // @NotBlank is a validation constraint (from Jakarta Validation, ≈ zod's
-    // z.string().min(1)).
-    // Combined with @Valid on the parameter, Spring rejects blank values with HTTP
-    // 400.
+    // DTOs — see lernfragen.md → "Records" and "DTOs".
 
     record IbanRequest(@NotBlank String iban) {
     }
@@ -104,44 +61,17 @@ public class IbanController {
             String validationMethod) {
     }
 
-    // ── Endpoints ──
-
-    /**
-     * POST /api/ibans/validate — Validate IBAN without saving.
-     *
-     * @PostMapping marks this method as a POST handler.
-     *              ≈ Express: router.post('/validate', async (req, res) => { ... })
-     *
-     * @Valid triggers validation of the request body against the constraints
-     *        defined in IbanRequest (e.g. @NotBlank). If validation fails, Spring
-     *        returns 400 and the error is handled by GlobalExceptionHandler.
-     *        ≈ In Express: a zod .parse() in a middleware.
-     *
-     * @RequestBody tells Spring to deserialize the JSON request body into the
-     *              IbanRequest record. ≈ req.body in Express (after express.json()
-     *              middleware).
-     *
-     *              ResponseEntity<T> wraps the response with an HTTP status code.
-     *              ResponseEntity.ok(...) → HTTP 200 with JSON body.
-     *              ≈ res.status(200).json({...}) in Express.
-     */
+    /** POST /api/ibans/validate — Validate IBAN without saving. */
     @PostMapping("/validate")
     public ResponseEntity<IbanResponse> validateIban(@Valid @RequestBody IbanRequest request) {
         return ResponseEntity.ok(buildResponse(request.iban()));
     }
 
-    /**
-     * POST /api/ibans — Validate and save IBAN.
-     *
-     * Same logic as validateIban(), but additionally persists the IBAN entity
-     * to the database via the repository.
-     */
+    /** POST /api/ibans — Validate and save IBAN. */
     @PostMapping
     public ResponseEntity<IbanResponse> validateAndSaveIban(@Valid @RequestBody IbanRequest request) {
         IbanResponse response = buildResponse(request.iban());
 
-        // Persist to PostgreSQL via Spring Data JPA.
-        // ibanRepository.save() ≈ prisma.iban.create({...}) or db.Exec("INSERT ...")
         ibanRepository.save(new Iban(
                 response.iban(),
                 response.bankName(),
@@ -152,22 +82,7 @@ public class IbanController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /api/ibans — List all saved IBANs.
-     *
-     * @GetMapping marks this as a GET handler.
-     *             ≈ Express: router.get('/', async (req, res) => { ... })
-     *
-     *             ibanRepository.findAll() ≈ prisma.iban.findMany() — Spring Data
-     *             JPA
-     *             auto-generates the SQL query from the method name.
-     *
-     *             .stream().map(...).toList() ≈ ibans.map(iban => ({...})) in
-     *             TypeScript.
-     *             We map the JPA entity to a DTO record so we control exactly which
-     *             fields
-     *             are included in the JSON response.
-     */
+    /** GET /api/ibans — List all saved IBANs. */
     @GetMapping
     public ResponseEntity<List<IbanListEntry>> getAllIbans() {
         List<IbanListEntry> entries = ibanRepository.findAll().stream()
@@ -196,8 +111,7 @@ public class IbanController {
         String bankName = result.bankName();
         String validationMethod = result.validationMethod();
 
-        // Fallback to external API if local validation passed but no bank name was
-        // resolved (i.e. the BLZ is not in our local KNOWN_BANKS map)
+        // Fallback to external API if BLZ is not in KNOWN_BANKS
         if (result.valid() && bankName == null) {
             var external = externalApiService.validate(result.iban());
             if (external != null && external.bankName() != null) {

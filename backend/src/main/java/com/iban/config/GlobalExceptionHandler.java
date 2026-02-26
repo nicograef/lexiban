@@ -1,42 +1,22 @@
 package com.iban.config;
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Map;
-
 /**
  * Global error handler for all REST controllers.
- *
- * ── Analogy ──
- * In Express.js this is the error-handling middleware:
- *   app.use((err, req, res, next) => {
- *     if (err instanceof ValidationError) res.status(400).json({...})
- *     else res.status(500).json({ error: 'Internal server error' })
- *   })
- * In Go, this is centralized error wrapping in your HTTP handler.
- *
- * @RestControllerAdvice combines:
- *   - @ControllerAdvice — intercepts exceptions thrown by any @RestController
- *   - @ResponseBody — return values are serialized to JSON automatically
- * It catches exceptions BEFORE they become an ugly default error page.
- *
- * Each @ExceptionHandler method handles a specific exception type.
- * @ResponseStatus sets the HTTP status code for the response.
+ * Catches exceptions and returns consistent JSON error responses.
+ * See lernfragen.md → "@RestControllerAdvice" for the pattern.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Handles validation errors (e.g. @NotBlank on IbanRequest fails).
-     * Returns HTTP 400 with a structured error message.
-     *
-     * MethodArgumentNotValidException is thrown by Spring when @Valid
-     * validation fails — ≈ zod's ZodError in TypeScript.
-     */
+    /** Handles @Valid validation failures → HTTP 400. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationErrors(MethodArgumentNotValidException ex) {
