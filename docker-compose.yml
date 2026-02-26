@@ -1,0 +1,64 @@
+# ── Docker Compose — Production Configuration ──
+# Starts all services needed to run the full application.
+#
+# Architecture (simplified — no separate reverse-proxy):
+#   Browser → :80 → frontend (nginx: static files + /api proxy) → backend:8080
+#   backend → postgres:5432
+#
+# The frontend's nginx serves the SPA AND proxies /api/* to the backend.
+# This eliminates the need for a separate reverse-proxy container.
+# In a real-world product, a cloud load balancer (ALB, Cloud Run, Traefik)
+# would handle routing instead of a hand-rolled nginx proxy.
+
+name: iban
+
+services:
+  # ── PostgreSQL Database ──
+  postgres:
+    image: postgres:17
+    container_name: iban-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: iban
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d iban"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Spring Boot Backend ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iban-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iban
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── React Frontend (Nginx: static files + API proxy) ──
+  # Serves the Vite-built SPA and proxies /api/* to the backend.
+  # This single container replaces both the old frontend + reverse-proxy.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iban-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  postgres-data:

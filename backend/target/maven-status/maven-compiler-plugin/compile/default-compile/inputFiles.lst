@@ -1,0 +1,8 @@
+/workspaces/iban/backend/src/main/java/com/iban/IbanApplication.java
+/workspaces/iban/backend/src/main/java/com/iban/config/CorsConfig.java
+/workspaces/iban/backend/src/main/java/com/iban/config/GlobalExceptionHandler.java
+/workspaces/iban/backend/src/main/java/com/iban/controller/IbanController.java
+/workspaces/iban/backend/src/main/java/com/iban/model/Iban.java
+/workspaces/iban/backend/src/main/java/com/iban/repository/IbanRepository.java
+/workspaces/iban/backend/src/main/java/com/iban/service/ExternalIbanApiService.java
+/workspaces/iban/backend/src/main/java/com/iban/service/IbanValidationService.java

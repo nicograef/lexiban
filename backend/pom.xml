@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven POM (Project Object Model) — the central build & dependency config.
+  ≈ package.json in Node.js / go.mod in Go.
+
+  Key concepts:
+  - <parent>        — inherits defaults from spring-boot-starter-parent
+                       (versions, plugin config). ≈ "extends" a shared config.
+  - <dependencies>  — project dependencies. ≈ "dependencies" in package.json.
+  - <build>         — build plugins. ≈ "scripts" in package.json.
+
+  Common Maven commands (≈ npm/pnpm scripts):
+  - mvn clean install        ≈ pnpm install && pnpm build
+  - mvn test                 ≈ pnpm test
+  - mvn spring-boot:run      ≈ pnpm dev (starts dev server)
+  - mvn package -DskipTests  ≈ pnpm build (produces a .jar file)
+
+  The .jar file is a self-contained archive with embedded Tomcat — just run:
+  java -jar target/iban-validator-0.0.1-SNAPSHOT.jar
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Inherit version management from Spring Boot's parent POM.
+         This sets default versions for all spring-boot-starter-* dependencies
+         so we don't have to specify version numbers manually.
+         ≈ Using a shared pnpm workspace config or Go's toolchain directive. -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.3</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Project coordinates — uniquely identify this artifact.
+         groupId + artifactId ≈ npm package scope + name (@iban/validator). -->
+    <groupId>com.iban</groupId>
+    <artifactId>iban-validator</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>iban-validator</name>
+    <description>IBAN Validator SPA Backend</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <!-- Override ByteBuddy for Java 25 compatibility (Mockito mocking) -->
+        <byte-buddy.version>1.18.5</byte-buddy.version>
+    </properties>
+
+    <dependencies>
+        <!-- ── Web (REST API) ──
+             Includes: embedded Tomcat, Spring MVC, Jackson (JSON serialization).
+             With this single dependency you get a working HTTP server.
+             ≈ express + body-parser in Node.js. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- ── JPA + PostgreSQL (Database ORM) ──
+             spring-boot-starter-data-jpa includes Hibernate (the ORM engine)
+             and Spring Data JPA (repository abstractions).
+             ≈ prisma + @prisma/client in TS, or gorm.io/gorm in Go.
+             The postgresql driver is the JDBC driver for connecting to Postgres.
+             scope=runtime means it's only needed at runtime, not compile time. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ── Flyway (Database Migrations) ──
+             Runs versioned SQL scripts on startup to keep the DB schema in sync.
+             ≈ prisma migrate deploy (TS) or golang-migrate (Go).
+             Migration files: src/main/resources/db/migration/V1__*.sql -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- ── Validation ──
+             Enables @Valid, @NotBlank, @Size etc. annotations on DTOs.
+             ≈ zod schema validation in TypeScript. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ── Test ──
+             Includes JUnit 5, Mockito, MockMvc, AssertJ, Spring Test utilities.
+             ≈ vitest + @testing-library + supertest in the TS world.
+             scope=test means these are only available in src/test/. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- spring-boot-maven-plugin packages the app as an executable .jar
+                 with embedded Tomcat. ≈ vite build producing a self-contained bundle.
+                 Also enables: mvn spring-boot:run for development. -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
