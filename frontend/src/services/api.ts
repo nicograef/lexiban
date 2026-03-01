@@ -13,17 +13,15 @@ export interface IbanValidationResponse {
   iban: string
   bankName: string | null
   bankIdentifier: string | null
-  validationMethod: string
   reason: string | null
 }
 
 export interface IbanListEntry {
-  id: number
   iban: string
   bankName: string | null
   bankIdentifier: string | null
   valid: boolean
-  validationMethod: string
+  reason: string | null
 }
 
 /**

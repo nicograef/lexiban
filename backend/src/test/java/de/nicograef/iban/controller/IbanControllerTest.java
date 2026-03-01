@@ -3,6 +3,9 @@ package de.nicograef.iban.controller;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -14,8 +17,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import de.nicograef.iban.model.Iban;
 import de.nicograef.iban.repository.IbanRepository;
-import de.nicograef.iban.service.ExternalIbanApiService;
 import de.nicograef.iban.service.IbanValidationService;
 
 /**
@@ -30,29 +33,17 @@ import de.nicograef.iban.service.IbanValidationService;
  *                                   database, NO real services.
  *                                   ≈ In TS: testing an Express router in
  *                                   isolation without starting the full app.
- *                                   It auto-configures MockMvc for sending fake
- *                                   HTTP requests.
- *
- * @Autowired MockMvc mockMvc
- *            Spring injects a MockMvc instance that acts like a test HTTP
- *            client.
- *            ≈ supertest(app) in Node.js — you can perform().andExpect() like
- *            request(app).post('/api/ibans/validate').expect(200).
  *
  * @MockitoBean
  *              Creates a mock (fake) implementation of the annotated dependency
- *              and
- *              registers it in the Spring context. The controller receives
- *              these mocks
- *              instead of real service/repository beans.
- *              ≈ vi.mock('./service') in Vitest or jest.mock('./service') in
- *              Jest.
- *              Mockito is Java's equivalent of Jest's mocking capabilities.
+ *              and registers it in the Spring context. The controller receives
+ *              these mocks instead of real service/repository beans.
+ *              ≈ vi.mock('./service') in Vitest.
  *
- *              when(...).thenReturn(...)
- *              Defines what a mock should return when called with specific
- *              arguments.
- *              ≈ vi.mocked(service.validate).mockReturnValue({...}) in Vitest.
+ *              Note: ExternalIbanApiService is no longer injected into the
+ *              controller — it's now inside IbanValidationService. The
+ *              controller only depends on IbanValidationService +
+ *              IbanRepository.
  */
 @WebMvcTest(IbanController.class)
 class IbanControllerTest {
@@ -64,23 +55,15 @@ class IbanControllerTest {
         private IbanValidationService validationService;
 
         @MockitoBean
-        private ExternalIbanApiService externalApiService;
-
-        @MockitoBean
         private IbanRepository ibanRepository;
 
-        // ── Test: Valid IBAN returns 200 with correct JSON ──
-        // ≈ it('should validate a valid IBAN', async () => {
-        // vi.mocked(service.validate).mockReturnValue({ valid: true, ... })
-        // const res = await request(app).post('/api/ibans').send({ iban: '...' })
-        // expect(res.status).toBe(200)
-        // expect(res.body.valid).toBe(true)
-        // })
+        // ── POST /api/ibans — validate + save (or cache hit) ──
+
         @Test
         void validateValidIban() throws Exception {
-                when(validationService.validate("DE89370400440532013000"))
+                when(validationService.validateOrLookup(any()))
                                 .thenReturn(new IbanValidationService.ValidationResult(
-                                                true, "DE89370400440532013000", "Commerzbank", "37040044", "local",
+                                                true, "DE89370400440532013000", "Commerzbank", "37040044",
                                                 null));
 
                 mockMvc.perform(post("/api/ibans")
@@ -92,14 +75,14 @@ class IbanControllerTest {
                                 .andExpect(jsonPath("$.valid").value(true))
                                 .andExpect(jsonPath("$.iban").value("DE89370400440532013000"))
                                 .andExpect(jsonPath("$.bankName").value("Commerzbank"))
-                                .andExpect(jsonPath("$.validationMethod").value("local"));
+                                .andExpect(jsonPath("$.reason").isEmpty());
         }
 
         @Test
         void validateInvalidIban() throws Exception {
-                when(validationService.validate("INVALID"))
+                when(validationService.validateRaw("INVALID"))
                                 .thenReturn(new IbanValidationService.ValidationResult(
-                                                false, "INVALID", null, null, "local",
+                                                false, "INVALID", null, null,
                                                 "IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
 
                 mockMvc.perform(post("/api/ibans")
@@ -108,12 +91,10 @@ class IbanControllerTest {
                                                 {"iban": "INVALID"}
                                                 """))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.valid").value(false));
+                                .andExpect(jsonPath("$.valid").value(false))
+                                .andExpect(jsonPath("$.reason").value("IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
         }
 
-        // ── Test: Empty IBAN triggers @NotBlank validation → 400 ──
-        // No mock setup needed — the @Valid + @NotBlank annotation on IbanRequest
-        // rejects the empty string before the controller method even runs.
         @Test
         void validateEmptyIbanReturnsBadRequest() throws Exception {
                 mockMvc.perform(post("/api/ibans")
@@ -124,6 +105,8 @@ class IbanControllerTest {
                                 .andExpect(status().isBadRequest());
         }
 
+        // ── GET /api/ibans — list all saved IBANs ──
+
         @Test
         void getAllIbansReturnsEmptyList() throws Exception {
                 when(ibanRepository.findAll()).thenReturn(List.of());
@@ -132,5 +115,17 @@ class IbanControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$").isArray())
                                 .andExpect(jsonPath("$").isEmpty());
+        }
+
+        @Test
+        void getAllIbansReturnsSavedEntries() throws Exception {
+                Iban entity = new Iban("DE89370400440532013000", "Commerzbank", "37040044", true, null);
+                when(ibanRepository.findAll()).thenReturn(List.of(entity));
+
+                mockMvc.perform(get("/api/ibans"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].iban").value("DE89370400440532013000"))
+                                .andExpect(jsonPath("$[0].bankName").value("Commerzbank"))
+                                .andExpect(jsonPath("$[0].valid").value(true));
         }
 }

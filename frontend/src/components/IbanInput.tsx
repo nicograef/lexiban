@@ -171,9 +171,6 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
                   {bankIdentifierLabel}: {validation.result.bankIdentifier}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Validierung: {validation.result.validationMethod}
-              </p>
             </CardContent>
           </Card>
         )}
@@ -236,7 +233,7 @@ export function IbanList({ refreshKey }: { refreshKey?: number }) {
       <CardContent className="space-y-2">
         {ibans.map((entry) => (
           <div
-            key={entry.id}
+            key={entry.iban}
             className="flex items-center justify-between rounded-lg border p-3"
           >
             <div>

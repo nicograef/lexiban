@@ -452,23 +452,6 @@ IBANs sind statisch (eine IBAN wird nicht plötzlich ungültig). Aber der `bankN
 
 Pragmatische Lösung für dieses Projekt: Da das Ergebnis für dieselbe IBAN deterministisch ist, ist ein doppelter INSERT harmlos — der zweite überschreibt den ersten mit identischen Daten. Die `Iban`-Entity sollte `Persistable<String>` implementieren.
 
-### 5.3 DELETE-Endpoint
-
-Ein `DELETE /api/ibans/{iban}`-Endpoint wäre eine sinnvolle Ergänzung:
-
-```java
-@DeleteMapping("/{iban}")
-public ResponseEntity<Void> deleteIban(@PathVariable String iban) {
-    if (!ibanRepository.existsById(iban)) {
-        return ResponseEntity.notFound().build();
-    }
-    ibanRepository.deleteById(iban);
-    return ResponseEntity.noContent().build();
-}
-```
-
-**Nutzen:** Ermöglicht es, einen Cache-Eintrag zu löschen und beim nächsten POST frisch zu validieren. Gut für die UI (Eintrag aus der Liste entfernen).
-
 ---
 
 ## 6. Natürlicher vs. Surrogate Key — Abwägung

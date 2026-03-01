@@ -1,14 +1,29 @@
 package de.nicograef.iban.service;
 
-import java.math.BigInteger;
 import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import de.nicograef.iban.model.Iban;
+import de.nicograef.iban.model.IbanNumber;
+import de.nicograef.iban.repository.IbanRepository;
+
 /**
- * IBAN validation using Modulo-97 check digit algorithm (ISO 13616).
- * Also resolves German bank names by BLZ (Bankleitzahl).
+ * IBAN validation and orchestration service.
+ *
+ * Responsibilities:
+ * 1. Validate an IBAN (structural check, country length, Mod-97, BLZ lookup).
+ * 2. Orchestrate the full "validate or lookup" use case:
+ * - Check if the IBAN is already cached in the database.
+ * - If not: validate locally → fallback to external API → save result.
+ *
+ * This service now owns the orchestration logic that previously lived in the
+ * controller. The controller becomes a thin HTTP ↔ Service adapter.
+ *
+ * TS analogy: an Express middleware that handles all business logic before the
+ * route handler formats the response.
+ *
  * See docs/iban.md for the algorithm details.
  */
 @Service
@@ -53,22 +68,30 @@ public class IbanValidationService {
             Map.entry("SE", 24) // Sweden
     );
 
+    private final Mod97Validator mod97Validator;
+    private final ExternalIbanApiService externalApiService;
+    private final IbanRepository ibanRepository;
+
     /**
-     * Structural regex for ISO 13616 IBAN format:
-     * - Pos 1–2: Two uppercase letters (country code, ISO 3166-1)
-     * - Pos 3–4: Two digits (check digits)
-     * - Pos 5–34: 11–30 alphanumeric characters (BBAN)
-     * Total: 15–34 characters (shortest: Norway=15, longest: Malta=31, max spec:
-     * 34).
-     *
-     * TS equivalent: /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/
+     * Constructor injection — all dependencies are explicit and final.
+     * TS analogy: constructor(private readonly mod97: Mod97Validator, ...) {}
      */
-    private static final Pattern IBAN_STRUCTURE = Pattern.compile(
-            "^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$");
+    public IbanValidationService(
+            Mod97Validator mod97Validator,
+            ExternalIbanApiService externalApiService,
+            IbanRepository ibanRepository) {
+        this.mod97Validator = mod97Validator;
+        this.externalApiService = externalApiService;
+        this.ibanRepository = ibanRepository;
+    }
 
     /**
      * Result of an IBAN validation. The reason field provides a human-readable
      * explanation for why the IBAN is invalid (null when valid).
+     *
+     * Removed: validationMethod — was semantically fragwürdig (the validation
+     * method is an internal implementation detail, not a business concern).
+     *
      * TS equivalent: { valid: boolean; iban: string; reason?: string; ... }
      */
     public record ValidationResult(
@@ -76,57 +99,123 @@ public class IbanValidationService {
             String iban,
             String bankName,
             String bankIdentifier,
-            String validationMethod,
             String reason) {
     }
 
     /**
-     * Validate an IBAN: normalize → structural check → length check → Mod-97 → BLZ
-     * lookup.
-     * See docs/iban.md for algorithm details.
+     * Full use-case orchestration: lookup cached result OR validate + save.
      *
-     * bankName and bankIdentifier in the result are null for non-DE IBANs or
-     * unknown
-     * German banks. The external API (called by the controller) may resolve these
-     * as fallback.
+     * Flow:
+     * 1. Check database for existing IBAN (cache hit → return immediately).
+     * 2. On cache miss: validate locally (Mod-97, BLZ lookup).
+     * 3. If valid but no bank name: fallback to external API.
+     * 4. Save result to database.
+     * 5. Return validation result.
+     *
+     * This logic was previously split between Controller and Service.
+     * Now it's all here — the Controller just calls this one method.
+     *
+     * @param ibanNumber Normalized IBAN (guaranteed by IbanNumber value object)
+     * @return Validation result (from cache or freshly computed)
      */
-    public ValidationResult validate(String rawIban) {
-        String iban = normalize(rawIban);
-
-        // Step 1: Structural check — reject before expensive Mod-97 calculation.
-        // Catches: too short/long, missing country code, non-digit check digits, etc.
-        if (!isStructurallyValid(iban)) {
-            return new ValidationResult(false, iban, null, null, "local",
-                    describeStructuralError(iban));
+    public ValidationResult validateOrLookup(IbanNumber ibanNumber) {
+        // Step 1: Lookup — is this IBAN already in the database?
+        Optional<Iban> cached = ibanRepository.findById(ibanNumber.value());
+        if (cached.isPresent()) {
+            Iban entity = cached.get();
+            return new ValidationResult(
+                    entity.isValid(),
+                    entity.getIban(),
+                    entity.getBankName(),
+                    entity.getBankIdentifier(),
+                    entity.getReason());
         }
 
-        // Step 2: Country-specific length check (only for known countries)
-        String country = iban.substring(0, 2);
+        // Step 2: Cache miss — validate locally
+        ValidationResult result = validate(ibanNumber);
+
+        // Step 3: If valid but no bank name, try external API as fallback
+        String bankName = result.bankName();
+        if (result.valid() && bankName == null) {
+            var external = externalApiService.validate(ibanNumber.value());
+            if (external != null && external.bankName() != null) {
+                bankName = external.bankName();
+                // Rebuild result with external bank name
+                result = new ValidationResult(
+                        result.valid(),
+                        result.iban(),
+                        bankName,
+                        result.bankIdentifier(),
+                        result.reason());
+            }
+        }
+
+        // Step 4: Save to database (one row per IBAN, no duplicates)
+        ibanRepository.save(new Iban(
+                result.iban(),
+                result.bankName(),
+                result.bankIdentifier(),
+                result.valid(),
+                result.reason()));
+
+        return result;
+    }
+
+    /**
+     * Validate an IBAN: structural check → length check → Mod-97 → BLZ lookup.
+     * Pure validation with no side effects (no DB, no external API).
+     *
+     * @param ibanNumber Normalized IBAN (IbanNumber guarantees normalization)
+     * @return Validation result
+     */
+    public ValidationResult validate(IbanNumber ibanNumber) {
+        String iban = ibanNumber.value();
+
+        // Step 1: Country-specific length check (only for known countries)
+        String country = ibanNumber.countryCode();
         Integer expectedLength = COUNTRY_LENGTHS.get(country);
         if (expectedLength != null && iban.length() != expectedLength) {
-            return new ValidationResult(false, iban, null, null, "local",
+            return new ValidationResult(false, iban, null, null,
                     "Ungültige Länge: " + iban.length() + " statt " + expectedLength
                             + " Zeichen für " + country);
         }
 
-        // Step 3: Mod-97 check digit validation
-        if (!isValidMod97(iban)) {
-            return new ValidationResult(false, iban, null, null, "local",
+        // Step 2: Mod-97 check digit validation (delegated to Mod97Validator)
+        if (!mod97Validator.isValid(iban)) {
+            return new ValidationResult(false, iban, null, null,
                     "Prüfziffern ungültig (Modulo-97-Prüfung fehlgeschlagen)");
         }
 
-        // Step 4: Extract BLZ for German IBANs.
-        // Positions 5–12 in human-readable notation (1-based), = substring(4, 12) in
-        // Java.
-        // See iban.md §4 for the German IBAN structure.
-        String bankIdentifier = null;
-        String bankName = null;
-        if ("DE".equals(country) && iban.length() >= 12) {
-            bankIdentifier = iban.substring(4, 12);
-            bankName = KNOWN_BANKS.get(bankIdentifier);
+        // Step 3: Extract bank identifier for German IBANs
+        String bankIdentifier = ibanNumber.bankIdentifier().orElse(null);
+        String bankName = bankIdentifier != null ? KNOWN_BANKS.get(bankIdentifier) : null;
+
+        return new ValidationResult(true, iban, bankName, bankIdentifier, null);
+    }
+
+    /**
+     * Validate from raw string input. Creates IbanNumber internally.
+     * Returns an invalid result if the raw input fails structural validation.
+     *
+     * Used when the caller has a raw String that may not be structurally valid.
+     * The IbanNumber constructor would throw for invalid input, so we catch that.
+     */
+    public ValidationResult validateRaw(String rawIban) {
+        if (rawIban == null || rawIban.isBlank()) {
+            return new ValidationResult(false, "", null, null, "IBAN ist leer");
         }
 
-        return new ValidationResult(true, iban, bankName, bankIdentifier, "local", null);
+        // Normalize for error messages even if structurally invalid
+        String normalized = rawIban.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
+
+        try {
+            IbanNumber ibanNumber = new IbanNumber(rawIban);
+            return validate(ibanNumber);
+        } catch (IllegalArgumentException e) {
+            // IbanNumber constructor rejected the input — describe why
+            return new ValidationResult(false, normalized, null, null,
+                    describeStructuralError(normalized));
+        }
     }
 
     /**
@@ -134,20 +223,6 @@ public class IbanValidationService {
      */
     public String resolveBankName(String blz) {
         return KNOWN_BANKS.get(blz);
-    }
-
-    /** Remove all non-alphanumeric characters and convert to uppercase. */
-    private String normalize(String input) {
-        return input.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-    }
-
-    /**
-     * Structural pre-validation against ISO 13616 format.
-     * Checks the "shape" of an IBAN before running the expensive Mod-97 math.
-     * This is like a zod .regex() schema check before hitting the business logic.
-     */
-    private boolean isStructurallyValid(String iban) {
-        return IBAN_STRUCTURE.matcher(iban).matches();
     }
 
     /**
@@ -171,33 +246,5 @@ public class IbanValidationService {
             return "Stelle 3–4 müssen Ziffern sein (Prüfziffern)";
         }
         return "Ungültiges IBAN-Format";
-    }
-
-    /**
-     * Modulo-97 check digit validation (ISO 7064).
-     * Uses BigInteger for the resulting 30–60+ digit number.
-     *
-     * Character.getNumericValue() returns 10–35 for A–Z, which is exactly
-     * what the ISO 7064 spec requires. TS equivalent: charCodeAt(0) - 55.
-     *
-     * TS equivalent using BigInt:
-     * const num = BigInt(numericString);
-     * return num % 97n === 1n;
-     */
-    private boolean isValidMod97(String iban) {
-        String rearranged = iban.substring(4) + iban.substring(0, 4);
-
-        // Convert letters to numbers (A=10, B=11, ..., Z=35)
-        StringBuilder numeric = new StringBuilder();
-        for (char c : rearranged.toCharArray()) {
-            if (Character.isLetter(c)) {
-                numeric.append(Character.getNumericValue(c));
-            } else {
-                numeric.append(c);
-            }
-        }
-
-        BigInteger value = new BigInteger(numeric.toString());
-        return value.mod(BigInteger.valueOf(97)).intValue() == 1;
     }
 }

@@ -73,26 +73,28 @@ cd frontend && pnpm lint && pnpm test
 
 ## API-Endpunkte
 
-| Methode | Pfad                  | Beschreibung                       |
-| ------- | --------------------- | ---------------------------------- |
-| POST    | `/api/ibans/validate` | IBAN validieren (ohne Speicherung) |
-| POST    | `/api/ibans`          | IBAN validieren und speichern      |
-| GET     | `/api/ibans`          | Alle gespeicherten IBANs abrufen   |
+| Methode | Pfad                | Beschreibung                                      |
+| ------- | ------------------- | ------------------------------------------------- |
+| POST    | `/api/ibans`        | IBAN validieren und speichern (oder Cache-Lookup) |
+| GET     | `/api/ibans`        | Alle gespeicherten IBANs abrufen                  |
+| DELETE  | `/api/ibans/{iban}` | Gespeicherte IBAN löschen (Cache-Invalidierung)   |
 
-### Beispiel: POST `/api/ibans/validate`
+### Beispiel: POST `/api/ibans`
 
 ```json
 // Request
 { "iban": "DE89370400440532013000" }
 
-// Response
+// Response (erstmalig: Validierung + Speicherung)
 {
   "valid": true,
   "iban": "DE89370400440532013000",
   "bankName": "Commerzbank",
   "bankIdentifier": "37040044",
-  "validationMethod": "local"
+  "reason": null
 }
+
+// Wiederholte Anfrage: sofortiger Cache-Lookup, keine erneute Validierung
 ```
 
 ## Implementierungsdetails

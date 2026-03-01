@@ -139,15 +139,17 @@ graph TB
 
 1. App öffnen → IBAN-Eingabefeld sichtbar
 2. `DE89 3704 0044 0532 0130 00` eingeben → automatische Formatierung
-3. **"Validieren"** klicken → Ergebnis: gültig, Commerzbank, BLZ 37040044, Methode "local"
-4. **"Validieren & Speichern"** klicken → IBAN wird gespeichert, erscheint in der Liste unten
+3. **"Prüfen"** klicken → Ergebnis: gültig, Commerzbank, BLZ 37040044
+4. IBAN wird validiert, gespeichert und erscheint in der Liste unten
+5. **Gleiche IBAN erneut senden** → sofortiger Cache-Lookup, keine erneute Validierung
 
 ### Edge Cases zeigen
 
-- **Ungültige IBAN** (`DE00...`) → "ungültig", rotes Ergebnis
+- **Ungültige IBAN** (`DE00...`) → "ungültig", rotes Ergebnis mit Fehlermeldung
 - **Leere Eingabe** → HTTP 400 durch `@NotBlank`-Validation, Fehlermeldung im Frontend
-- **Unbekannte Bank** → Fallback auf openiban.com, `validationMethod: "external"`
+- **Unbekannte Bank** → Fallback auf openiban.com für Bankauflösung
 - **Leerzeichen/Bindestriche** → werden automatisch entfernt, Validierung funktioniert weiterhin
+- **Wiederholte Anfrage** → Cache-Hit, sofortige Antwort aus der Datenbank
 
 ---
 
@@ -162,7 +164,11 @@ graph LR
     end
     subgraph Service ["Business-Logik"]
         IVS["IbanValidationService\n≈ Domain Service"]
+        M97["Mod97Validator\n≈ Pure Function"]
         EAS["ExternalIbanApiService\n≈ fetch/axios"]
+    end
+    subgraph ValueObjects ["Domain Model"]
+        VO["IbanNumber\n≈ Value Object"]
     end
     subgraph Repository ["Datenzugriff"]
         IR["IbanRepository\n≈ Prisma Client"]
@@ -172,30 +178,43 @@ graph LR
     end
 
     IC --> IVS
-    IC --> EAS
-    IC --> IR
-    IVS -.->|"BLZ unbekannt"| EAS
+    IVS --> M97
+    IVS --> EAS
+    IVS --> IR
+    IVS --> VO
     EAS -.->|"REST"| API
     IR -->|"JPA"| DB[("PostgreSQL")]
 ```
 
-### Controller (IbanController.java)
+### Controller (IbanController.java) — dünn
 
-- `@RestController` mit drei Endpunkten: `POST /validate`, `POST /`, `GET /`
+- `@RestController` mit drei Endpunkten: `POST /`, `GET /`, `DELETE /{iban}`
 - DTOs als **Java Records** (≈ TypeScript `type`) — `IbanRequest`, `IbanResponse`, `IbanListEntry`
 - `@Valid` + `@NotBlank` übernehmen die Input-Validation (≈ zod)
-- Die Fallback-Logik ist in eine private `buildResponse()`-Methode extrahiert (DRY)
-- **Constructor Injection** — kein `@Autowired` auf Feldern, weil: `final`-Felder, explizite Dependencies, testbar ohne Spring
+- **Kein** Orchestrierungs- oder Fallback-Logik — nur HTTP ↔ Service Mapping
+- **Constructor Injection** — kein `@Autowired` auf Feldern
 
-### Service (IbanValidationService.java)
+### Value Object: IbanNumber (DDD)
 
-- Eigene Modulo-97-Implementierung (gleich im Detail)
+- Self-normalizing Java Record: entfernt Leerzeichen, uppercase, strukturelle Validierung
+- Garantiert: wer ein `IbanNumber` hat, weiß dass es normalisiert ist
+- Methoden: `countryCode()`, `bankIdentifier()`, `bban()`, `formatted()`
+- Verhindert Bugs bei String-PK: jeder DB-Zugriff nutzt den gleichen normalisierten String
+
+### Service (IbanValidationService.java) — orchestriert
+
+- `validateOrLookup(IbanNumber)`: kompletter Use Case (Cache-Lookup → Validate → External Fallback → Save)
+- Nutzt `Mod97Validator` per DI für die Prüfziffern-Validierung
 - BLZ-Lookup via `Map.of()` für drei bekannte Banken
-- Reiner Service ohne Frameworks — direkt mit `new` instanziierbar, ideal für Unit-Tests
+
+### Mod97Validator — extrahierter Algorithmus
+
+- Eigenständige `@Service`-Klasse für den ISO-7064-Algorithmus
+- Isoliert testbar ohne Spring-Kontext oder andere Dependencies
 
 ### Repository (IbanRepository.java)
 
-- **Eine einzige Zeile**: `extends JpaRepository<Iban, Long>`
+- **Eine einzige Zeile**: `extends JpaRepository<Iban, String>` — String-PK statt Long
 - Spring generiert zur Laufzeit die komplette CRUD-Implementierung
 - ≈ Prisma Client, der automatisch `findAll()`, `save()`, `deleteById()` bereitstellt
 
@@ -229,25 +248,40 @@ sequenceDiagram
     participant FE as Frontend
     participant Ctrl as IbanController
     participant Svc as ValidationService
+    participant DB as PostgreSQL
     participant Ext as ExternalIbanApiService
     participant API as openiban.com
 
-    FE->>Ctrl: POST /api/ibans/validate
-    Ctrl->>Svc: validate(iban)
-    Svc-->>Ctrl: valid=true, BLZ bekannt?
+    FE->>Ctrl: POST /api/ibans
+    Ctrl->>Svc: validateOrLookup(IbanNumber)
+    Svc->>DB: findById(iban)
 
-    alt BLZ in lokaler Map
-        Ctrl-->>FE: ✅ valid, bankName, method="local"
-    else BLZ unbekannt
-        Ctrl->>Ext: validate(iban)
-        Ext->>API: GET /validate/{iban}
-        alt API erreichbar
-            API-->>Ext: bankName, BIC
-            Ext-->>Ctrl: ExternalResult
-            Ctrl-->>FE: ✅ valid, bankName, method="external"
-        else API down / Fehler
-            Ext-->>Ctrl: null
-            Ctrl-->>FE: ✅ valid, kein bankName
+    alt Cache-Hit (IBAN bereits bekannt)
+        DB-->>Svc: Cached result
+        Svc-->>Ctrl: ValidationResult
+        Ctrl-->>FE: ✅ Sofortige Antwort
+    else Cache-Miss
+        DB-->>Svc: empty
+        Svc->>Svc: validate(IbanNumber) + Mod97
+        alt BLZ in lokaler Map
+            Svc->>DB: save(entity)
+            Svc-->>Ctrl: ValidationResult
+            Ctrl-->>FE: ✅ valid, bankName
+        else BLZ unbekannt
+            Svc->>Ext: validate(iban)
+            Ext->>API: GET /validate/{iban}
+            alt API erreichbar
+                API-->>Ext: bankName, BIC
+                Ext-->>Svc: ExternalResult
+                Svc->>DB: save(entity)
+                Svc-->>Ctrl: ValidationResult
+                Ctrl-->>FE: ✅ valid, bankName (extern)
+            else API down / Fehler
+                Ext-->>Svc: null
+                Svc->>DB: save(entity)
+                Svc-->>Ctrl: ValidationResult
+                Ctrl-->>FE: ✅ valid, kein bankName
+            end
         end
     end
 ```
@@ -259,7 +293,7 @@ GET https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true
 - **RestClient** (Spring 6.1) als HTTP-Client (≈ fetch/axios)
 - Ganzer Call in `try/catch` — wenn openiban.com down ist, wird `null` zurückgegeben
 - **Graceful Degradation**: Die App funktioniert immer, nur ohne Banknamen-Auflösung
-- Im Response steht dann `validationMethod: "external"` statt `"local"`
+- Die Fallback-Logik liegt jetzt im **Service** (nicht mehr im Controller)
 
 ---
 
@@ -277,7 +311,9 @@ Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express E
 
 ### Entity (Iban.java)
 
-7 Felder: `id` (auto-generiert), `iban`, `bankName`, `bankIdentifier`, `valid`, `validationMethod`, `createdAt`.
+7 Felder: `iban` (natürlicher Primary Key), `bankName`, `bankIdentifier`, `valid`, `reason`, `createdAt`, `updatedAt`.
+
+**IBAN als Primary Key:** Jede IBAN existiert genau einmal in der DB. Wiederholte Anfragen liefern das gespeicherte Ergebnis (Cache-Lookup). Implementiert `Persistable<String>` damit JPA bei String-PKs zwischen INSERT und UPDATE unterscheiden kann.
 
 **Warum kein Record?** JPA/Hibernate braucht Mutabilität + leeren Konstruktor (Reflection), Records sind immutable. DTOs sind Records, Entities sind Klassen.
 
@@ -291,22 +327,25 @@ Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express E
 
 ## 11. Testing
 
-**16 Backend-Tests** (JUnit 5), alle grün:
+**54 Backend-Tests** (JUnit 5), alle grün:
 
 | Art             | Datei                       | Tests | Was wird getestet?                                                                                   |
 | --------------- | --------------------------- | ----- | ---------------------------------------------------------------------------------------------------- |
-| **Unit**        | `IbanValidationServiceTest` | 12    | Mod-97-Algorithmus, BLZ-Lookup, Edge Cases (Leerzeichen, Bindestriche, Lowercase, ungültige Zeichen) |
-| **Integration** | `IbanControllerTest`        | 4     | HTTP-Routing, JSON-Serialisierung, Validation (`@NotBlank` → 400), Mocking via `@MockitoBean`        |
+| **Unit**        | `IbanValidationServiceTest` | 23    | Mod-97-Algorithmus, BLZ-Lookup, Edge Cases (Leerzeichen, Bindestriche, Lowercase, ungültige Zeichen) |
+| **Unit**        | `Mod97ValidatorTest`        | 8     | Isolierte Tests für den Modulo-97-Prüfziffern-Algorithmus                                            |
+| **Unit**        | `IbanNumberTest`            | 16    | Value Object: Normalisierung, countryCode(), bankIdentifier(), formatted(), Fehlerfälle              |
+| **Integration** | `IbanControllerTest`        | 7     | HTTP-Routing, Cache-Hit/Miss, DELETE, JSON-Serialisierung, Validation (`@NotBlank` → 400)            |
 
-**3 Frontend-Tests** (Vitest + React Testing Library):
+**29 Frontend-Tests** (Vitest + React Testing Library):
 
-- Smoke-Tests: Render der Eingabe, Validate-Button, Save-Button
+- IbanInput-Komponente: Rendering, Formatierung, Clear-Button, Keyboard-Events
+- Utils: formatIban, cleanIban, getExpectedLength, COUNTRY_LENGTHS
 
 **Testen lässt sich so:**
 
 ```bash
-cd backend && mvn verify -B       # Backend: 16 Tests
-cd frontend && pnpm test           # Frontend: 3 Tests
+cd backend && mvn verify -B       # Backend: 54 Tests
+cd frontend && pnpm test           # Frontend: 29 Tests
 ```
 
 ---
@@ -346,18 +385,20 @@ graph LR
 
 ## 13. Was ich gelernt habe
 
-| Spring Boot / Java                      | Mein Vergleich (TS/Node/Go)                 |
-| --------------------------------------- | ------------------------------------------- |
-| `@RestController` + `@RequestMapping`   | Express Router                              |
-| Constructor Injection (IoC)             | Manuelles Wiring in Go / Angulars DI        |
-| `@Service`, `@Repository` — Schichten   | Domain-Layer-Pattern, das ich aus DDD kenne |
-| `JpaRepository` (0 Zeilen eigener Code) | Prisma Client                               |
-| Flyway Migrations                       | Prisma Migrate / golang-migrate             |
-| `@Valid` + `@NotBlank`                  | zod-Validation                              |
-| `@RestControllerAdvice`                 | Express Error-Handling Middleware           |
-| `BigInteger` für Mod 97                 | JavaScript `BigInt`                         |
-| Maven `pom.xml` + Starter Dependencies  | `package.json` + npm-Scripts                |
-| `@WebMvcTest` + `MockMvc`               | Vitest + Supertest                          |
+| Spring Boot / Java                       | Mein Vergleich (TS/Node/Go)                 |
+| ---------------------------------------- | ------------------------------------------- |
+| `@RestController` + `@RequestMapping`    | Express Router                              |
+| Constructor Injection (IoC)              | Manuelles Wiring in Go / Angulars DI        |
+| `@Service`, `@Repository` — Schichten    | Domain-Layer-Pattern, das ich aus DDD kenne |
+| `JpaRepository` (0 Zeilen eigener Code)  | Prisma Client                               |
+| Flyway Migrations                        | Prisma Migrate / golang-migrate             |
+| `@Valid` + `@NotBlank`                   | zod-Validation                              |
+| `@RestControllerAdvice`                  | Express Error-Handling Middleware           |
+| `BigInteger` für Mod 97                  | JavaScript `BigInt`                         |
+| Maven `pom.xml` + Starter Dependencies   | `package.json` + npm-Scripts                |
+| `@WebMvcTest` + `MockMvc`                | Vitest + Supertest                          |
+| Java Records als Value Objects (DDD)     | TypeScript branded types / Go value structs |
+| `Persistable<String>` für natürliche PKs | Custom isNew()-Logik in ORMs                |
 
 **Mein Key Takeaway:** Spring Boot ist überraschend produktiv, sobald man die Annotation-Magie versteht. Die Convention-over-Configuration-Philosophie erinnert mich an Angular (DI, Decoratoren, strikte Struktur). Die Projektstruktur Controller → Service → Repository ist letztlich das gleiche Layered-Architecture-Pattern, das ich aus Node.js/Go-Projekten kenne.
 
@@ -381,8 +422,9 @@ _(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
 
 - **Projekt:** IBAN Validator — React + Spring Boot + PostgreSQL + Docker
 - **Eigene Modulo-97-Implementierung** nach ISO 13616
-- **16 Backend-Tests + 3 Frontend-Tests**, alle grün
-- **Produktionsnahe Architektur** mit Flyway, Docker Compose, Nginx-Proxy
+- **54 Backend-Tests + 29 Frontend-Tests**, alle grün
+- **DDD-Elemente**: IbanNumber Value Object, Mod97Validator, Service-Orchestrierung
+- **Produktionsnahe Architektur** mit Flyway, Docker Compose, Nginx-Proxy, natürliche PKs
 - **Saubere Doku:** README, Architecture Decisions, Fachliches Wissen, Lernguide
 - **Reflection:** Alle Entscheidungen in decisions.md begründet — auch was man in Produktion anders machen würde
 
