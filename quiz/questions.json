@@ -1780,5 +1780,29 @@
     ],
     "answer": 1,
     "explanation": "Ohne `Persistable` ruft `save()` intern `merge()` auf, was erst ein SELECT macht und dann ein INSERT (weil die Entity nicht existiert). **Das funktioniert korrekt**, kostet aber einen zusätzlichen SELECT pro neuem INSERT.\n\nDa der Service ohnehin per `findById()` prüft, ob die IBAN schon existiert, ist das extra SELECT von `merge()` nur ein minimaler Overhead — kein Bug, nur ~1 redundante Query pro neuer IBAN.\n\nDie Entscheidung: **Einfachheit > Performance**. Die Entity ist ohne `Persistable` + `@Transient isNew`-Flag deutlich kürzer und leichter verständlich."
+  },
+  {
+    "id": 155,
+    "question": "Wo wird IbanFormatException in diesem Projekt gefangen — und warum?",
+    "options": [
+      "Im Controller per try/catch, weil Exceptions immer dort behandelt werden sollten",
+      "Im Service per try/catch, weil die Business-Logik dort liegt",
+      "Im GlobalExceptionHandler per @ExceptionHandler, weil das die idiomatic Spring-Lösung für cross-cutting Error-Handling ist",
+      "Gar nicht — Spring gibt automatisch HTTP 500 zurück"
+    ],
+    "answer": 2,
+    "explanation": "`IbanFormatException` wird im `GlobalExceptionHandler` (einer `@RestControllerAdvice`-Klasse) per `@ExceptionHandler(IbanFormatException.class)` gefangen und in eine HTTP-400-Response umgewandelt.\n\nDas ist die **idiomatische Spring-Lösung**: Exception-zu-HTTP-Mapping ist ein **cross-cutting concern** — es gehört nicht in den Controller (der nur HTTP ↔ Service mappt), sondern in eine zentrale Stelle.\n\n**Vorteile:**\n• **DRY** — falls ein zweiter Controller dieselbe Exception wirft, ist sie automatisch abgedeckt\n• **Separation of Concerns** — Controller bleibt ein dünner Einzeiler\n• **Konsistenz** — alle Error-Responses haben dasselbe JSON-Format\n\n≈ In Express registrierst du auch einen globalen Error-Handler (`app.use((err, req, res, next) => {...})`) statt in jedem Route-Handler try/catch zu schreiben."
+  },
+  {
+    "id": 156,
+    "question": "In welcher Reihenfolge sucht Spring nach @ExceptionHandler-Methoden?",
+    "options": [
+      "Erst @RestControllerAdvice (global), dann im Controller (lokal)",
+      "Erst im Controller (lokal), dann in @RestControllerAdvice (global)",
+      "Nur @RestControllerAdvice wird durchsucht — Controller können keine @ExceptionHandler haben",
+      "Die Reihenfolge ist zufällig und nicht garantiert"
+    ],
+    "answer": 1,
+    "explanation": "Spring prüft **zuerst** `@ExceptionHandler`-Methoden **im Controller selbst** (lokal), dann in `@RestControllerAdvice`-Klassen (global). Lokale Handler haben also Vorrang.\n\nDas bedeutet: Man **könnte** `IbanFormatException` auch direkt im `IbanController` fangen — mit einer `@ExceptionHandler`-Methode in der Controller-Klasse. Das wäre sinnvoll, wenn die Exception **nur für diesen einen Controller** relevant ist und man ein abweichendes Verhalten vom globalen Handler braucht.\n\nIm Projekt bleibt der Handler bewusst im `GlobalExceptionHandler`, weil das Exception → HTTP-Mapping ein **cross-cutting concern** ist und der Controller so maximal schlank bleibt.\n\n≈ In Express: Route-spezifischer Error-Handler (im Router) vs. globaler Error-Handler (`app.use(...)`) — der spezifischere gewinnt."
   }
 ]
