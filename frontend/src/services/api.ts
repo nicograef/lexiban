@@ -14,6 +14,7 @@ export interface IbanValidationResponse {
   bankName: string | null
   bankIdentifier: string | null
   validationMethod: string
+  reason: string | null
 }
 
 export interface IbanListEntry {
@@ -26,29 +27,12 @@ export interface IbanListEntry {
 }
 
 /**
- * POST /api/ibans/validate — Validate IBAN without saving.
- * Calls IbanController.validateIban() on the backend.
- * The IBAN is cleaned (non-alphanumeric chars removed) before sending.
- */
-export async function validateIban(
-  rawIban: string,
-): Promise<IbanValidationResponse> {
-  const response = await fetch(`${API_BASE}/validate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ iban: cleanIban(rawIban) }),
-  })
-  if (!response.ok) {
-    throw new Error(`Validation failed: ${response.status.toString()}`)
-  }
-  return (await response.json()) as IbanValidationResponse
-}
-
-/**
  * POST /api/ibans — Validate and save IBAN.
  * Calls IbanController.validateAndSaveIban() on the backend.
+ * The IBAN is cleaned (non-alphanumeric chars removed) before sending.
+ * Every IBAN is saved regardless of validity.
  */
-export async function validateAndSaveIban(
+export async function validateIban(
   rawIban: string,
 ): Promise<IbanValidationResponse> {
   const response = await fetch(API_BASE, {
@@ -57,7 +41,7 @@ export async function validateAndSaveIban(
     body: JSON.stringify({ iban: cleanIban(rawIban) }),
   })
   if (!response.ok) {
-    throw new Error(`Save failed: ${response.status.toString()}`)
+    throw new Error(`Validation failed: ${response.status.toString()}`)
   }
   return (await response.json()) as IbanValidationResponse
 }

@@ -46,7 +46,8 @@ public class IbanController {
             String iban,
             String bankName,
             String bankIdentifier,
-            String validationMethod) {
+            String validationMethod,
+            String reason) {
     }
 
     public record IbanListEntry(
@@ -58,16 +59,15 @@ public class IbanController {
             String validationMethod) {
     }
 
-    /** POST /api/ibans/validate — Validate IBAN without saving. */
-    @PostMapping("/validate")
-    public ResponseEntity<IbanResponse> validateIban(@Valid @RequestBody IbanRequest request) {
-        return ResponseEntity.ok(buildResponse(request.iban()));
-    }
-
-    /** POST /api/ibans — Validate and save IBAN. */
+    /**
+     * POST /api/ibans — Validate and always save the IBAN (valid or invalid).
+     * Both valid and invalid IBANs are persisted for audit/history purposes.
+     * For non-German IBANs, the external API is always called since KNOWN_BANKS
+     * only contains German BLZ entries.
+     */
     @PostMapping
     public ResponseEntity<IbanResponse> validateAndSaveIban(@Valid @RequestBody IbanRequest request) {
-        IbanResponse response = buildResponse(request.iban());
+        IbanResponse response = validateIban(request.iban());
 
         ibanRepository.save(new Iban(
                 response.iban(),
@@ -96,11 +96,10 @@ public class IbanController {
     }
 
     /**
-     * Shared validation logic used by both validate and validateAndSave.
      * Runs local Mod-97 check first, then falls back to the external API
      * if the IBAN is valid but the bank name couldn't be resolved locally.
      */
-    private IbanResponse buildResponse(String rawIban) {
+    private IbanResponse validateIban(String rawIban) {
         ValidationResult result = validationService.validate(rawIban);
 
         String bankName = result.bankName();
@@ -120,6 +119,7 @@ public class IbanController {
                 result.iban(),
                 bankName,
                 result.bankIdentifier(),
-                validationMethod);
+                validationMethod,
+                result.reason());
     }
 }

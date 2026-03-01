@@ -29,7 +29,18 @@ public class ExternalIbanApiService {
             String bic) {
     }
 
-    /** Validate IBAN via openiban.com. Returns null if the service is unavailable. */
+    /**
+     * Validate IBAN via openiban.com. Returns null if the service is unavailable.
+     * Null means "service not available", NOT "IBAN invalid".
+     * The controller checks for null and falls back to the local validation result.
+     *
+     * Query params: getBIC=true → includes the BIC/SWIFT code in the response.
+     * validateBankCode=true → also verifies the bank code in the BBAN actually
+     * exists
+     * (goes beyond Mod-97 which only checks the check digits).
+     *
+     * TS equivalent: fetch(url).then(r => r.json()).catch(() => null)
+     */
     public ExternalValidationResult validate(String iban) {
         try {
             var response = restClient.get()
@@ -46,6 +57,9 @@ public class ExternalIbanApiService {
 
             return new ExternalValidationResult(response.valid(), bankName, bic);
         } catch (Exception e) {
+            // Broad catch is intentional — the external API is best-effort enrichment.
+            // A failure here must never block the local validation result.
+            // TS equivalent: .catch(() => null)
             log.warn("External IBAN validation failed for {}: {}", iban, e.getMessage());
             return null;
         }

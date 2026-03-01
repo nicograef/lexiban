@@ -72,8 +72,7 @@ class IbanControllerTest {
         // ── Test: Valid IBAN returns 200 with correct JSON ──
         // ≈ it('should validate a valid IBAN', async () => {
         // vi.mocked(service.validate).mockReturnValue({ valid: true, ... })
-        // const res = await request(app).post('/api/ibans/validate').send({ iban: '...'
-        // })
+        // const res = await request(app).post('/api/ibans').send({ iban: '...' })
         // expect(res.status).toBe(200)
         // expect(res.body.valid).toBe(true)
         // })
@@ -81,9 +80,10 @@ class IbanControllerTest {
         void validateValidIban() throws Exception {
                 when(validationService.validate("DE89370400440532013000"))
                                 .thenReturn(new IbanValidationService.ValidationResult(
-                                                true, "DE89370400440532013000", "Commerzbank", "37040044", "local"));
+                                                true, "DE89370400440532013000", "Commerzbank", "37040044", "local",
+                                                null));
 
-                mockMvc.perform(post("/api/ibans/validate")
+                mockMvc.perform(post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                                 {"iban": "DE89370400440532013000"}
@@ -99,9 +99,10 @@ class IbanControllerTest {
         void validateInvalidIban() throws Exception {
                 when(validationService.validate("INVALID"))
                                 .thenReturn(new IbanValidationService.ValidationResult(
-                                                false, "INVALID", null, null, "local"));
+                                                false, "INVALID", null, null, "local",
+                                                "IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
 
-                mockMvc.perform(post("/api/ibans/validate")
+                mockMvc.perform(post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                                 {"iban": "INVALID"}
@@ -115,7 +116,7 @@ class IbanControllerTest {
         // rejects the empty string before the controller method even runs.
         @Test
         void validateEmptyIbanReturnsBadRequest() throws Exception {
-                mockMvc.perform(post("/api/ibans/validate")
+                mockMvc.perform(post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                                 {"iban": ""}

@@ -11,12 +11,11 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatIban } from '@/lib/utils'
+import { cleanIban, formatIban, getExpectedLength } from '@/lib/utils'
 import {
   getAllIbans,
   type IbanListEntry,
   type IbanValidationResponse,
-  validateAndSaveIban,
   validateIban,
 } from '@/services/api'
 
@@ -26,7 +25,7 @@ interface ValidationState {
   error: string | null
 }
 
-export function IbanInput() {
+export function IbanInput({ onSaved }: { onSaved?: () => void }) {
   const [input, setInput] = useState('')
   const [validation, setValidation] = useState<ValidationState>({
     loading: false,
@@ -41,12 +40,18 @@ export function IbanInput() {
     setValidation({ loading: false, result: null, error: null })
   }
 
+  const handleClear = () => {
+    setInput('')
+    setValidation({ loading: false, result: null, error: null })
+  }
+
   const handleValidate = async () => {
     if (!input.trim()) return
     setValidation({ loading: true, result: null, error: null })
     try {
       const result = await validateIban(input)
       setValidation({ loading: false, result, error: null })
+      onSaved?.()
     } catch {
       setValidation({
         loading: false,
@@ -56,58 +61,83 @@ export function IbanInput() {
     }
   }
 
-  const handleSave = async () => {
-    if (!input.trim()) return
-    setValidation({ loading: true, result: null, error: null })
-    try {
-      const result = await validateAndSaveIban(input)
-      setValidation({ loading: false, result, error: null })
-    } catch {
-      setValidation({
-        loading: false,
-        result: null,
-        error: 'Speichern fehlgeschlagen',
-      })
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && input.trim() && !validation.loading) {
+      void handleValidate()
     }
   }
+
+  /** Dynamic label: "BLZ" for German IBANs, "Bank Identifier" for others */
+  const bankIdentifierLabel = cleanIban(input).startsWith('DE')
+    ? 'BLZ'
+    : 'Bank Identifier'
+
+  // Character counter: show current length vs. expected length for the detected country
+  const cleaned = cleanIban(input)
+  const countryCode = cleaned.length >= 2 ? cleaned.substring(0, 2) : ''
+  const expectedLength = countryCode ? getExpectedLength(countryCode) : null
+  const currentLength = cleaned.length
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>IBAN prüfen</CardTitle>
         <CardDescription>
-          IBAN eingeben — Leerzeichen und Trennzeichen werden automatisch
-          formatiert.
+          IBAN eingeben — unterstützt alle IBAN-Länder (DE, AT, CH, GB, FR,
+          ...). Leerzeichen und Trennzeichen werden automatisch formatiert.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="iban-input">IBAN</Label>
-          <Input
-            id="iban-input"
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            placeholder="DE89 3704 0044 0532 0130 00"
-            className="font-mono text-lg tracking-wider"
-          />
+          <div className="relative">
+            <Input
+              id="iban-input"
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="DE89 3704 0044 0532 0130 00"
+              className="font-mono text-lg tracking-wider pr-8"
+              maxLength={42}
+              autoFocus
+            />
+            {input && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
+                aria-label="Eingabe löschen"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {currentLength > 0 && (
+            <p
+              className={`text-xs ${
+                expectedLength && currentLength === expectedLength
+                  ? 'text-green-600'
+                  : expectedLength && currentLength > expectedLength
+                    ? 'text-red-500'
+                    : 'text-muted-foreground'
+              }`}
+              data-testid="char-counter"
+            >
+              {currentLength}
+              {expectedLength
+                ? ` / ${expectedLength.toString()} Zeichen (${countryCode})`
+                : ' Zeichen'}
+            </p>
+          )}
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            onClick={() => void handleValidate()}
-            disabled={validation.loading || !input.trim()}
-          >
-            {validation.loading ? 'Prüfe...' : 'Validieren'}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => void handleSave()}
-            disabled={validation.loading || !input.trim()}
-          >
-            {validation.loading ? 'Speichere...' : 'Validieren & Speichern'}
-          </Button>
-        </div>
+        <Button
+          onClick={() => void handleValidate()}
+          disabled={validation.loading || !input.trim()}
+        >
+          {validation.loading ? 'Prüfe...' : 'Prüfen'}
+        </Button>
 
         {validation.error && (
           <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-destructive text-sm">
@@ -127,13 +157,18 @@ export function IbanInput() {
               <p className="font-medium">
                 {validation.result.valid ? '✓ IBAN gültig' : '✗ IBAN ungültig'}
               </p>
+              {!validation.result.valid && validation.result.reason && (
+                <p className="text-sm text-red-700">
+                  {validation.result.reason}
+                </p>
+              )}
               <p className="text-sm font-mono">{validation.result.iban}</p>
               {validation.result.bankName && (
                 <p className="text-sm">Bank: {validation.result.bankName}</p>
               )}
               {validation.result.bankIdentifier && (
                 <p className="text-sm text-muted-foreground">
-                  BLZ: {validation.result.bankIdentifier}
+                  {bankIdentifierLabel}: {validation.result.bankIdentifier}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
@@ -147,7 +182,7 @@ export function IbanInput() {
   )
 }
 
-export function IbanList() {
+export function IbanList({ refreshKey }: { refreshKey?: number }) {
   const [ibans, setIbans] = useState<IbanListEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -167,7 +202,7 @@ export function IbanList() {
 
   useEffect(() => {
     void fetchIbans()
-  }, [fetchIbans])
+  }, [fetchIbans, refreshKey])
 
   if (loading) {
     return (
