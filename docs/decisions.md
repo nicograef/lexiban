@@ -153,6 +153,54 @@ With only 1 entity and 3 endpoints, it feels like over-engineering. But:
 
 ---
 
+## 11. Java 21 (LTS) over Java 25
+
+**Decision**: Use Java 21 as compile target and runtime. Do not upgrade to Java 25.
+
+**Reasoning**: Java 21 (September 2023) is the current industry-standard LTS release:
+
+- **Stability & ecosystem maturity** — all major frameworks (Spring Boot 3.x, Hibernate 6.x), libraries (Mockito, ByteBuddy), and build tools are fully tested against Java 21. No compatibility workarounds needed.
+- **Wide adoption** — most enterprise teams (including the likely target company) run Java 21 in production. Choosing the same version demonstrates pragmatism.
+- **Spring Boot 3.4.x** requires Java 17+ and is optimized/tested for Java 21. Java 25 support is not guaranteed without library overrides (e.g. ByteBuddy version pinning for Mockito).
+- **No missing features** — this project uses Records, Text Blocks, `var`, and `BigInteger`, all available since Java 16. The new Java 25 language features (Unnamed Variables, Module Imports, Compact Source Files) are syntactic conveniences that don't add value to a Spring Boot REST API.
+
+Java 25 (September 2025) is the next LTS but was released only 6 months ago. Its runtime improvements (Compact Object Headers, AOT Class Loading) are valuable for large-scale production but irrelevant for a demo project.
+
+**In production**: Teams upgrade LTS-to-LTS after the new version has been in GA for 6-12 months and all dependencies are verified. Java 21 → 25 migration will happen industry-wide in 2026/2027.
+
+---
+
+## 12. Maven over Gradle
+
+**Decision**: Use Maven as the build tool. Do not switch to Gradle.
+
+**Reasoning**: Maven is the better fit for this project and this developer:
+
+- **Declarative & readable for Java newcomers** — `pom.xml` is declarative XML, conceptually close to `package.json` (declarative JSON). Gradle requires learning Groovy or Kotlin DSL — yet another language on top of Java itself.
+- **Spring Boot ecosystem default** — Spring Initializr defaults to Maven. The official documentation and most tutorials use Maven examples. For a learner, following the most documented path reduces friction.
+- **No complex build needed** — this project has a simple build: compile → test → package as Fat-JAR. No multi-module setup, no custom tasks, no incremental build. Gradle's strengths (build scripts as code, incremental compilation, build cache) are overkill here.
+- **Wide enterprise adoption** — Maven remains the most widely used build tool in enterprise Java. The target company likely uses Maven.
+- **Transparency** — XML is verbose but explicit. Every dependency, plugin, and property is visible — no hidden build logic in scripts. For a developer who wants to understand everything, this is an advantage.
+
+**In production**: The choice depends on team preference and project complexity. Gradle is faster for large multi-module projects with custom build logic. Maven is simpler and more predictable for standard web applications. Both are equally valid — the key is consistency within a team.
+
+---
+
+## 13. Maven 3.9.x (stable) over Maven 4.0.0-rc
+
+**Decision**: Use Maven 3.9.12 (latest stable). Do not use Maven 4.0.0-rc-5.
+
+**Reasoning**: Maven 4.0.0 is still a Release Candidate — the Apache Maven website explicitly states _"it is NOT safe for production use"_.
+
+- **Maven 3.9.12** is the official _"recommended version for all users"_ (March 2026).
+- The `pom.xml` in this project uses no Maven-4-specific features (Model 4.1.0, multi-project reactor improvements). It builds identically with 3.9.x.
+- Using a pre-release build tool in a portfolio project adds unnecessary risk: potential edge-case bugs that have nothing to do with the application code.
+- Maven 3.9.x is what interviewers and CI/CD pipelines expect.
+
+**In production**: Teams adopt new major Maven versions only after GA release and sufficient ecosystem testing. Maven 3.9.x will remain the standard until Maven 4.0.0 reaches GA and gains adoption (likely late 2026+).
+
+---
+
 ## Appendix: How to switch from PostgreSQL to H2
 
 → Ausgelagert in [h2-migration.md](h2-migration.md) — vollständige Schritt-für-Schritt-Anleitung mit Code-Beispielen und Trade-off-Tabelle.

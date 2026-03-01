@@ -44,8 +44,6 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- Override ByteBuddy for Java 25 compatibility (Mockito mocking) -->
-        <byte-buddy.version>1.18.5</byte-buddy.version>
     </properties>
 
     <dependencies>
