@@ -138,7 +138,7 @@ function render() {
 
     html += `<div class="explanation ${resultClass}">`;
     html += `<div class="explanation-header ${headerClass}">${headerText}</div>`;
-    html += `<div>${escapeHtml(q.explanation)}</div>`;
+    html += `<div class="explanation-body">${renderExplanation(q.explanation)}</div>`;
     html += `</div>`;
   }
 
@@ -201,6 +201,29 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+/**
+ * Render explanation text with light-markdown support.
+ * Supports: **bold**, `code`, \n\n for paragraphs, \n for line breaks.
+ * Runs escapeHtml first for XSS safety, then applies formatting.
+ */
+function renderExplanation(str) {
+  let html = escapeHtml(str);
+  // \n\n → paragraph break
+  html = html
+    .split("\n\n")
+    .map((p) => `<p>${p}</p>`)
+    .join("");
+  // \n → <br> inside paragraphs
+  html = html.replace(/\n/g, "<br>");
+  // **bold** → <strong>
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // `code` → <code>
+  html = html.replace(/`(.+?)`/g, "<code>$1</code>");
+  // ≈ analogy marker → styled span
+  html = html.replace(/≈\s/g, '<span class="analogy">≈ </span>');
+  return html;
 }
 
 // Go!

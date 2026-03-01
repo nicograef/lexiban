@@ -81,7 +81,7 @@
       "Es ist eine Vorgabe von Spring Boot"
     ],
     "answer": 1,
-    "explanation": "Nach der Buchstaben-Konvertierung entsteht eine Zahl mit 30–60+ Stellen. int (max. ~2 Mrd.) und long (max. ~9,2 × 10¹⁸) reichen nicht. BigInteger unterstützt beliebig große Zahlen — analog zu JavaScripts BigInt."
+    "explanation": "Nach der Buchstaben-Konvertierung entsteht eine Zahl mit 30–60+ Stellen. `int` (max. ~2 Mrd.) und `long` (max. ~9,2 × 10¹⁸) reichen nicht. `BigInteger` unterstützt beliebig große Zahlen.\n\n≈ JavaScript `BigInt`: `BigInt('131489370400440532013000') % 97n === 1n`. In Go gäbe es `math/big.Int`. Der Grund ist derselbe: native Datentypen haben eine feste Bitbreite, aber IBAN-Zahlen können 60+ Stellen haben."
   },
   {
     "id": 8,
@@ -153,7 +153,7 @@
       "JRE enthält JDK und JVM"
     ],
     "answer": 1,
-    "explanation": "Das JDK (Java Development Kit) enthält das JRE (Java Runtime Environment), das wiederum die JVM (Java Virtual Machine) enthält. Die JVM führt Bytecode aus, das JRE liefert die Standardbibliothek, das JDK bringt den Compiler (javac) und Entwickler-Tools mit."
+    "explanation": "Das **JDK** (Java Development Kit) enthält das **JRE** (Java Runtime Environment), das wiederum die **JVM** (Java Virtual Machine) enthält.\n\n≈ **Node.js-Analogie**: JDK ≈ Node.js + npm + TypeScript-Compiler, JRE ≈ Node.js Runtime (ohne npm), JVM ≈ V8-Engine.\n\nDie JVM führt **Bytecode** (`.class`-Dateien) plattformunabhängig aus — ob Linux, Mac oder Windows, derselbe Bytecode läuft überall. In diesem Projekt nutzen wir **JDK 21** (konfiguriert in der `pom.xml`)."
   },
   {
     "id": 14,
@@ -165,7 +165,7 @@
       "Direkt ausführbare .jar-Dateien"
     ],
     "answer": 2,
-    "explanation": "javac kompiliert .java-Dateien zu .class-Dateien (Bytecode). Dieser Bytecode ist plattformunabhängig und wird von der JVM interpretiert/JIT-kompiliert. Analog zu: tsc kompiliert .ts → .js."
+    "explanation": "`javac` kompiliert `.java`-Dateien zu `.class`-Dateien (Bytecode). Dieser Bytecode ist plattformunabhängig und wird von der JVM interpretiert/JIT-kompiliert.\n\n≈ `tsc` kompiliert `.ts` → `.js`. Der Unterschied: TypeScript-Output ist JavaScript (Klartext), Java-Output ist Bytecode (binär). Go-Analogie: `go build` erzeugt nativen Maschinencode — Java erzeugt Bytecode, der von der JVM zur Laufzeit in Maschinencode übersetzt wird (JIT)."
   },
   {
     "id": 15,
@@ -177,7 +177,7 @@
       "Noch vor dem main()-Aufruf durch die JVM"
     ],
     "answer": 1,
-    "explanation": "Annotations sind zur Compile-Zeit nur passive Metadaten im Bytecode. Erst zur Laufzeit — beim Aufruf von SpringApplication.run() — liest Spring diese per Reflection aus und baut daraus Beans, Routes und DI-Konfiguration."
+    "explanation": "Annotations sind zur Compile-Zeit nur **passive Metadaten** im Bytecode. Erst zur Laufzeit — beim Aufruf von `SpringApplication.run()` — liest Spring diese per **Reflection** aus und baut daraus Beans, Routes und DI-Konfiguration.\n\n≈ Stell dir vor, Express würde automatisch alle Dateien in `src/` scannen und jede Funktion mit einem `// @get /users`-Kommentar als Route registrieren — ohne dass du `router.get('/users', handler)` schreibst. Genau das macht Spring per Reflection.\n\n**Trade-off:** Weil alles zur Laufzeit passiert, können Fehler (z.B. fehlende Bean, falscher Typ) erst beim **Start** auftreten — nicht beim Build. In Go kompiliert der Code nicht, wenn eine Dependency fehlt. In Spring kann der Build erfolgreich sein, aber die App crasht beim Starten."
   },
   {
     "id": 16,
@@ -189,7 +189,7 @@
       "Ein Verfahren zum automatischen Download von Libraries"
     ],
     "answer": 1,
-    "explanation": "DI ist eine Form von Inversion of Control (IoC): Statt new Service() im Controller zu schreiben, übergibt Spring die fertige Instanz über den Konstruktor. Vorteil: Testbarkeit (Mocks injizieren) und lose Kopplung."
+    "explanation": "DI ist eine Form von **Inversion of Control** (IoC): Statt `new Service()` im Controller zu schreiben, übergibt Spring die fertige Instanz über den Konstruktor.\n\n**Vorteil:** Testbarkeit (Mocks injizieren) und lose Kopplung. In Tests: `new Controller(mockService)` — kein Spring-Kontext nötig.\n\n≈ In Go baust du das DI-Wiring manuell in `main()`: `repo := NewRepo(db); svc := NewService(repo); ctrl := NewController(svc)`. Spring macht das automatisch per Reflection. Angular hat ein ähnliches DI-System."
   },
   {
     "id": 17,
@@ -201,7 +201,7 @@
       "Static Injection"
     ],
     "answer": 2,
-    "explanation": "Constructor Injection ist Best Practice: Felder können final sein (Immutabilität), Abhängigkeiten sind explizit sichtbar, Objekte sind nach Konstruktion komplett initialisiert, und Tests funktionieren ohne Spring-Kontext (new Controller(mockService))."
+    "explanation": "**Constructor Injection** ist Best Practice in Spring Boot. Vorteile:\n\n• Felder können `final` sein → **Immutabilität**\n• Abhängigkeiten sind **explizit sichtbar** im Konstruktor\n• Objekt ist nach Konstruktor-Aufruf **vollständig initialisiert**\n• **Testbar ohne Spring**: einfach `new Controller(mockService)`\n\n**Field Injection** (`@Autowired` auf Feldern) ist schlecht, weil: Felder nicht `final` sein können, Abhängigkeiten unsichtbar sind, und Tests einen Spring-Kontext oder Reflection brauchen.\n\n≈ In TypeScript/Go gibt es kein automatisches DI — du übergibst Dependencies immer explizit über den Konstruktor/Funktionsparameter. Das ist genau das Prinzip."
   },
   {
     "id": 18,
@@ -249,7 +249,7 @@
       "Es aktiviert nur Flyway-Migrations"
     ],
     "answer": 1,
-    "explanation": "@SpringBootApplication ist eine Meta-Annotation, die drei Annotations kombiniert: @Configuration (Konfigurationsklasse), @EnableAutoConfiguration (automatische Konfiguration basierend auf Dependencies) und @ComponentScan (sucht nach @Component-Klassen im Package-Baum)."
+    "explanation": "`@SpringBootApplication` ist eine **Meta-Annotation**, die drei Annotations kombiniert:\n\n• `@Configuration` — Konfigurationsklasse (kann `@Bean`-Methoden enthalten)\n• `@EnableAutoConfiguration` — automatische Konfiguration basierend auf Dependencies im Classpath\n• `@ComponentScan` — sucht nach `@Component`-Klassen im Package-Baum per Reflection\n\n≈ Stell dir vor, ein Express-Setup würde automatisch alle Router-Dateien finden, Middleware konfigurieren und den Server starten — nur weil du `createApp()` aufrufst."
   },
   {
     "id": 22,
@@ -261,7 +261,7 @@
       "Alle genannten Punkte"
     ],
     "answer": 3,
-    "explanation": "SpringApplication.run() löst eine ganze Kette aus: Component Scan per Reflection, Bean-Erstellung + DI, Route-Registrierung aus @RequestMapping-Annotations, Flyway-Migrations und Start des embedded Tomcat auf Port 8080."
+    "explanation": "`SpringApplication.run()` löst eine ganze Kette aus:\n\n**1. Component Scan** — Spring durchsucht alle Packages per Reflection nach annotierten Klassen\n**2. Bean-Erstellung + DI** — Gefundene Klassen werden instanziiert, Konstruktor-Parameter aufgelöst\n**3. Route-Registrierung** — `@RequestMapping`, `@GetMapping` etc. werden im Tomcat registriert\n**4. Flyway Migrations** — SQL-Dateien aus `db/migration/` werden gegen die DB ausgeführt\n**5. Embedded Tomcat starten** — HTTP-Server lauscht auf Port 8080\n\n≈ In Go/TS machst du jeden Schritt manuell: `repo := NewRepo(db); svc := NewService(repo); router.Post('/api', handler); app.Listen(8080)`"
   },
   {
     "id": 23,
@@ -297,7 +297,7 @@
       "Es ist eine Kombination aus @Service und @RequestMapping"
     ],
     "answer": 0,
-    "explanation": "@RestController = @Controller + @ResponseBody. Jeder Rückgabewert einer Methode wird automatisch von Jackson zu JSON serialisiert. Ohne @ResponseBody würde Spring einen View-Namen (HTML-Template) erwarten."
+    "explanation": "`@RestController` = `@Controller` + `@ResponseBody`. Jeder Rückgabewert einer Methode wird automatisch von **Jackson** zu JSON serialisiert.\n\nOhne `@ResponseBody` würde Spring einen **View-Namen** (HTML-Template) erwarten — das wäre Server-Side Rendering (≈ EJS/Pug in Express). Mit `@RestController` gibt jede Methode direkt Daten zurück.\n\n≈ `@RestController`-Methode ≈ Express-Handler mit `res.json(data)`. `@Controller`-Methode ≈ Handler mit `res.render('template', data)`."
   },
   {
     "id": 26,
@@ -333,7 +333,7 @@
       "Ein Interface für Datenzugriff"
     ],
     "answer": 1,
-    "explanation": "Records (seit Java 16) sind immutable Datenklassen. Der Compiler generiert Konstruktor, Getter (ohne get-Prefix), equals(), hashCode() und toString(). Im Projekt als DTOs: IbanRequest, IbanResponse, ValidationResult."
+    "explanation": "**Records** (seit Java 16) sind immutable Datenklassen ohne Boilerplate. Der Compiler generiert automatisch: Konstruktor, Getter (ohne `get`-Prefix!), `equals()`, `hashCode()` und `toString()`.\n\nIm Projekt als DTOs: `IbanRequest`, `IbanResponse`, `ValidationResult`.\n\n≈ TypeScript `type` / `interface` — aber mit automatischer Gleichheitslogik. Go-Analogie: `struct` (by value). Zugriff auf Felder: `response.valid()`, `response.iban()` — Methoden, kein Punkt-Zugriff.\n\n**Warum nicht für die Entity?** Hibernate braucht mutable Felder + leeren Konstruktor (Reflection). Records sind immutable → inkompatibel."
   },
   {
     "id": 29,
@@ -369,7 +369,7 @@
       "Ein Test-Framework"
     ],
     "answer": 2,
-    "explanation": "Jackson konvertiert automatisch Java-Objekte ↔ JSON. Bei @RequestBody deserialisiert es den JSON-Request in ein Java-Objekt, bei @RestController-Returns serialisiert es den Rückgabewert zu JSON. Analog zu JSON.parse()/JSON.stringify() plus automatischem Typ-Mapping."
+    "explanation": "**Jackson** konvertiert automatisch Java-Objekte ↔ JSON. Bei `@RequestBody` deserialisiert es den JSON-Request in ein Java-Objekt, bei `@RestController`-Returns serialisiert es den Rückgabewert zu JSON.\n\n**Wie matcht Jackson Felder?** Per Name: JSON-Feld `\"iban\"` → Record-Parameter `iban`. Bei Klassen nutzt Jackson Getter: `getIban()` → JSON-Feld `\"iban\"`, `isValid()` → `\"valid\"`.\n\n≈ `JSON.parse()` + `JSON.stringify()` — aber mit automatischem Typ-Mapping. Noch näher: `zod.parse()` mit automatischem Serialisieren."
   },
   {
     "id": 32,
@@ -393,7 +393,7 @@
       "Ein Spring-Boot-Plugin"
     ],
     "answer": 1,
-    "explanation": "Hibernate implementiert die JPA-Spezifikation und bildet die Brücke zwischen Java-Objekten und relationalen Datenbanken. Die Aufruf-Kette: Spring Data JPA → Hibernate → JDBC → PostgreSQL. Analog zu Prisma als ORM über dem pg-Treiber."
+    "explanation": "**Hibernate** implementiert die JPA-Spezifikation und bildet die Brücke zwischen Java-Objekten und relationalen Datenbanken.\n\nDie Aufruf-Kette: `Spring Data JPA` → `Hibernate` → `JDBC` → `PostgreSQL`.\n\n≈ Prisma als ORM über dem `pg`-Treiber. Oder in Go: `GORM` über `database/sql`.\n\nHibernate konvertiert auch automatisch **camelCase → snake_case** für Spaltennamen: `bankName` → `bank_name`, `validationMethod` → `validation_method`. Das ist eine Spring-Boot-Convention (konfigurierbar)."
   },
   {
     "id": 34,
@@ -429,7 +429,7 @@
       "Es definiert Flyway-Migrationen"
     ],
     "answer": 1,
-    "explanation": "Spring Data JPA erkennt das Interface beim Start, erzeugt per Proxy eine vollständige Implementierung mit save(), findAll(), findById(), deleteById() etc. — ohne eine einzige Zeile Implementierungscode. Analog zum Prisma Client."
+    "explanation": "Spring Data JPA erkennt das Interface beim Start, erzeugt **per Proxy** eine vollständige Implementierung mit `save()`, `findAll()`, `findById()`, `deleteById()` etc. — ohne eine einzige Zeile Implementierungscode.\n\n**Unter der Haube:** Spring scannt den Classpath, findet Interfaces die `JpaRepository` erweitern, und erzeugt zur Laufzeit eine Implementierung. Der Proxy delegiert an Hibernate, das SQL generiert, das über JDBC an PostgreSQL geht:\n\n`ibanRepository.save(entity)` → Spring Proxy → Hibernate (SQL) → JDBC → PostgreSQL\n\n≈ Prisma Client — `prisma.iban.create({data})` generiert auch SQL automatisch."
   },
   {
     "id": 37,
@@ -501,7 +501,7 @@
       "Eine Test-Library"
     ],
     "answer": 1,
-    "explanation": "Maven ist Javas Standard-Build-Tool und Dependency-Manager. Die pom.xml ist die zentrale Konfigurationsdatei — analog zu package.json in Node.js oder go.mod in Go. Maven kompiliert, testet, paketiert und verwaltet Dependencies."
+    "explanation": "Maven ist Javas Standard-Build-Tool und Dependency-Manager. Die `pom.xml` ist die zentrale Konfigurationsdatei.\n\n≈ `package.json` in Node.js oder `go.mod` in Go.\n\n**Maven Lifecycle** (≈ npm-Scripts in Reihe):\n• `mvn compile` → `javac` kompiliert `.java` → `.class` (≈ `tsc`)\n• `mvn test` → Compile + Tests ausführen (≈ `pnpm test`)\n• `mvn package` → Compile + Test + `.jar` erzeugen (≈ `pnpm build`)\n• `mvn clean` → `target/`-Ordner löschen (≈ `rm -rf dist/`)\n• `mvn spring-boot:run` → App im Dev-Modus starten (≈ `pnpm dev`)\n\nDer `target/`-Ordner ist das Build-Ergebnis (≈ `dist/` oder `build/`)."
   },
   {
     "id": 43,
@@ -549,7 +549,7 @@
       "Eine .war-Datei für einen externen Anwendungsserver"
     ],
     "answer": 1,
-    "explanation": "mvn package kompiliert, testet und erzeugt eine Fat-JAR-Datei (Self-contained Archiv mit eingebettetem Tomcat + allen Dependencies). Aufruf: java -jar target/iban-validator-0.0.1-SNAPSHOT.jar. Analog zu pnpm build."
+    "explanation": "`mvn package` kompiliert, testet und erzeugt eine **Fat-JAR** (Self-contained Archiv mit eingebettetem Tomcat + allen Dependencies). Aufruf: `java -jar target/iban-validator-0.0.1-SNAPSHOT.jar`.\n\n≈ `pnpm build` erzeugt ein `dist/`-Verzeichnis. Go-Analogie: `go build` erzeugt ein einzelnes Binary.\n\nDer Unterschied: Go-Binary = nativer Maschinencode (kein Runtime nötig). Java `.jar` = Bytecode (JVM als Runtime nötig). Aber beide sind **self-contained** und deployfähig als einzelne Datei."
   },
   {
     "id": 47,
@@ -825,7 +825,7 @@
       "Es generiert automatisch API-Dokumentation"
     ],
     "answer": 1,
-    "explanation": "@WebMvcTest startet einen \"dünnen\" Spring-Kontext: nur Controller, Jackson-Serialisierung und Jakarta Validation. Keine echten Services, keine Datenbank. Abhängigkeiten werden per @MockitoBean gemockt. Analog zu Supertest mit isoliertem Router in Express."
+    "explanation": "`@WebMvcTest` startet einen **dünnen** Spring-Kontext: nur Controller, Jackson-Serialisierung und Jakarta Validation. **Keine echten Services, keine Datenbank.**\n\nAbhängigkeiten werden per `@MockitoBean` gemockt. Das ist viel schneller als `@SpringBootTest` (das alles hochfährt).\n\n≈ Supertest mit isoliertem Router in Express — du testest nur das HTTP-Routing, nicht die Business-Logik dahinter.\n\n**Warum nicht `@SpringBootTest`?** Das würde die gesamte App starten inkl. DB-Connection. `@WebMvcTest` ist schneller und isolierter — genau der Web-Layer wird getestet."
   },
   {
     "id": 70,
@@ -861,7 +861,7 @@
       "Ein CSS-Testing-Framework"
     ],
     "answer": 1,
-    "explanation": "MockMvc simuliert HTTP-Requests, ohne einen echten Server zu starten. Requests gehen direkt an den DispatcherServlet. perform(post(\"/api/ibans/validate\").content(...)) ist analog zu supertest(app).post('/api/ibans/validate').send(...) in Node.js."
+    "explanation": "**MockMvc** simuliert HTTP-Requests, ohne einen echten Server zu starten. Requests gehen direkt an den DispatcherServlet (Spring's zentralen Request-Router).\n\n`perform(post(\"/api/ibans/validate\").content(...))` ist ≈ `supertest(app).post('/api/ibans/validate').send(...)` in Node.js.\n\n**Vorteil:** Kein Netzwerk, kein echter Port — deutlich schneller als echte HTTP-Tests. Der gesamte Request-Response-Zyklus (Routing, Validation, Serialisierung) wird aber trotzdem durchlaufen."
   },
   {
     "id": 73,
@@ -969,7 +969,7 @@
       "Es aktiviert CORS"
     ],
     "answer": 1,
-    "explanation": "@RestControllerAdvice im GlobalExceptionHandler fängt Exceptions aus allen Controllern: MethodArgumentNotValidException → HTTP 400, allgemeine Exception → HTTP 500. Jede Fehlerantwort ist konsistentes JSON. Analog zu Express Error-Handling Middleware."
+    "explanation": "`@RestControllerAdvice` ist Spring's **globaler Error-Handler** — fängt Exceptions aus allen Controllern und gibt konsistente JSON-Fehlerantworten zurück.\n\nIm Projekt: `MethodArgumentNotValidException` → HTTP 400, allgemeine `Exception` → HTTP 500.\n\n≈ Express Error-Handling Middleware: `app.use((err, req, res, next) => { ... })`.\n\nOhne `@RestControllerAdvice` bekäme der Client eine hässliche HTML-Error-Page statt strukturiertem JSON."
   },
   {
     "id": 82,
@@ -1041,7 +1041,7 @@
       "Spring Boot unterstützt H2 nicht"
     ],
     "answer": 1,
-    "explanation": "H2 wäre einfacher (kein Docker-Container nötig), aber PostgreSQL zeigt Patterns, die in Produktion relevant sind: Flyway-Migrations gegen eine echte DB, Docker Compose Service-Orchestrierung, depends_on mit Healthchecks, Environment-Variablen für Credentials (ADR #4)."
+    "explanation": "H2 wäre einfacher (kein Docker-Container nötig), aber PostgreSQL zeigt Patterns, die in **Produktion relevant** sind:\n\n• **Flyway-Migrations** gegen eine echte DB-Engine\n• **Docker Compose** Service-Orchestrierung mit `depends_on` + Healthchecks\n• **Environment-Variablen** für Credentials (`SPRING_DATASOURCE_*`)\n• Die Architektur matcht ein reales Produktions-Setup\n\nPostgreSQL läuft in einem einzigen Container mit zero Konfiguration — der Overhead ist ein `image: postgres:17` Block in `docker-compose.yml` (ADR #4)."
   },
   {
     "id": 88,
@@ -1053,7 +1053,7 @@
       "Spring Boot erfordert Maven"
     ],
     "answer": 1,
-    "explanation": "Maven's pom.xml ist deklaratives XML — konzeptionell nah an package.json. Gradle erfordert zusätzlich Groovy oder Kotlin DSL. Für ein einfaches Projekt (compile → test → package) bringen Gradle's Stärken (Build-Scripts, inkrementelle Builds) keinen Vorteil (ADR #12)."
+    "explanation": "Maven's `pom.xml` ist **deklaratives XML** — konzeptionell nah an `package.json` (deklaratives JSON). Gradle erfordert zusätzlich **Groovy oder Kotlin DSL** — eine weitere Sprache auf Java obendrauf.\n\nFür ein einfaches Projekt (compile → test → package) bringen Gradle's Stärken (Build-Scripts als Code, inkrementelle Builds, Build-Cache) keinen Vorteil.\n\n**In der Praxis:** Maven ist das am weitesten verbreitete Build-Tool in Enterprise-Java. Gradle ist schneller für große Multi-Module-Projekte. Beide sind gleich valid — Konsistenz im Team ist wichtiger als die Tool-Wahl (ADR #12)."
   },
   {
     "id": 89,
@@ -1306,5 +1306,257 @@
     ],
     "answer": 2,
     "explanation": "Spring führt die Bean-Validierung vor dem Methodenaufruf durch. Bei Verletzung wird eine MethodArgumentNotValidException geworfen — die Methode wird nie betreten, der Service nie aufgerufen. Der GlobalExceptionHandler fängt die Exception und gibt HTTP 400 mit {\"error\": \"Validation failed\", \"details\": \"must not be blank\"} zurück. Analog: Eine Express-Middleware lehnt den Request ab, bevor der Handler erreicht wird."
+  },
+  {
+    "question": "Was ist Reflection in Java?",
+    "options": [
+      "Ein Design-Pattern für Datenbank-Zugriff",
+      "Die Fähigkeit, zur Laufzeit Klassen zu inspizieren und zu manipulieren — Felder lesen, Methoden aufrufen, Objekte erstellen",
+      "Ein Compile-Zeit-Feature von javac",
+      "Ein Logging-Framework"
+    ],
+    "answer": 1,
+    "explanation": "**Reflection** erlaubt es, zur Laufzeit Klassen zu inspizieren: Felder lesen/setzen, Methoden aufrufen, Objekte erstellen — ohne den konkreten Typ zur Compile-Zeit zu kennen.\n\n**Drei Schlüssel-Mechanismen** in diesem Projekt nutzen Reflection:\n• **Hibernate/JPA** — lädt Daten aus der DB und setzt Entity-Felder per `field.set()`\n• **Spring DI** — findet `@Service`/`@Controller`-Klassen per Classpath-Scanning\n• **Route-Registrierung** — Spring liest `@GetMapping`, `@PostMapping` und registriert HTTP-Handler\n\n≈ In TS/JS gibt es kein echtes Reflection, aber `Reflect.metadata` (TypeScript Decorators) kommt dem nahe. Go hat das `reflect`-Package.",
+    "id": 110
+  },
+  {
+    "question": "Was ist JIT-Kompilierung in der JVM?",
+    "options": [
+      "Die Kompilierung von .java zu .class Dateien",
+      "Die Übersetzung von häufig ausgeführtem Bytecode in nativen Maschinencode zur Laufzeit",
+      "Die Kompilierung von XML-Konfigurationsdateien",
+      "Ein Maven-Build-Schritt"
+    ],
+    "answer": 1,
+    "explanation": "**JIT** (Just-In-Time) Kompilierung: Die JVM identifiziert häufig ausgeführten Code (**Hot Code**) und kompiliert ihn zur Laufzeit in nativen Maschinencode.\n\n≈ V8's **TurboFan** in Node.js macht dasselbe — häufig aufgerufene JavaScript-Funktionen werden in optimierten Maschinencode übersetzt.\n\n**Konsequenz:** Java-Apps starten langsamer als Go-Binaries (JVM muss hochfahren, Klassen laden), sind aber im **Dauerbetrieb** durch JIT-Optimierung oft genauso schnell. Spring Boot startet in 2–5 Sekunden — merkbar länger als `node server.js`.",
+    "id": 111
+  },
+  {
+    "question": "Was ist der Unterschied zwischen Stack und Heap in der JVM?",
+    "options": [
+      "Stack speichert Klassen, Heap speichert Interfaces",
+      "Stack speichert lokale Variablen und Methodenaufrufe, Heap speichert Objekte und Arrays",
+      "Stack ist für Tests, Heap ist für Produktion",
+      "Kein Unterschied — beide sind Speicherbereiche für Objekte"
+    ],
+    "answer": 1,
+    "explanation": "**Stack**: Lokale Variablen und Methodenaufrufe. Automatisch freigegeben nach Method-Return. Sehr schnell (LIFO).\n**Heap**: Objekte und Arrays. Garbage Collector räumt auf. Langsamer (komplexe Verwaltung).\n\n```\nString iban = normalize(rawIban);  // Referenz auf Stack, String-Objekt auf Heap\nboolean valid = isValidMod97(iban); // primitiver Wert direkt auf Stack\n```\n\n≈ Wie der **Call Stack** vs. **Heap** in Chrome DevTools. In Node.js (V8) funktioniert es identisch — die Garbage Collection räumt nicht mehr referenzierte Objekte vom Heap.",
+    "id": 112
+  },
+  {
+    "question": "Was bedeutet das Keyword `static` in Java?",
+    "options": [
+      "Die Variable wird verschlüsselt gespeichert",
+      "Das Element gehört zur Klasse selbst, nicht zu einer Instanz",
+      "Die Methode kann nur einmal aufgerufen werden",
+      "Das Feld wird in der Datenbank gespeichert"
+    ],
+    "answer": 1,
+    "explanation": "`static` = gehört zur **Klasse**, nicht zu einer **Instanz**. Existiert genau 1x, egal wie viele Instanzen erstellt werden.\n\n**Im Projekt:** `private static final Map<String, String> KNOWN_BANKS = Map.of(...)` — die Map existiert einmal für alle Requests.\n\n≈ TypeScript: `static` auf einer Klasse ≈ Top-level `export const` auf Modul-Ebene.\n≈ Go: Eine Package-Level-Variable statt einer Struct-Methode.\n\nIn Spring Boot sind Services **Singletons** (nur eine Instanz), daher ist der Unterschied bei Methoden weniger relevant. **Konstanten** werden aber immer `static final` gemacht.",
+    "id": 113
+  },
+  {
+    "question": "Was bedeutet `final` in Java?",
+    "options": [
+      "Die Klasse wird beim nächsten Build gelöscht",
+      "Die Referenz kann nach der Zuweisung nicht mehr geändert werden",
+      "Die Variable wird automatisch auf null gesetzt",
+      "Die Methode wird automatisch getestet"
+    ],
+    "answer": 1,
+    "explanation": "`final` hat drei Bedeutungen je nach Kontext:\n\n• **`final` Variable** — Referenz kann nicht neu zugewiesen werden (≈ `const` / `readonly` in TS)\n• **`final` Klasse** — Klasse kann nicht vererbt werden\n• **`final` Methode** — Methode kann nicht überschrieben werden\n\n**Wichtig:** `final` schützt nur die **Referenz**, nicht den **Inhalt**! Eine `final List<String>` kann nicht auf eine andere Liste zeigen, aber Elemente können geändert werden. Für echte Immutabilität: `List.of()`, `Map.of()` oder Records.\n\n**Im Projekt:** `private final IbanValidationService validationService;` — nach Constructor Injection kann das Feld nicht mehr neu zugewiesen werden.",
+    "id": 114
+  },
+  {
+    "question": "Was sind die vier Access Modifier in Java?",
+    "options": [
+      "open, closed, sealed, abstract",
+      "public (alle), protected (Klasse + Unterklassen + gleiches Package), package-private (nur gleiches Package), private (nur eigene Klasse)",
+      "read, write, execute, delete",
+      "static, final, abstract, synchronized"
+    ],
+    "answer": 1,
+    "explanation": "Vier Sichtbarkeiten, von offen bis restriktiv:\n\n• **`public`** — sichtbar für alle. Beispiel: `public ValidationResult validate(...)`\n• **`protected`** — eigene Klasse + Unterklassen + gleiches Package. Beispiel: `protected Iban() {}` für JPA\n• **package-private** (kein Keyword) — nur im selben Package sichtbar\n• **`private`** — nur die eigene Klasse. Beispiel: `private boolean isValidMod97(...)`\n\n**Faustregel** (wie in TypeScript-Klassen): Alles so restriktiv wie möglich → `private` als Default. Öffentliche API-Methoden → `public`.",
+    "id": 115
+  },
+  {
+    "question": "Was ist ein DTO (Data Transfer Object)?",
+    "options": [
+      "Eine Datenbank-Tabelle",
+      "Ein Objekt, das nur Daten transportiert — zwischen Schichten oder zwischen Client und Server",
+      "Ein Test-Framework",
+      "Ein Docker-Container-Typ"
+    ],
+    "answer": 1,
+    "explanation": "DTOs sind Objekte, die **nur Daten transportieren** — keine Business-Logik.\n\n**Im Projekt** (alle als Records):\n• `IbanRequest` — eingehend: was der Client schickt\n• `IbanResponse` — ausgehend: was der Client bekommt\n• `IbanListEntry` — ausgehend: für die IBAN-Liste\n\n**Warum nicht die Entity direkt als JSON senden?** Weil du kontrollieren willst, welche Felder der Client sieht. Die Entity hat z.B. `createdAt` — das muss nicht in jeder Response sein.\n\n≈ In TS/Node schickt man selten das Prisma-Model 1:1 als JSON, sondern mappt auf ein Response-Objekt.",
+    "id": 116
+  },
+  {
+    "question": "Was ist Tomcat im Spring-Boot-Kontext?",
+    "options": [
+      "Ein Datenbank-Server",
+      "Ein eingebetteter HTTP-Server (Servlet Container), der in der .jar-Datei steckt und automatisch startet",
+      "Ein Build-Tool wie Maven",
+      "Ein Test-Framework"
+    ],
+    "answer": 1,
+    "explanation": "**Tomcat** ist ein Java **Servlet Container** — ein HTTP-Server, der Java-Code ausführen kann.\n\nIn Spring Boot ist Tomcat **eingebettet** (embedded): Er steckt in deiner `.jar`-Datei und startet automatisch bei `SpringApplication.run()`. Du musst ihn **nicht separat installieren** oder konfigurieren.\n\n≈ Express.js ist auch kein separater Server — du importierst es und es läuft im selben Node.js-Prozess.\n\n**Vor Spring Boot** musste man Java-Apps als `.war`-Dateien auf einen externen Tomcat-Server deployen — ≈ PHP auf Apache deployen. Spring Boot hat das durch den Embedded Server revolutioniert.",
+    "id": 117
+  },
+  {
+    "question": "Was ist JDBC?",
+    "options": [
+      "Ein ORM-Framework wie Hibernate",
+      "Javas Low-Level Standard-API für Datenbankzugriffe — du schreibst SQL von Hand",
+      "Ein Frontend-Framework",
+      "Ein Maven-Plugin für DB-Migrations"
+    ],
+    "answer": 1,
+    "explanation": "**JDBC** (Java Database Connectivity) ist Javas Standard-API für direkten DB-Zugriff. Du schreibst SQL von Hand, verwaltest Connections und mappst Ergebnisse manuell.\n\n≈ Das `pg`-Package in Node.js: `client.query('SELECT * FROM ibans WHERE id = $1', [id])`.\n\nIn der Praxis nutzt man fast immer ein **ORM darüber**: Hibernate/JPA abstrahiert JDBC weg. Die Kette im Projekt:\n`Spring Data JPA` → `Hibernate` → `JDBC` → `PostgreSQL`\n\nDer PostgreSQL-JDBC-Treiber hat `<scope>runtime</scope>` in der `pom.xml` — er wird nie direkt im Code importiert, nur von Hibernate intern geladen.",
+    "id": 118
+  },
+  {
+    "question": "Was ist Jakarta EE?",
+    "options": [
+      "Eine Programmiersprache",
+      "Ein Satz von Spezifikationen (Standards) für Enterprise-Java — definiert das 'Was', nicht das 'Wie'",
+      "Ein konkretes Framework wie Spring Boot",
+      "Ein Build-Tool"
+    ],
+    "answer": 1,
+    "explanation": "**Jakarta EE** (früher Java EE) ist ein Satz von **Spezifikationen** für Enterprise-Java: Jakarta Persistence (JPA), Jakarta Validation, Jakarta Servlet, usw.\n\n≈ W3C-Standards für das Web — sie beschreiben *was* ein Feature tun soll, nicht *wie*.\n\nJede Spezifikation hat **Implementierungen**:\n• JPA → **Hibernate** (ORM)\n• Servlet → **Tomcat** (HTTP-Server)\n• Validation → **Hibernate Validator** (`@NotBlank`, `@Valid`)\n\nSpring Boot baut auf Jakarta EE auf und nutzt dessen Annotations (`@Entity`, `@Valid`, `@NotBlank`). Die Packages beginnen mit `jakarta.*` (seit Java EE → Jakarta EE Umbennung).",
+    "id": 119
+  },
+  {
+    "question": "Was ist der semantische Unterschied zwischen @Component, @Service und @Repository?",
+    "options": [
+      "Kein Unterschied — alle drei registrieren einen Bean, die Annotation ist rein semantisch",
+      "@Component ist für Tests, @Service für Produktion, @Repository für Entwicklung",
+      "@Service startet einen eigenen Thread, @Repository erstellt eine DB-Tabelle",
+      "@Component ist die Basis-Annotation, aber nur @Repository hat Framework-spezifisches Verhalten"
+    ],
+    "answer": 0,
+    "explanation": "Alle drei registrieren einen **Bean** im Spring-Kontext. `@Service` und `@Repository` sind Spezialisierungen von `@Component`.\n\nDer Unterschied ist **semantisch** — er macht den Code lesbar:\n• `@Component` — generisch (Basis für die anderen)\n• `@Service` — Business-Logik\n• `@Repository` — Datenzugriff\n\n**Eine Ausnahme:** `@Repository` hat zusätzliches Framework-Verhalten: SQL-Exceptions werden automatisch in Spring-eigene `DataAccessException`s übersetzt.\n\nTechnisch könnte man überall `@Component` schreiben — aber die spezifischen Annotations sind **Best Practice** für Lesbarkeit.",
+    "id": 120
+  },
+  {
+    "question": "Was ist der DispatcherServlet in Spring?",
+    "options": [
+      "Ein Datenbank-Treiber",
+      "Springs zentraler Request-Router, der HTTP-Requests an die richtige Controller-Methode weiterleitet",
+      "Ein Build-Plugin",
+      "Ein Test-Runner"
+    ],
+    "answer": 1,
+    "explanation": "Der **DispatcherServlet** ist Spring's zentraler Request-Router. Er:\n\n1. Empfängt alle HTTP-Requests vom Tomcat\n2. Findet anhand von `@RequestMapping`/`@GetMapping`/`@PostMapping` die richtige Controller-Methode\n3. Deserialisiert den Request-Body (Jackson) und validiert (`@Valid`)\n4. Ruft die Controller-Methode auf\n5. Serialisiert den Return-Wert zu JSON\n\n≈ Express's interner Routing-Mechanismus — der Code, der entscheidet welcher Handler für `POST /api/ibans/validate` zuständig ist.\n\nBei `MockMvc`-Tests geht der Request direkt an den DispatcherServlet — kein echtes Netzwerk nötig.",
+    "id": 121
+  },
+  {
+    "question": "Was ist der Unterschied zwischen @Autowired, @Inject und @Resource?",
+    "options": [
+      "@Autowired erstellt einen neuen Bean, @Inject löscht einen Bean",
+      "Alle drei injizieren Dependencies — @Autowired ist Spring-spezifisch, @Inject und @Resource sind Jakarta-Standards",
+      "@Inject ist nur für Tests, @Resource nur für Datenbanken",
+      "Es gibt keinen Unterschied"
+    ],
+    "answer": 1,
+    "explanation": "Drei Wege, dasselbe zu sagen — eine Dependency injizieren:\n\n• `@Autowired` — **Spring-spezifisch**, am häufigsten gesehen\n• `@Inject` — **Jakarta-Standard** (framework-agnostisch, aus `jakarta.inject`)\n• `@Resource` — **Jakarta-Standard**, sucht per **Name** statt per Typ\n\n**Wichtig:** Bei **Constructor Injection** brauchst du **keine davon**! Spring erkennt automatisch, dass der einzige Konstruktor Injection braucht.\n\n**Im Projekt:** Kein `@Autowired` nötig — alle Dependencies werden per Constructor Injection injiziert. Das ist die sauberste Variante.",
+    "id": 122
+  },
+  {
+    "question": "Wie konvertiert Hibernate Java-Feldnamen in Datenbank-Spaltennamen?",
+    "options": [
+      "Gar nicht — Feldnamen und Spaltennamen müssen identisch sein",
+      "camelCase wird automatisch in snake_case konvertiert (bankName → bank_name)",
+      "Alle Feldnamen werden in UPPERCASE konvertiert",
+      "Es wird ein Hash des Feldnamens als Spaltenname verwendet"
+    ],
+    "answer": 1,
+    "explanation": "Spring Boot's Default-Namenstrategie konvertiert automatisch **camelCase → snake_case**:\n\n• `bankName` → `bank_name`\n• `validationMethod` → `validation_method`\n• `createdAt` → `created_at`\n\nDas ist eine **Spring-Boot-Convention** (konfigurierbar über `spring.jpa.hibernate.naming.physical-strategy`). Ohne Spring Boot müsste man `@Column(name = \"bank_name\")` auf jedes Feld schreiben.\n\n≈ Prisma macht dasselbe: Felder in camelCase im Code, snake_case in der DB. Go's GORM hat eine ähnliche Convention.",
+    "id": 123
+  },
+  {
+    "question": "Was machen @Configuration und @Bean zusammen?",
+    "options": [
+      "@Configuration löscht alle Beans, @Bean erstellt neue",
+      "@Configuration markiert eine Klasse als Bean-Fabrik, @Bean-Methoden darin erzeugen manuell konfigurierte Beans",
+      "@Configuration ist für Tests, @Bean für Produktion",
+      "Beide sind veraltet und durch @Component ersetzt"
+    ],
+    "answer": 1,
+    "explanation": "`@Configuration` + `@Bean` = **manuelle Bean-Erstellung** (statt automatischem Classpath-Scanning).\n\n**Im Projekt** (CorsConfig.java):\n```\n@Configuration\n@Profile(\"dev\")\npublic class CorsConfig {\n    @Bean\n    public WebMvcConfigurer corsConfigurer() { ... }\n}\n```\n\nSpring ruft die `@Bean`-Methode auf und registriert den Return-Wert als Bean. Das ist nützlich für:\n• Beans aus externen Libraries (die keine `@Component`-Annotation haben)\n• Beans, die komplexe Konfiguration brauchen\n• Bedingte Beans (z.B. nur im `dev`-Profil)\n\n≈ In Go: eine Factory-Funktion `NewCorsMiddleware(config)` in `main()`.",
+    "id": 124
+  },
+  {
+    "question": "Wie wurden Java-Backends vor Spring Boot gebaut?",
+    "options": [
+      "Mit Node.js",
+      "Mit Servlets + externem Tomcat + viel XML-Konfiguration",
+      "Mit Go",
+      "Es gab keine Java-Backends vor Spring Boot"
+    ],
+    "answer": 1,
+    "explanation": "**Vor Spring Boot** (3 Phasen):\n\n**1. Servlets (seit 1997)** — Javas erste Web-API. Klassen die HTTP verarbeiten, deployed auf einen externen Tomcat/JBoss. Viel XML, viel Boilerplate:\n`class IbanServlet extends HttpServlet { doPost(req, resp) { ... } }`\n\n**2. Spring Framework (seit 2003)** — DI und weniger Boilerplate, aber: immer noch viel XML, externer Tomcat nötig.\n\n**3. Spring Boot (seit 2014)** — Convention over Configuration. **Embedded Tomcat**, Auto-Konfiguration, Starter-Dependencies, kein XML.\n\nSpring Boot hat das Java-Ökosystem revolutioniert — von hunderten Zeilen XML zu einer Annotation (`@SpringBootApplication`) und einer `main()`-Methode.",
+    "id": 125
+  },
+  {
+    "question": "Warum teilen sich alle Docker-Services ein einziges Netzwerk (kein separates DB-Netzwerk)?",
+    "options": [
+      "Docker unterstützt nur ein Netzwerk",
+      "Der Frontend-Container hat keinen DB-Treiber — Netzwerk-Isolation bringt keinen Sicherheitsvorteil",
+      "PostgreSQL funktioniert nicht mit mehreren Netzwerken",
+      "Docker Compose erstellt automatisch ein geteiltes Netzwerk, das nicht geändert werden kann"
+    ],
+    "answer": 1,
+    "explanation": "Alle 3 Services teilen Docker Compose's **Default-Netzwerk**.\n\n**Vorher:** Zwei Netzwerke — `app-network` (Frontend ↔ Backend) und `db-network` (Backend ↔ Postgres, internal).\n**Nachher:** Ein Default-Netzwerk (alle Services erreichbar per Service-Name).\n\n**Warum?** Der Frontend-Container läuft Nginx — er hat **keinen PostgreSQL-Treiber**. Er *kann* nicht mit der DB kommunizieren, selbst wenn er im selben Netzwerk ist. Die YAML-Komplexität für marginale Sicherheit lohnt sich nicht.\n\n**In Produktion:** VPCs, Security Groups und IAM Roles übernehmen die Netzwerk-Isolation (ADR #3).",
+    "id": 126
+  },
+  {
+    "question": "Warum wird Maven 3.9.x statt Maven 4.0.0-rc verwendet?",
+    "options": [
+      "Maven 4.0 existiert nicht",
+      "Maven 4.0.0 ist noch ein Release Candidate — 3.9.x ist die empfohlene stabile Version",
+      "Maven 4.0 ist langsamer als 3.9",
+      "Spring Boot erfordert Maven 3.9"
+    ],
+    "answer": 1,
+    "explanation": "Maven **4.0.0-rc** ist noch ein Release Candidate — die Apache-Website sagt explizit: *\"NOT safe for production use\"*.\n\n**Maven 3.9.12** ist die offizielle *\"recommended version for all users\"*.\n\nDas Projekt nutzt keine Maven-4-Features (Model 4.1.0, Multi-Project-Reactor). Ein Release-Candidate-Build-Tool in einem Portfolio-Projekt wäre ein unnötiges Risiko.\n\n≈ In Node.js: Man würde auch npm 10 (stable) statt npm 11-rc (unstable) verwenden.\n\n**In Produktion:** Teams adoptieren neue Major-Versionen erst nach GA-Release + Ökosystem-Tests (ADR #13).",
+    "id": 127
+  },
+  {
+    "question": "Was ist der Unterschied zwischen Compile-Zeit und Laufzeit bei Spring Annotations?",
+    "options": [
+      "Kein Unterschied — Annotations werden zur Compile-Zeit ausgewertet",
+      "Zur Compile-Zeit sind Annotations passive Metadaten; erst zur Laufzeit nutzt Spring sie per Reflection",
+      "Annotations existieren nur zur Laufzeit",
+      "Annotations werden von Maven zur Build-Zeit verarbeitet, nicht von javac oder der JVM"
+    ],
+    "answer": 1,
+    "explanation": "**Compile-Zeit** (`mvn compile`): `javac` prüft Syntax + Typen, erzeugt `.class`-Bytecode. Annotations werden als **Metadaten eingebettet** — nichts wird ausgeführt.\n\n**Laufzeit** (`java -jar ...`): Spring liest Annotations per Reflection, erstellt Beans, injiziert Dependencies, registriert Routes, startet Tomcat.\n\n**Trade-off:** Fehler (fehlende Bean, falscher Typ) treten erst beim **Start** auf — nicht beim Build. In Go kompiliert der Code nicht, wenn eine Dependency fehlt.\n\n**Alternative Frameworks** wie **Quarkus** und **Micronaut** verarbeiten Annotations zur **Compile-Zeit** — schnellerer Start, Fehler früher erkannt, aber weniger Flexibilität.",
+    "id": 128
+  },
+  {
+    "question": "Was ist der Getter/Setter-Convention in Java und warum existiert sie?",
+    "options": [
+      "Es gibt keine Convention — Felder sind immer public",
+      "Felder sind private, Zugriff über getX()/setX() Methoden — Kapselung + Framework-Erwartung",
+      "Getter und Setter sind nur für statische Felder",
+      "Getter/Setter werden automatisch von der JVM generiert"
+    ],
+    "answer": 1,
+    "explanation": "Java-Convention: Felder sind `private`, Zugriff über `getX()` / `setX()` Methoden.\n\n```\nprivate String iban;\npublic String getIban() { return iban; }\n```\n\n**Warum?**\n• **Kapselung** — interne Repräsentation änderbar, ohne die API zu brechen\n• **Frameworks** — Jackson (JSON) und Hibernate nutzen Getter/Setter per Reflection\n• **Convention** — die gesamte Java-Toolchain baut darauf auf (JavaBeans-Standard)\n\n**Records lösen das Problem:** `record IbanResponse(boolean valid, String iban)` — Getter werden automatisch generiert (ohne `get`-Prefix: `response.valid()`, `response.iban()`).\n\n≈ TypeScript `get`/`set` Property-Accessors, aber in Java immer explizit nötig.",
+    "id": 129
+  },
+  {
+    "question": "Was ist Flyway vs. Liquibase?",
+    "options": [
+      "Flyway nutzt JSON-Dateien, Liquibase nutzt SQL-Dateien",
+      "Flyway nutzt plain SQL-Dateien (einfacher), Liquibase nutzt XML/YAML/JSON (db-agnostisch, komplexer)",
+      "Beide sind identisch",
+      "Flyway ist ein Test-Tool, Liquibase ein Build-Tool"
+    ],
+    "answer": 1,
+    "explanation": "Beides sind **DB-Migrations-Tools** für versionierte Schema-Änderungen:\n\n**Flyway:** Plain **SQL**-Dateien (`V1__initial_schema.sql`). Einfach, direkt, db-spezifisch.\n**Liquibase:** **XML/YAML/JSON**-Format. Db-agnostisch (ein Changelog für mehrere DBs), aber komplexer.\n\nFlyway ist in Spring Boot der **populärere Default**. Das Projekt nutzt Flyway mit einer SQL-Datei in `src/main/resources/db/migration/`.\n\n≈ In der Node.js-Welt: Flyway ≈ `golang-migrate` (plain SQL), Liquibase ≈ Prisma Migrate (abstraktes Schema).",
+    "id": 130
   }
 ]

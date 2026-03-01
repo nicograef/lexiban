@@ -193,7 +193,7 @@ header h1 {
 /* ===== Explanation ===== */
 .explanation {
   margin-top: 1.25rem;
-  padding: 1rem;
+  padding: 1rem 1.15rem;
   border-radius: 8px;
   background: #f8fafc;
   border-left: 4px solid #3b82f6;
@@ -201,6 +201,9 @@ header h1 {
   color: #334155;
   line-height: 1.65;
   animation: fadeIn 0.25s ease;
+  overflow-y: auto;
+  max-height: 60vh;
+  -webkit-overflow-scrolling: touch;
 }
 
 .explanation.correct-result {
@@ -222,6 +225,35 @@ header h1 {
 
 .explanation-header.incorrect-text {
   color: #dc2626;
+}
+
+/* Rich explanation body */
+.explanation-body p {
+  margin: 0 0 0.6em;
+}
+
+.explanation-body p:last-child {
+  margin-bottom: 0;
+}
+
+.explanation-body code {
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  word-break: break-word;
+}
+
+.explanation-body strong {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.explanation-body .analogy {
+  color: #6366f1;
+  font-weight: 600;
 }
 
 /* ===== Navigation ===== */
@@ -290,8 +322,15 @@ header h1 {
   body {
     padding: 1rem 0.5rem;
   }
+  .quiz-container {
+    max-width: 100%;
+  }
+  header h1 {
+    font-size: 1.3rem;
+  }
   .question-card {
     padding: 1rem;
+    border-radius: 10px;
   }
   .question-text {
     font-size: 1rem;
@@ -299,5 +338,44 @@ header h1 {
   .option-btn {
     padding: 0.6rem 0.75rem;
     font-size: 0.88rem;
+  }
+  .explanation {
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    max-height: 50vh;
+  }
+  .explanation-body code {
+    font-size: 0.8em;
+  }
+  .nav-buttons {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .nav-buttons button {
+    font-size: 0.82rem;
+    padding: 0.5rem 0.9rem;
+  }
+  .nav-buttons button.primary {
+    order: -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  body {
+    padding: 0.5rem 0.25rem;
+  }
+  .question-text {
+    font-size: 0.95rem;
+  }
+  .option-btn {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.84rem;
+    gap: 0.5rem;
+  }
+  .option-letter {
+    min-width: 1.4rem;
+    height: 1.4rem;
+    font-size: 0.75rem;
   }
 }
