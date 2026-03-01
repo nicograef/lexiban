@@ -22,7 +22,7 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: mvn verify -B
+        run: ./mvnw verify -B
 
   frontend-ci:
     runs-on: ubuntu-latest

@@ -201,6 +201,48 @@ Java 25 (September 2025) is the next LTS but was released only 6 months ago. Its
 
 ---
 
+## 14. Spring Boot 3.5.11 (not 4.0.3)
+
+**Decision**: Upgrade from Spring Boot 3.4.3 to **3.5.11**. Do not upgrade to Spring Boot 4.0.3.
+
+**Before**: Spring Boot 3.4.3 — OSS support ended December 2025, no longer receiving security patches.
+**After**: Spring Boot 3.5.11 — in active OSS support until June 2026, commercial support until June 2032.
+
+**Reasoning**: As of March 2026, three actively maintained Spring Boot lines exist:
+
+| Version | Released | OSS End  | Baseline                                       |
+| ------- | -------- | -------- | ---------------------------------------------- |
+| 3.5.x   | May 2025 | Jun 2026 | Spring Framework 6.x, Jakarta EE 10, Jackson 2 |
+| 4.0.x   | Nov 2025 | Dec 2026 | Spring Framework 7.x, Jakarta EE 11, Jackson 3 |
+| 4.1.x   | May 2026 | Jun 2027 | Not yet released (Milestone 2)                 |
+
+Spring Boot **3.4.x** (this project's previous version) lost OSS support in **December 2025** — it is no longer receiving bug fixes or security patches. An upgrade is mandatory.
+
+Spring Boot **3.5.11** is the right target because:
+
+- **Non-breaking upgrade** — 3.4 → 3.5 is a minor version bump. Same Jakarta EE 10, same Spring Framework 6.x, same Jackson 2, same starter names (`spring-boot-starter-web`, `spring-boot-starter-data-jpa`). No code changes required — only the version number in `pom.xml`.
+- **Focus on learning** — this project's goal is to understand Spring Boot fundamentals (Controller → Service → Repository, DI, JPA, MockMvc). A 4.0 migration would require changing starter names (`spring-boot-starter-web` → `spring-boot-starter-webmvc`), adding `spring-boot-starter-flyway`, migrating to Jackson 3, replacing `@MockBean` with `@MockitoBean`, and adapting to a completely new module structure. That refactoring work is unrelated to Nico's learning goals.
+- **Enterprise-realistic timing** — professional teams adopt new major versions 6–12 months after GA, once all dependencies are verified. Spring Boot 4.0.0 was released November 2025 — only 4 months ago. Being on 3.5.x in March 2026 is exactly what a cautious, professional team would do.
+- **Longest support** — 3.5.x has commercial support until **June 2032** (the longest of any current line), reflecting its role as the final 3.x release before the 4.x generation.
+
+Spring Boot **4.0.3** was not chosen because:
+
+- **Major breaking changes** — it is based on Spring Framework 7.0, Jackson 3. The module structure was completely reorganized ([Migration Guide](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide)).
+- **New starter names** — `spring-boot-starter-web` is deprecated, replaced by `spring-boot-starter-webmvc`. Flyway requires `spring-boot-starter-flyway` instead of the bare `flyway-core` dependency.
+- **Jackson 3** — new group IDs (`tools.jackson` instead of `com.fasterxml.jackson`), renamed annotations (`@JacksonComponent` instead of `@JsonComponent`). Not relevant for this project, but adds migration surface.
+- **Testing changes** — `@MockBean` / `@SpyBean` are deprecated in favor of Spring Framework's `@MockitoBean` / `@MockitoSpyBean`. `@SpringBootTest` no longer auto-configures MockMvc (requires explicit `@AutoConfigureMockMvc`).
+- **Overkill for this scope** — none of the 4.0 features (HTTP Service Clients, API Versioning, modular starters, Jackson 3) add value to a simple IBAN validator. The migration effort would cost hours with zero learning benefit for the stated goals.
+
+**When to reconsider**: Upgrade to 4.0.x (or 4.1.x) once:
+
+1. The project's learning goals shift to "how to migrate a Spring Boot 3.x app to 4.x".
+2. 3.5.x approaches its OSS end-of-life (June 2026).
+3. A dependency requires Spring Framework 7.x or Jakarta EE 11.
+
+**In production**: Teams plan major Spring Boot upgrades as dedicated migration sprints. The official recommendation is: first upgrade to the latest 3.5.x, fix all deprecation warnings, then migrate to 4.0.x using the [migration guide](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide). Jumping directly from 3.4.x to 4.0.x is discouraged.
+
+---
+
 ## Appendix: How to switch from PostgreSQL to H2
 
 → Ausgelagert in [h2-migration.md](h2-migration.md) — vollständige Schritt-für-Schritt-Anleitung mit Code-Beispielen und Trade-off-Tabelle.

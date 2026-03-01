@@ -10,10 +10,14 @@
   - <build>         — build plugins. ≈ "scripts" in package.json.
 
   Common Maven commands (≈ npm/pnpm scripts):
-  - mvn clean install        ≈ pnpm install && pnpm build
-  - mvn test                 ≈ pnpm test
-  - mvn spring-boot:run      ≈ pnpm dev (starts dev server)
-  - mvn package -DskipTests  ≈ pnpm build (produces a .jar file)
+  - ./mvnw clean install        ≈ pnpm install && pnpm build
+  - ./mvnw test                 ≈ pnpm test
+  - ./mvnw spring-boot:run      ≈ pnpm dev (starts dev server)
+  - ./mvnw package -DskipTests  ≈ pnpm build (produces a .jar file)
+
+  ./mvnw is the Maven Wrapper — it downloads & pins the exact Maven version
+  (3.9.12) so every developer and CI pipeline uses the same build tool.
+  ≈ corepack + pnpm (pinned version in package.json).
 
   The .jar file is a self-contained archive with embedded Tomcat — just run:
   java -jar target/iban-validator-0.0.1-SNAPSHOT.jar
@@ -21,7 +25,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion> <!-- POM model version, always 4.0.0 -->
 
     <!-- Inherit version management from Spring Boot's parent POM.
     This sets default versions for all spring-boot-starter-* dependencies
@@ -30,7 +34,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.3</version>
+        <version>3.5.11</version>
         <relativePath/>
     </parent>
 

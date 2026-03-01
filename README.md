@@ -79,7 +79,7 @@ cp .env.example .env
 docker compose up postgres
 
 # 2. Backend starten (neues Terminal)
-cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=dev
+cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 3. Frontend starten (neues Terminal)
 cd frontend && pnpm install && pnpm dev
@@ -102,7 +102,7 @@ Kein separater Reverse-Proxy-Container — die Frontend-Nginx übernimmt beides.
 
 ```bash
 # Backend (JUnit 5 + MockMvc)
-cd backend && mvn verify -B
+cd backend && ./mvnw verify -B
 
 # Frontend (Vitest + React Testing Library)
 cd frontend && pnpm lint && pnpm test

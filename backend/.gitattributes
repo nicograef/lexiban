@@ -1,0 +1,4 @@
+# Ensure the Maven Wrapper shell script always uses LF line endings,
+# even on Windows checkouts. ≈ .gitattributes for shell scripts in Node.js projects.
+/mvnw text eol=lf
+*.cmd text eol=crlf
