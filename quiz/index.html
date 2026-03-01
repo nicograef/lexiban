@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IBAN Quiz</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="quiz-container">
+      <header>
+        <h1>IBAN Validator — Quiz</h1>
+        <p class="subtitle">
+          109 Fragen zu IBAN, Java, Spring Boot, Docker &amp; mehr
+        </p>
+      </header>
+
+      <nav class="progress-bar">
+        <span id="progress-text">Frage 1 / 109</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </nav>
+
+      <main id="question-area">
+        <!-- Filled by app.js -->
+      </main>
+
+      <footer class="nav-buttons">
+        <button id="btn-prev" disabled>&larr; Zurück</button>
+        <button id="btn-check" class="primary">Antwort prüfen</button>
+        <button id="btn-next">Weiter &rarr;</button>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

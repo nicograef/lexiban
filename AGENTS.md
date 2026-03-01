@@ -16,6 +16,7 @@ Dieses Projekt hat mehrere Markdown-Dateien mit unterschiedlichen Zwecken. **Lie
 | [iban.md](docs/iban.md)                 | Fachliches Wissen: IBAN-Aufbau, Modulo-97-Algorithmus, BLZ, SEPA         | Änderungen an **Validierungslogik**, IBAN-Parsing, Fachbegriffe   |
 | [decisions.md](docs/decisions.md)       | Architecture Decision Records (ADRs) mit Begründungen                    | **Architektur-Fragen**, warum etwas so ist wie es ist             |
 | [lernfragen.md](docs/lernfragen.md)     | Java/Spring-Boot-Lernguide mit TS/Node/Go-Analogien                      | **Backend-Code verstehen**, Konzepte erklären, Annotations deuten |
+| [questions.json](quiz/questions.json)   | Single-Choice-Fragenkatalog zu IBAN, Java, Spring Boot, DDD              | **Quiz/Prüfungsvorbereitung** — JSON-Datenquelle für die Quiz-App |
 | [future.md](docs/future.md)             | Backlog möglicher Erweiterungen (Auth, HTTPS, CI/CD, Dark Mode etc.)     | Neue Features planen, Erweiterbarkeit diskutieren                 |
 | [presentation.md](docs/presentation.md) | Präsentations-Skript für das Vorstellungsgespräch                        | Präsentation vorbereiten oder überarbeiten                        |
 

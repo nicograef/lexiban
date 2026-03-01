@@ -144,7 +144,7 @@ In Java hat jede Klasse, jedes Feld und jede Methode einen **Access Modifier**:
 | `public`                            | Alle                                            | `public ValidationResult validate(...)` — API der Service-Klasse                         |
 | `private`                           | Nur die eigene Klasse                           | `private boolean isValidMod97(...)` — internes Implementierungsdetail                    |
 | `protected`                         | Eigene Klasse + Unterklassen + gleiches Package | `protected Iban() {}` — JPA braucht den Konstruktor, aber extern soll ihn niemand nutzen |
-| _(kein Modifier)_ "package-private" | Nur im selben Package                           | `record IbanRequest(...)` im Controller — nur dort sichtbar                              |
+| _(kein Modifier)_ "package-private" | Nur im selben Package                           | Kommt im Projekt bewusst nicht vor — entweder `public` oder `private`                    |
 
 **Faustregel** (identisch zu TypeScript-Klassen):
 
@@ -330,6 +330,65 @@ record IbanListEntry(Long id, String iban, ...) {}      // Ausgehend: für die I
 ```
 
 **Warum nicht einfach die Entity direkt als JSON senden?** Weil du kontrollieren willst, welche Felder der Client sieht. Die Entity hat z.B. `createdAt` — das muss nicht in jeder Response sein. In TS/Node ist das das gleiche Prinzip: du schickst selten das Prisma-Model 1:1 als JSON, sondern mappst auf ein Response-Objekt.
+
+### Nested Records — wo und warum?
+
+Records müssen **nicht** in einer eigenen Datei stehen. In Java kann man sie als **Top-Level-Klasse** (eigene `.java`-Datei) oder als **Nested Record** (innerhalb einer Klasse) definieren — beides funktioniert identisch. Die Wahl ist eine **Design-Entscheidung**, kein Sprachzwang.
+
+```typescript
+// TS-Analogie: Top-Level vs. Inline-Typ
+// Top-Level — eigene Datei, exportiert, wiederverwendbar:
+// types/iban.ts
+export type IbanResponse = { valid: boolean; iban: string };
+
+// Inline — nur in dieser Route, nicht exportiert:
+// routes/iban.ts
+type IbanRequest = { iban: string }; // Nur hier gebraucht
+```
+
+Im Projekt gibt es beide Varianten:
+
+| Record                                         | Wo definiert?                      | Modifier  | Warum?                                                          |
+| ---------------------------------------------- | ---------------------------------- | --------- | --------------------------------------------------------------- |
+| `IbanRequest`, `IbanResponse`, `IbanListEntry` | Nested in `IbanController`         | `public`  | Erscheinen in `public` Method-Signaturen → müssen `public` sein |
+| `ValidationResult`                             | Nested in `IbanValidationService`  | `public`  | Wird vom Controller importiert (anderes Package!)               |
+| `ExternalValidationResult`                     | Nested in `ExternalIbanApiService` | `public`  | Wird vom Controller importiert                                  |
+| `OpenIbanResponse`, `BankData`                 | Nested in `ExternalIbanApiService` | `private` | Interne DTOs für die openiban.com-API, nur dort gebraucht       |
+
+**Faustregel:**
+
+- **Nested + `public`** → DTO erscheint in `public` Method-Signaturen oder wird von anderen Packages importiert (z. B. `IbanRequest`/`IbanResponse` im Controller, `ValidationResult` im Service)
+- **Nested + `private`** → DTO wird nur innerhalb der eigenen Klasse gebraucht und taucht in keiner öffentlichen Signatur auf (z. B. `OpenIbanResponse`, `BankData` im `ExternalIbanApiService`)
+- **Top-Level (eigene Datei)** → DTO wird von vielen Klassen in verschiedenen Kontexten gebraucht, oder ist selbst komplex genug für eine eigene Datei
+
+### Access Modifier bei Nested Records
+
+Ohne expliziten Modifier ist ein nested Record **package-private** — sichtbar für alle Klassen im selben Package. Die richtige Sichtbarkeit hängt davon ab, wo der Record referenziert wird:
+
+```java
+// ❌ Package-private (Default) — oft zu breit oder zu schmal
+record IbanRequest(@NotBlank String iban) {}
+
+// ✅ public — der Record taucht in einer public Method-Signatur auf
+public record IbanRequest(@NotBlank String iban) {}
+
+// ✅ private — rein internes DTO, nicht in öffentlicher Signatur
+private record OpenIbanResponse(boolean valid, BankData bankData) {}
+```
+
+**Wichtig:** Wenn ein Record als Parameter oder Rückgabetyp einer `public`-Methode auftritt, **muss** er ebenfalls `public` sein — sonst exportiert man einen nicht-öffentlichen Typ über eine öffentliche API (Code-Smell). Jackson/Spring kann zwar `private` Records per Reflection serialisieren, aber die **Code-Sichtbarkeit** sollte konsistent mit der API-Sichtbarkeit sein.
+
+**Warum sind die Controller-Records `public`?** Weil sie in den `public` Methoden-Signaturen vorkommen (`ResponseEntity<IbanResponse>`, `@RequestBody IbanRequest`).
+
+**Warum ist `ValidationResult` public?** Weil der Controller es importiert:
+
+```java
+// IbanController.java (Package: controller)
+import de.nicograef.iban.service.IbanValidationService.ValidationResult;
+//                         ^^^^^^^ anderes Package → braucht public
+```
+
+Ohne `public` wäre `ValidationResult` nur innerhalb von `de.nicograef.iban.service` sichtbar — der Import aus dem `controller`-Package würde nicht kompilieren.
 
 ### Jackson — JSON-Serialisierung
 
@@ -674,6 +733,37 @@ public ResponseEntity<IbanResponse> validateIban(@Valid @RequestBody IbanRequest
     return ResponseEntity.ok(buildResponse(request.iban()));
     // ≈ res.status(200).json(buildResponse(req.body.iban))
 }
+```
+
+### @Valid und @NotBlank — Zwei-Stufen-Validierung
+
+Eine häufige Frage: Warum braucht man `@Valid` auf dem Parameter, wenn `@NotBlank` schon auf dem Record-Feld steht? Das ist ein **Zwei-Stufen-System** — analog zu zod + Middleware in Express:
+
+| Stufe                       | Annotation                         | Was sie tut                                 | Analogie                                |
+| --------------------------- | ---------------------------------- | ------------------------------------------- | --------------------------------------- |
+| **1. Schema definieren**    | `@NotBlank` auf `IbanRequest.iban` | Legt die Validierungsregel fest             | `z.string().min(1)` — Schema-Definition |
+| **2. Validierung auslösen** | `@Valid` auf dem Parameter         | Sagt Spring: „Prüfe jetzt die Constraints!" | Express-Middleware `validate(schema)`   |
+
+```java
+// Stufe 1: Schema definieren (≈ const schema = z.object({ iban: z.string().min(1) }))
+record IbanRequest(@NotBlank String iban) {}
+
+// Stufe 2: Validierung triggern (≈ validate(schema) Middleware)
+public ResponseEntity<IbanResponse> validateIban(@Valid @RequestBody IbanRequest request) { ... }
+//                                                ^^^^^
+//                                                Ohne @Valid → @NotBlank wird IGNORIERT!
+```
+
+**Ohne `@Valid`** deserialisiert Spring den JSON-Body zu einem `IbanRequest`-Objekt, führt aber **keine Validierung** durch — ein leerer String käme ungeprüft in die Controller-Methode. `@Valid` ist der Trigger, der Jakarta Bean Validation aktiviert.
+
+**Bei Validierungsfehler** (z.B. `{"iban": ""}`) wirft Spring automatisch eine `MethodArgumentNotValidException` — die Controller-Methode wird **nie betreten**. Der `GlobalExceptionHandler` fängt diese Exception und gibt HTTP 400 zurück:
+
+```
+Client sendet {"iban": ""}
+  → Spring deserialisiert JSON (@RequestBody)
+  → Spring validiert (@Valid prüft @NotBlank) → FEHLER!
+  → MethodArgumentNotValidException → GlobalExceptionHandler → HTTP 400
+  → Controller-Methode wird NIE aufgerufen
 ```
 
 ### Error Handling: @RestControllerAdvice

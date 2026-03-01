@@ -68,6 +68,8 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
     ├── iban.md                      # Fachliches IBAN-Wissen
     ├── lernfragen.md                # Java/Spring-Boot-Lernguide
     ├── presentation.md              # Präsentations-Skript
+├── quiz/                              # Quiz-App (109 Single-Choice-Fragen)
+    └── questions.json               # Fragenkatalog (IBAN, Java, Spring Boot, DDD)
     └── h2-migration.md              # Anleitung: PostgreSQL → H2 Umstieg
 ```
 

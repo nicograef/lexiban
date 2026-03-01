@@ -1,0 +1,58 @@
+Quiz App — Build Context
+========================
+
+Goal: Minimal quiz app (109 questions, single-choice)
+Tech: Plain HTML + CSS + JS (no frameworks, no bundlers)
+Location: /workspaces/iban/quiz/
+
+Questions source: /workspaces/iban/quiz/questions.json
+- 109 questions across 14 blocks
+- All single-choice with 4 options, one correct answer, and an explanation
+
+Files:
+1. questions.json  — all 104 questions as structured JSON
+2. index.html      — minimal HTML shell
+3. style.css       — styling
+4. app.js          — quiz logic (render, shuffle, check answer, show explanation)
+
+Features:
+- Show one question at a time
+- User selects an answer, clicks "Antwort prüfen"
+- Correct/incorrect feedback with explanation shown
+- Navigate to next/previous question
+- Shuffle: questions AND options are randomized on every page load
+- No score tracking, no state persistence, no storage
+
+JSON Schema (per question):
+  { id, question, options: ["…","…","…","…"], answer: 0, explanation }
+- "options" is an array of strings (flexible length, labels A/B/C/D computed at render)
+- "answer" is the 0-based index into the options array pointing to the correct answer
+- All 104 questions are single-choice
+
+Shuffle behavior:
+- On load: Fisher-Yates shuffle of questions array
+- Per question: options array is shuffled, answer index is remapped accordingly
+- Shuffle state is stored per-question so navigating back shows the same shuffled order
+- No toggle — always shuffled
+
+Status:
+- [x] Read questions source
+- [x] Created quiz/ directory
+- [x] Create questions.json with Q1 (schema established)
+- [x] Add all 109 questions (14 blocks)
+- [x] Create index.html
+- [x] Create style.css
+- [x] Create app.js
+- [x] Migrate options: Object {A,B,C,D} → Array [str, str, str, str]
+- [x] Migrate answer: letter "B" → index 1 (A→0, B→1, C→2, D→3)
+- [x] Implement shuffle (questions + options per question)
+
+Decisions / Notes:
+- German quotation marks „…" cause JSON parse errors → replaced with '…'
+- answer was originally an array ["B"] for multi-choice support, simplified to single string "B", then migrated to 0-based index (number)
+- options was originally an object {A:"…",B:"…"}, migrated to array for flexibility and shuffle support
+- Single-choice: clicking a new option deselects the previous one
+- Keyboard shortcuts: ←/→ navigate, Enter checks answer
+- No score tracking, no localStorage, no persistence
+- escapeHtml() used to prevent XSS from question text
+- Shuffle always on, no toggle button — maximizes learning on repeat runs

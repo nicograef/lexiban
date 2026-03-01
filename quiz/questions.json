@@ -1,0 +1,1310 @@
+[
+  {
+    "id": 1,
+    "question": "Wie viele Zeichen hat eine deutsche IBAN?",
+    "options": [
+      "20",
+      "22",
+      "24",
+      "34"
+    ],
+    "answer": 1,
+    "explanation": "Die deutsche IBAN hat immer exakt 22 Stellen: 2 Buchstaben Ländercode (DE) + 2 Prüfziffern + 8 Stellen BLZ + 10 Stellen Kontonummer."
+  },
+  {
+    "id": 2,
+    "question": "Aus welchen Bestandteilen setzt sich eine IBAN zusammen (allgemein)?",
+    "options": [
+      "Ländercode, Prüfziffern, BBAN",
+      "BIC, Kontonummer, Bankleitzahl",
+      "SWIFT-Code, Prüfziffern, Kontonummer",
+      "Routing Number, Ländercode, Kontonummer"
+    ],
+    "answer": 0,
+    "explanation": "Jede IBAN besteht aus: 2-Buchstaben-Ländercode (ISO 3166-1), 2 Prüfziffern (Modulo 97) und dem BBAN (Basic Bank Account Number), der länderspezifisch aufgebaut ist."
+  },
+  {
+    "id": 3,
+    "question": "Was ist das BBAN?",
+    "options": [
+      "Der BIC-Code einer Bank",
+      "Der nationale Teil der IBAN ohne Ländercode und Prüfziffern",
+      "Eine alternative Bezeichnung für die gesamte IBAN",
+      "Die Bankleitzahl in Deutschland"
+    ],
+    "answer": 1,
+    "explanation": "BBAN = Basic Bank Account Number. Es ist der länderspezifische Teil der IBAN (ab Position 5), der Bankidentifikation und Kontonummer enthält."
+  },
+  {
+    "id": 4,
+    "question": "Welcher Modulo-Wert muss bei einer gültigen IBAN herauskommen, wenn man den ISO-7064-Algorithmus anwendet?",
+    "options": [
+      "0",
+      "1",
+      "97",
+      "98"
+    ],
+    "answer": 1,
+    "explanation": "Bei der Modulo-97-Validierung muss der Rest der Division durch 97 exakt 1 ergeben. Das ist der ISO-7064-Standard (MOD-97-10)."
+  },
+  {
+    "id": 5,
+    "question": "Was passiert im ersten Schritt der Modulo-97-Validierung mit den ersten 4 Zeichen der IBAN?",
+    "options": [
+      "Sie werden entfernt",
+      "Sie werden verdoppelt",
+      "Sie werden ans Ende der IBAN verschoben",
+      "Sie werden durch Nullen ersetzt"
+    ],
+    "answer": 2,
+    "explanation": "Die ersten 4 Zeichen (Ländercode + Prüfziffern) werden ans Ende verschoben. Aus DE68210501… wird 210501…DE68. Danach werden Buchstaben in Zahlen konvertiert (A=10, …, Z=35)."
+  },
+  {
+    "id": 6,
+    "question": "Wie werden Buchstaben bei der Modulo-97-Berechnung in Zahlen umgewandelt?",
+    "options": [
+      "A=1, B=2, …, Z=26",
+      "A=10, B=11, …, Z=35",
+      "Über den ASCII-Wert direkt",
+      "A=0, B=1, …, Z=25"
+    ],
+    "answer": 1,
+    "explanation": "Laut ISO 13616 wird jeder Buchstabe durch seine Position im Alphabet + 9 ersetzt: A=10, B=11, …, Z=35. So wird z. B. D=13 und E=14."
+  },
+  {
+    "id": 7,
+    "question": "Warum wird in Java BigInteger für die Modulo-97-Berechnung verwendet?",
+    "options": [
+      "BigInteger ist schneller als int",
+      "Die entstehende Zahl kann 30–60+ Stellen haben und passt in keinen nativen Datentyp",
+      "BigInteger ist der einzige Typ, der Modulo unterstützt",
+      "Es ist eine Vorgabe von Spring Boot"
+    ],
+    "answer": 1,
+    "explanation": "Nach der Buchstaben-Konvertierung entsteht eine Zahl mit 30–60+ Stellen. int (max. ~2 Mrd.) und long (max. ~9,2 × 10¹⁸) reichen nicht. BigInteger unterstützt beliebig große Zahlen — analog zu JavaScripts BigInt."
+  },
+  {
+    "id": 8,
+    "question": "An welchen Positionen steht die Bankleitzahl (BLZ) in einer deutschen IBAN?",
+    "options": [
+      "Position 1–8",
+      "Position 3–10",
+      "Position 5–12",
+      "Position 13–22"
+    ],
+    "answer": 2,
+    "explanation": "In der deutschen IBAN stehen die 8 Stellen der BLZ an Position 5–12 (nach Ländercode und Prüfziffern). In Java-Code: iban.substring(4, 12) (0-basiert)."
+  },
+  {
+    "id": 9,
+    "question": "Welche Fehlerarten erkennt die Modulo-97-Prüfung zu 100 %?",
+    "options": [
+      "Nur einzelne Tippfehler",
+      "Einzelne Tippfehler und Zahlendreher zweier benachbarter Ziffern",
+      "Nur Zahlendreher",
+      "Doppelte Substitutionsfehler"
+    ],
+    "answer": 1,
+    "explanation": "Das Modulo-97-Verfahren (ISO 7064) erkennt 100 % aller einzelnen Tippfehler und 100 % aller Zahlendreher zweier benachbarter Ziffern. Zusätzlich erkennt die feste Länderlänge Auslassungen und Verdopplungen."
+  },
+  {
+    "id": 10,
+    "question": "Was ist SEPA und wann wurde die IBAN in der EU verpflichtend?",
+    "options": [
+      "Single Euro Payments Area — verpflichtend seit 2016",
+      "Secure European Payment Authorization — verpflichtend seit 2012",
+      "Single Euro Payments Area — verpflichtend seit 1. Februar 2014",
+      "Standard Electronic Payment Account — verpflichtend seit 2010"
+    ],
+    "answer": 2,
+    "explanation": "SEPA = Single Euro Payments Area. Die EU-Verordnung Nr. 260/2012 legte den 1. Februar 2014 als Stichtag fest, ab dem IBAN die nationalen Kontonummern für Überweisungen und Lastschriften ersetzte."
+  },
+  {
+    "id": 11,
+    "question": "Welche maximale Länge hat eine IBAN laut ISO 13616?",
+    "options": [
+      "22 Zeichen",
+      "28 Zeichen",
+      "34 Zeichen",
+      "40 Zeichen"
+    ],
+    "answer": 2,
+    "explanation": "Laut ISO 13616 beträgt die maximale IBAN-Länge 34 alphanumerische Zeichen. Die kürzeste IBAN hat Norwegen mit 15 Zeichen, die längste in Europa hat Malta mit 31 Zeichen."
+  },
+  {
+    "id": 12,
+    "question": "Welches Land nutzt KEIN IBAN-System?",
+    "options": [
+      "Schweiz",
+      "Vereinigtes Königreich (UK)",
+      "USA",
+      "Norwegen"
+    ],
+    "answer": 2,
+    "explanation": "Die USA nutzen kein IBAN-System, sondern ABA Routing Transit Numbers. Auch Kanada und Australien verwenden eigene Systeme. Die Schweiz, UK und Norwegen nutzen IBANs."
+  },
+  {
+    "id": 13,
+    "question": "Was sind JDK, JRE und JVM — in welcher Beziehung stehen sie?",
+    "options": [
+      "JVM enthält JRE, JRE enthält JDK",
+      "JDK enthält JRE, JRE enthält JVM",
+      "Alle drei sind synonyme Begriffe",
+      "JRE enthält JDK und JVM"
+    ],
+    "answer": 1,
+    "explanation": "Das JDK (Java Development Kit) enthält das JRE (Java Runtime Environment), das wiederum die JVM (Java Virtual Machine) enthält. Die JVM führt Bytecode aus, das JRE liefert die Standardbibliothek, das JDK bringt den Compiler (javac) und Entwickler-Tools mit."
+  },
+  {
+    "id": 14,
+    "question": "Was erzeugt der Java-Compiler javac?",
+    "options": [
+      "Nativen Maschinencode (.exe)",
+      "JavaScript-Dateien",
+      "Bytecode (.class-Dateien)",
+      "Direkt ausführbare .jar-Dateien"
+    ],
+    "answer": 2,
+    "explanation": "javac kompiliert .java-Dateien zu .class-Dateien (Bytecode). Dieser Bytecode ist plattformunabhängig und wird von der JVM interpretiert/JIT-kompiliert. Analog zu: tsc kompiliert .ts → .js."
+  },
+  {
+    "id": 15,
+    "question": "Wann werden Spring-Annotations wie @RestController oder @GetMapping tatsächlich ausgewertet?",
+    "options": [
+      "Zur Compile-Zeit durch javac",
+      "Zur Laufzeit durch Spring per Reflection",
+      "Beim Maven-Build durch ein Plugin",
+      "Noch vor dem main()-Aufruf durch die JVM"
+    ],
+    "answer": 1,
+    "explanation": "Annotations sind zur Compile-Zeit nur passive Metadaten im Bytecode. Erst zur Laufzeit — beim Aufruf von SpringApplication.run() — liest Spring diese per Reflection aus und baut daraus Beans, Routes und DI-Konfiguration."
+  },
+  {
+    "id": 16,
+    "question": "Was ist Dependency Injection (DI)?",
+    "options": [
+      "Ein Pattern, bei dem Klassen ihre Abhängigkeiten selbst mit new erstellen",
+      "Ein Framework-Feature, bei dem Abhängigkeiten von außen in den Konstruktor übergeben werden",
+      "Ein Build-Tool-Mechanismus von Maven",
+      "Ein Verfahren zum automatischen Download von Libraries"
+    ],
+    "answer": 1,
+    "explanation": "DI ist eine Form von Inversion of Control (IoC): Statt new Service() im Controller zu schreiben, übergibt Spring die fertige Instanz über den Konstruktor. Vorteil: Testbarkeit (Mocks injizieren) und lose Kopplung."
+  },
+  {
+    "id": 17,
+    "question": "Welche Injection-Variante gilt in Spring Boot als Best Practice?",
+    "options": [
+      "Field Injection mit @Autowired",
+      "Setter Injection",
+      "Constructor Injection",
+      "Static Injection"
+    ],
+    "answer": 2,
+    "explanation": "Constructor Injection ist Best Practice: Felder können final sein (Immutabilität), Abhängigkeiten sind explizit sichtbar, Objekte sind nach Konstruktion komplett initialisiert, und Tests funktionieren ohne Spring-Kontext (new Controller(mockService))."
+  },
+  {
+    "id": 18,
+    "question": "Was ist ein Bean in Spring?",
+    "options": [
+      "Eine Java-Klasse, die mit new erstellt wird",
+      "Ein von Spring verwaltetes Objekt im Application Context",
+      "Eine Konfigurationsdatei",
+      "Ein Maven-Dependency-Eintrag"
+    ],
+    "answer": 1,
+    "explanation": "Ein Bean ist ein Objekt, das Spring erstellt, verwaltet und per DI bereitstellt. Beans werden durch Annotations wie @Service, @RestController, @Repository oder @Configuration + @Bean registriert."
+  },
+  {
+    "id": 19,
+    "question": "Was ist der Standard-Scope eines Spring-Beans?",
+    "options": [
+      "Prototype (neues Objekt pro Anfrage)",
+      "Request (pro HTTP-Request)",
+      "Singleton (ein Objekt für die gesamte App-Lebensdauer)",
+      "Session (pro HTTP-Session)"
+    ],
+    "answer": 2,
+    "explanation": "Der Default-Scope ist Singleton: Es gibt genau eine Instanz pro Bean-Definition für den gesamten Application Context. Für stateless Services (wie in diesem Projekt) ist das ideal."
+  },
+  {
+    "id": 20,
+    "question": "Welche dieser Annotations registriert eine Klasse NICHT als Spring Bean?",
+    "options": [
+      "@Service",
+      "@RestController",
+      "@Entity",
+      "@Repository"
+    ],
+    "answer": 2,
+    "explanation": "@Entity ist eine JPA-Annotation und registriert die Klasse NICHT als Spring Bean. Sie markiert eine Klasse als Datenbank-Entität. @Service, @RestController und @Repository sind alle Spezialisierungen von @Component und registrieren Beans."
+  },
+  {
+    "id": 21,
+    "question": "Was bedeutet @SpringBootApplication?",
+    "options": [
+      "Es aktiviert nur den embedded Tomcat",
+      "Es ist eine Kombination aus @Configuration, @EnableAutoConfiguration und @ComponentScan",
+      "Es ersetzt die main()-Methode",
+      "Es aktiviert nur Flyway-Migrations"
+    ],
+    "answer": 1,
+    "explanation": "@SpringBootApplication ist eine Meta-Annotation, die drei Annotations kombiniert: @Configuration (Konfigurationsklasse), @EnableAutoConfiguration (automatische Konfiguration basierend auf Dependencies) und @ComponentScan (sucht nach @Component-Klassen im Package-Baum)."
+  },
+  {
+    "id": 22,
+    "question": "Was macht SpringApplication.run() beim Start?",
+    "options": [
+      "Führt Component Scan durch und findet annotierte Klassen",
+      "Erstellt Beans und löst Dependency Injection auf",
+      "Startet den embedded Tomcat auf dem konfigurierten Port",
+      "Alle genannten Punkte"
+    ],
+    "answer": 3,
+    "explanation": "SpringApplication.run() löst eine ganze Kette aus: Component Scan per Reflection, Bean-Erstellung + DI, Route-Registrierung aus @RequestMapping-Annotations, Flyway-Migrations und Start des embedded Tomcat auf Port 8080."
+  },
+  {
+    "id": 23,
+    "question": "Welche drei Schichten bilden das Standard-Spring-Boot-Pattern?",
+    "options": [
+      "View → Model → Database",
+      "Controller → Service → Repository",
+      "Router → Middleware → Handler",
+      "Frontend → Backend → Cache"
+    ],
+    "answer": 1,
+    "explanation": "Das kanonische Spring-Boot-Pattern: Controller (HTTP-Handling), Service (Business-Logik), Repository (Datenzugriff). Jede Schicht hat eine klare Verantwortung und ist einzeln testbar."
+  },
+  {
+    "id": 24,
+    "question": "Was ist die Aufgabe des IbanController in diesem Projekt?",
+    "options": [
+      "IBAN-Validierungslogik (Modulo 97) ausführen",
+      "HTTP-Requests empfangen, validieren und Responses zurückgeben",
+      "Datenbank-Queries ausführen",
+      "Die externe API aufrufen"
+    ],
+    "answer": 1,
+    "explanation": "Der Controller ist die HTTP-Schicht: Er empfängt Requests, delegiert an Services und gibt JSON-Responses zurück. Die eigentliche Validierungslogik steckt im IbanValidationService."
+  },
+  {
+    "id": 25,
+    "question": "Was bedeutet @RestController?",
+    "options": [
+      "Es ist eine Kombination aus @Controller und @ResponseBody",
+      "Es aktiviert nur die REST-Dokumentation",
+      "Es registriert die Klasse als JPA-Repository",
+      "Es ist eine Kombination aus @Service und @RequestMapping"
+    ],
+    "answer": 0,
+    "explanation": "@RestController = @Controller + @ResponseBody. Jeder Rückgabewert einer Methode wird automatisch von Jackson zu JSON serialisiert. Ohne @ResponseBody würde Spring einen View-Namen (HTML-Template) erwarten."
+  },
+  {
+    "id": 26,
+    "question": "Was bewirkt @RequestMapping(\"/api/ibans\") auf Klassenebene?",
+    "options": [
+      "Es definiert den Basis-Pfad für alle Endpunkte in diesem Controller",
+      "Es erstellt automatisch eine Datenbank-Tabelle",
+      "Es aktiviert CORS für diesen Pfad",
+      "Es registriert einen Fehler-Handler"
+    ],
+    "answer": 0,
+    "explanation": "@RequestMapping auf Klassenebene setzt den Basis-Pfad. Alle Methoden-Annotations (@PostMapping(\"/validate\"), @GetMapping) werden relativ dazu aufgelöst: /api/ibans/validate, /api/ibans."
+  },
+  {
+    "id": 27,
+    "question": "Welche Annotation sorgt dafür, dass der JSON-Request-Body auf ein Java-Objekt gemappt wird?",
+    "options": [
+      "@RequestParam",
+      "@PathVariable",
+      "@RequestBody",
+      "@ModelAttribute"
+    ],
+    "answer": 2,
+    "explanation": "@RequestBody weist Spring an, den HTTP-Body per Jackson in das annotierte Objekt (z. B. IbanRequest) zu deserialisieren. Analog zu req.body in Express.js (mit body-parser)."
+  },
+  {
+    "id": 28,
+    "question": "Was ist ein Java Record und wofür wird er in diesem Projekt verwendet?",
+    "options": [
+      "Ein veränderbares Datenobjekt mit Gettern und Settern",
+      "Eine immutable Datenklasse ohne Boilerplate, verwendet als DTO",
+      "Eine abstrakte Klasse für Vererbung",
+      "Ein Interface für Datenzugriff"
+    ],
+    "answer": 1,
+    "explanation": "Records (seit Java 16) sind immutable Datenklassen. Der Compiler generiert Konstruktor, Getter (ohne get-Prefix), equals(), hashCode() und toString(). Im Projekt als DTOs: IbanRequest, IbanResponse, ValidationResult."
+  },
+  {
+    "id": 29,
+    "question": "Warum kann die JPA-Entity Iban.java kein Record sein?",
+    "options": [
+      "Records sind in Java 21 noch nicht stabil",
+      "Hibernate braucht einen leeren Konstruktor und mutable Felder (Reflection)",
+      "Records dürfen keine Annotations haben",
+      "Records werden nicht von Jackson unterstützt"
+    ],
+    "answer": 1,
+    "explanation": "Hibernate/JPA instanziiert Entities per Reflection: leerer Konstruktor → Felder einzeln per field.set() setzen. Records sind immutable (alle Felder final) und haben keinen leeren Konstruktor — das ist mit Hibernate inkompatibel."
+  },
+  {
+    "id": 30,
+    "question": "Was macht die buildResponse()-Methode im IbanController?",
+    "options": [
+      "Sie baut die HTML-Seite auf",
+      "Sie führt die Mod-97-Validierung durch und fällt bei unbekannter Bank auf die externe API zurück",
+      "Sie speichert die IBAN in der Datenbank",
+      "Sie sendet eine E-Mail-Benachrichtigung"
+    ],
+    "answer": 1,
+    "explanation": "buildResponse() ist die extrahierte Shared-Logik beider Endpunkte: Erst lokale Validierung via IbanValidationService, dann Fallback auf ExternalIbanApiService falls die Bank unbekannt ist. DRY-Prinzip — vermeidet Code-Duplizierung."
+  },
+  {
+    "id": 31,
+    "question": "Was ist Jackson im Spring-Boot-Kontext?",
+    "options": [
+      "Ein HTTP-Server",
+      "Ein Datenbank-Treiber",
+      "Die Standard-JSON-Serialisierungs/Deserialisierungsbibliothek",
+      "Ein Test-Framework"
+    ],
+    "answer": 2,
+    "explanation": "Jackson konvertiert automatisch Java-Objekte ↔ JSON. Bei @RequestBody deserialisiert es den JSON-Request in ein Java-Objekt, bei @RestController-Returns serialisiert es den Rückgabewert zu JSON. Analog zu JSON.parse()/JSON.stringify() plus automatischem Typ-Mapping."
+  },
+  {
+    "id": 32,
+    "question": "Was ist JPA?",
+    "options": [
+      "Eine konkrete ORM-Implementierung",
+      "Eine Spezifikation (Standard) für Object-Relational Mapping in Java",
+      "Ein Datenbank-Treiber für PostgreSQL",
+      "Ein Build-Tool für Java-Projekte"
+    ],
+    "answer": 1,
+    "explanation": "JPA (Jakarta Persistence API) ist eine Spezifikation — sie definiert Annotations wie @Entity, @Id, @Column und Interfaces. Hibernate ist die populärste Implementierung dieser Spezifikation. Analog: JPA ist das Interface, Hibernate implementiert es."
+  },
+  {
+    "id": 33,
+    "question": "Was ist Hibernate im Verhältnis zu JPA?",
+    "options": [
+      "Ein Ersatz für JPA",
+      "Die populärste Implementierung der JPA-Spezifikation",
+      "Ein Datenbank-Management-Tool",
+      "Ein Spring-Boot-Plugin"
+    ],
+    "answer": 1,
+    "explanation": "Hibernate implementiert die JPA-Spezifikation und bildet die Brücke zwischen Java-Objekten und relationalen Datenbanken. Die Aufruf-Kette: Spring Data JPA → Hibernate → JDBC → PostgreSQL. Analog zu Prisma als ORM über dem pg-Treiber."
+  },
+  {
+    "id": 34,
+    "question": "Was bewirkt die Annotation @Entity auf einer Klasse?",
+    "options": [
+      "Sie registriert die Klasse als Spring Bean",
+      "Sie markiert die Klasse als Datenbank-Tabellen-Mapping",
+      "Sie macht die Klasse immutable",
+      "Sie aktiviert JSON-Serialisierung"
+    ],
+    "answer": 1,
+    "explanation": "@Entity sagt Hibernate: „Diese Klasse repräsentiert eine Datenbank-Tabelle.\" Jede Instanz entspricht einer Zeile. Hibernate nutzt Reflection, um Felder auf Spalten zu mappen. Analog zu model Iban { ... } in Prisma."
+  },
+  {
+    "id": 35,
+    "question": "Was bewirkt @GeneratedValue(strategy = GenerationType.IDENTITY) auf dem id-Feld?",
+    "options": [
+      "Die ID wird von der Anwendung generiert (UUID)",
+      "Die Datenbank generiert die ID automatisch (Auto-Increment)",
+      "Die ID wird aus dem IBAN-Wert berechnet",
+      "Spring generiert eine zufällige Zahl"
+    ],
+    "answer": 1,
+    "explanation": "GenerationType.IDENTITY delegiert die ID-Generierung an die Datenbank (Auto-Increment / GENERATED BY DEFAULT AS IDENTITY in PostgreSQL). Hibernate liest die generierte ID nach dem INSERT zurück. Analog zu @default(autoincrement()) in Prisma."
+  },
+  {
+    "id": 36,
+    "question": "Was macht IbanRepository extends JpaRepository<Iban, Long>?",
+    "options": [
+      "Es definiert manuell alle CRUD-SQL-Queries",
+      "Es ist ein leeres Interface — Spring generiert die komplette CRUD-Implementierung zur Laufzeit",
+      "Es erstellt eine REST-API automatisch",
+      "Es definiert Flyway-Migrationen"
+    ],
+    "answer": 1,
+    "explanation": "Spring Data JPA erkennt das Interface beim Start, erzeugt per Proxy eine vollständige Implementierung mit save(), findAll(), findById(), deleteById() etc. — ohne eine einzige Zeile Implementierungscode. Analog zum Prisma Client."
+  },
+  {
+    "id": 37,
+    "question": "Was bedeutet spring.jpa.hibernate.ddl-auto=validate?",
+    "options": [
+      "Hibernate erstellt Tabellen automatisch",
+      "Hibernate löscht und erstellt Tabellen bei jedem Start neu",
+      "Hibernate prüft, ob Entity-Klassen zum DB-Schema passen, ändert es aber nie",
+      "Hibernate ignoriert das Schema komplett"
+    ],
+    "answer": 2,
+    "explanation": "validate = Hibernate vergleicht Entity-Annotations mit dem vorhandenen DB-Schema. Stimmt etwas nicht überein, wirft es einen Fehler beim Start. Das Schema wird von Flyway verwaltet — Hibernate darf es nie verändern. Sicherer als update (das könnte Spalten droppen)."
+  },
+  {
+    "id": 38,
+    "question": "Was ist Flyway?",
+    "options": [
+      "Ein Java-Webserver",
+      "Ein Tool für versionierte Datenbank-Migrationen",
+      "Ein Frontend-Build-Tool",
+      "Ein Git-Plugin für automatische Deployments"
+    ],
+    "answer": 1,
+    "explanation": "Flyway führt versionierte SQL-Migrations-Dateien (V1__initial_schema.sql, V2__...) beim App-Start aus. Es trackt in der Tabelle flyway_schema_history, welche Migrationen bereits angewendet wurden. Analog zu prisma migrate deploy oder golang-migrate."
+  },
+  {
+    "id": 39,
+    "question": "Wie lautet die Namenskonvention für Flyway-Migrationsdateien?",
+    "options": [
+      "migration_001.sql",
+      "V{nummer}__{beschreibung}.sql (doppelter Unterstrich)",
+      "schema-{datum}.sql",
+      "{beschreibung}_v{nummer}.sql"
+    ],
+    "answer": 1,
+    "explanation": "Flyway erwartet das Format V{Version}__{Beschreibung}.sql mit doppeltem Unterstrich. Beispiel: V1__initial_schema.sql. Die Dateien liegen in src/main/resources/db/migration/."
+  },
+  {
+    "id": 40,
+    "question": "Was ist der Unterschied zwischen ddl-auto=update und Flyway-Migrations?",
+    "options": [
+      "Kein Unterschied — beide machen dasselbe",
+      "update lässt Hibernate das Schema aus Annotations ableiten (riskant), Flyway nutzt versionierte SQL-Dateien (sicher/reproduzierbar)",
+      "Flyway ist nur für Tests geeignet",
+      "update ist sicherer als Flyway"
+    ],
+    "answer": 1,
+    "explanation": "ddl-auto=update lässt Hibernate Tabellen basierend auf Entity-Annotations erstellen/ändern — das ist nicht versioniert, nicht reproduzierbar und kann in verschiedenen Umgebungen zu unterschiedlichen Schemata führen. Flyway-Migrations sind explizite, versionierte SQL-Dateien und damit reproduzierbar und sicher. In Produktion wird Flyway (oder Liquibase) verwendet, nie update."
+  },
+  {
+    "id": 41,
+    "question": "Warum hat die Entity Iban.java einen protected-Konstruktor ohne Parameter?",
+    "options": [
+      "Damit der Controller die Entity erstellen kann",
+      "Damit Hibernate die Entity per Reflection instanziieren kann",
+      "Damit die Entity in Tests verwendet werden kann",
+      "Java erfordert immer einen leeren Konstruktor"
+    ],
+    "answer": 1,
+    "explanation": "JPA/Hibernate instanziiert Entities per Reflection: clazz.getDeclaredConstructor().newInstance(). Dafür braucht es einen parameterlosen Konstruktor. protected statt public, damit nur Hibernate (und Subklassen) ihn nutzen — externe Aufrufer verwenden den vollständigen Konstruktor."
+  },
+  {
+    "id": 42,
+    "question": "Was ist Maven?",
+    "options": [
+      "Ein Java-Webserver",
+      "Ein Build-Tool und Dependency-Manager für Java",
+      "Ein Versionskontrollsystem",
+      "Eine Test-Library"
+    ],
+    "answer": 1,
+    "explanation": "Maven ist Javas Standard-Build-Tool und Dependency-Manager. Die pom.xml ist die zentrale Konfigurationsdatei — analog zu package.json in Node.js oder go.mod in Go. Maven kompiliert, testet, paketiert und verwaltet Dependencies."
+  },
+  {
+    "id": 43,
+    "question": "Was ist die pom.xml?",
+    "options": [
+      "Eine Laufzeit-Konfigurationsdatei für die Datenbank",
+      "Das Project Object Model — zentrale Build- und Dependency-Konfiguration",
+      "Eine HTML-Template-Datei",
+      "Die Datei, die JPA-Entities definiert"
+    ],
+    "answer": 1,
+    "explanation": "POM = Project Object Model. Die pom.xml definiert Projekt-Koordinaten (groupId, artifactId, version), Dependencies, Build-Plugins und erbt standardisierte Konfiguration vom spring-boot-starter-parent."
+  },
+  {
+    "id": 44,
+    "question": "Was bedeutet <scope>runtime</scope> bei einer Maven-Dependency?",
+    "options": [
+      "Die Dependency ist nur zum Kompilieren verfügbar",
+      "Die Dependency ist nur zur Laufzeit verfügbar, nicht zum Kompilieren",
+      "Die Dependency wird nicht heruntergeladen",
+      "Die Dependency ist nur in Tests verfügbar"
+    ],
+    "answer": 1,
+    "explanation": "runtime Scope bedeutet: Der Code wird nicht direkt importiert (Compile-Zeit), aber zur Laufzeit benötigt. Beispiel: Der PostgreSQL-JDBC-Treiber wird von Hibernate intern geladen, nie direkt im eigenen Code referenziert."
+  },
+  {
+    "id": 45,
+    "question": "Was ist der spring-boot-starter-parent?",
+    "options": [
+      "Ein Plugin, das Tomcat installiert",
+      "Ein Parent-POM, das Default-Versionen für alle Spring-Boot-Dependencies setzt",
+      "Eine Konfiguration für die Datenbank",
+      "Ein Test-Framework"
+    ],
+    "answer": 1,
+    "explanation": "Der spring-boot-starter-parent ist ein Parent-POM, das Versionen aller abhängigen Libraries koordiniert. Deshalb braucht man bei spring-boot-starter-web keine Version anzugeben — sie kommt vom Parent. Analog zu einer shared Config in einem Monorepo."
+  },
+  {
+    "id": 46,
+    "question": "Was erzeugt mvn package?",
+    "options": [
+      "Nur die kompilierten .class-Dateien",
+      "Eine ausführbare .jar-Datei mit eingebettetem Tomcat",
+      "Ein Docker-Image",
+      "Eine .war-Datei für einen externen Anwendungsserver"
+    ],
+    "answer": 1,
+    "explanation": "mvn package kompiliert, testet und erzeugt eine Fat-JAR-Datei (Self-contained Archiv mit eingebettetem Tomcat + allen Dependencies). Aufruf: java -jar target/iban-validator-0.0.1-SNAPSHOT.jar. Analog zu pnpm build."
+  },
+  {
+    "id": 47,
+    "question": "Was ist der mvnw (Maven Wrapper)?",
+    "options": [
+      "Ein alternativer Paketmanager",
+      "Ein Skript, das die exakte Maven-Version herunterlädt und pinnt",
+      "Ein Proxy für Maven Central",
+      "Ein Docker-Container für Maven"
+    ],
+    "answer": 1,
+    "explanation": "Der Maven Wrapper (mvnw / mvnw.cmd) stellt sicher, dass jeder Entwickler und jede CI-Pipeline exakt die gleiche Maven-Version verwendet (hier 3.9.12). Analog zu corepack + pnpm mit gepinnter Version in package.json."
+  },
+  {
+    "id": 48,
+    "question": "Welcher Maven-Befehl startet die App im Entwicklungsmodus?",
+    "options": [
+      "mvn start",
+      "mvn run",
+      "mvn spring-boot:run",
+      "mvn dev"
+    ],
+    "answer": 2,
+    "explanation": "mvn spring-boot:run kompiliert den Code und startet die App direkt — ohne eine .jar-Datei zu erzeugen. Man kann Profile aktivieren: mvn spring-boot:run -Dspring-boot.run.profiles=dev. Analog zu pnpm dev."
+  },
+  {
+    "id": 49,
+    "question": "Wie viele Docker-Services hat dieses Projekt in der Produktions-Konfiguration?",
+    "options": [
+      "2 (Backend + Frontend)",
+      "3 (PostgreSQL + Backend + Frontend)",
+      "4 (PostgreSQL + Backend + Frontend + Reverse Proxy)",
+      "1 (Alles in einem Container)"
+    ],
+    "answer": 1,
+    "explanation": "Das Projekt hat 3 Services: postgres (PostgreSQL 17), backend (Spring Boot / Java 21) und frontend (Nginx mit SPA + API-Proxy). Kein separater Reverse-Proxy-Container — Nginx im Frontend übernimmt beides."
+  },
+  {
+    "id": 50,
+    "question": "Warum gibt es keinen separaten Reverse-Proxy-Container?",
+    "options": [
+      "Docker unterstützt keinen vierten Container",
+      "Die Frontend-Nginx dient bereits SPA-Dateien und proxied /api/* zum Backend",
+      "Spring Boot hat einen eingebauten Reverse Proxy",
+      "PostgreSQL übernimmt das Routing"
+    ],
+    "answer": 1,
+    "explanation": "Da die Nginx im Frontend-Container bereits läuft (um Static Files zu serven), ist ein location /api/-Block trivial hinzufügbar. Ein separater Reverse-Proxy-Container wäre unnötiger Overhead für eine Single-Backend-Architektur (ADR #1)."
+  },
+  {
+    "id": 51,
+    "question": "Was bewirkt depends_on: postgres: condition: service_healthy im Backend-Service?",
+    "options": [
+      "Es startet das Backend immer vor PostgreSQL",
+      "Es wartet, bis der PostgreSQL-Healthcheck erfolgreich ist, bevor das Backend startet",
+      "Es prüft die Backend-Gesundheit",
+      "Es stoppt PostgreSQL, wenn das Backend fehlschlägt"
+    ],
+    "answer": 1,
+    "explanation": "condition: service_healthy stellt sicher, dass Docker Compose den Backend-Container erst startet, nachdem PostgreSQL seinen Healthcheck (pg_isready) bestanden hat. Das verhindert, dass Flyway eine noch nicht bereite Datenbank erreicht."
+  },
+  {
+    "id": 52,
+    "question": "Wo werden die Datenbank-Credentials in Docker Compose konfiguriert?",
+    "options": [
+      "Hardcoded in der docker-compose.yml",
+      "In einer .env-Datei, referenziert via ${POSTGRES_USER}",
+      "In der application.properties",
+      "Direkt im Java-Code"
+    ],
+    "answer": 1,
+    "explanation": "Die Credentials stehen in einer .env-Datei (nicht im Repository). Docker Compose liest ${POSTGRES_USER} und ${POSTGRES_PASSWORD} automatisch daraus. Das Backend erhält die Werte als Environment-Variablen (SPRING_DATASOURCE_USERNAME)."
+  },
+  {
+    "id": 53,
+    "question": "Was ist ein Docker Volume und wofür wird postgres-data verwendet?",
+    "options": [
+      "Ein temporärer Speicher, der beim Container-Stopp gelöscht wird",
+      "Ein persistenter Speicher, der Datenbank-Daten über Container-Neustarts hinweg erhält",
+      "Ein Backup-Verzeichnis",
+      "Ein Log-Verzeichnis"
+    ],
+    "answer": 1,
+    "explanation": "Docker Volumes sind persistente Speicher außerhalb des Container-Dateisystems. postgres-data mapped auf /var/lib/postgresql/data — die DB-Daten bleiben erhalten, auch wenn der Container neu erstellt wird."
+  },
+  {
+    "id": 54,
+    "question": "Was macht die Nginx-Konfiguration try_files $uri $uri/ /index.html?",
+    "options": [
+      "Sie leitet alle API-Requests um",
+      "Sie liefert für jede unbekannte Route die index.html aus (SPA-Routing)",
+      "Sie blockiert nicht existierende Dateien",
+      "Sie komprimiert alle Dateien"
+    ],
+    "answer": 1,
+    "explanation": "Das ist das SPA-Routing-Pattern: Wenn keine physische Datei gefunden wird, wird index.html ausgeliefert. React Router übernimmt dann das Client-Side-Routing. Ohne diesen Fallback würden direkte URL-Aufrufe zu 404-Fehlern führen."
+  },
+  {
+    "id": 55,
+    "question": "Was bewirkt proxy_pass http://backend:8080/api/ in der Nginx-Konfiguration?",
+    "options": [
+      "Es cacht API-Responses",
+      "Es leitet /api/*-Requests an den Backend-Container auf Port 8080 weiter",
+      "Es blockiert externe API-Zugriffe",
+      "Es erstellt eine WebSocket-Verbindung"
+    ],
+    "answer": 1,
+    "explanation": "proxy_pass leitet Requests, die mit /api/ beginnen, an den Docker-internen Service backend auf Port 8080 weiter. Docker Compose macht den Service-Namen backend zum DNS-Namen im internen Netzwerk."
+  },
+  {
+    "id": 56,
+    "question": "Warum exponiert nur der Frontend-Container Port 80 nach außen?",
+    "options": [
+      "Weil Backend und Datenbank keine Netzwerkverbindung brauchen",
+      "Weil der Browser nur Port 80 unterstützt",
+      "Weil Nginx als einziger Entry Point fungiert und intern zu Backend/DB routed",
+      "Weil Docker nur einen Port gleichzeitig exponieren kann"
+    ],
+    "answer": 2,
+    "explanation": "Der Frontend-Container (Nginx) ist der einzige öffentliche Entry Point. Er liefert die SPA aus und proxied /api/*-Requests intern zum Backend. Backend und PostgreSQL brauchen keine externen Ports — sie kommunizieren über das Docker-interne Netzwerk."
+  },
+  {
+    "id": 57,
+    "question": "Wie startet man die gesamte Produktionsumgebung?",
+    "options": [
+      "docker run iban",
+      "docker compose up --build",
+      "docker build -t iban .",
+      "npm start"
+    ],
+    "answer": 1,
+    "explanation": "docker compose up --build baut alle Docker-Images (Backend, Frontend) neu und startet alle 3 Services. Die App ist dann unter http://localhost erreichbar (Port 80)."
+  },
+  {
+    "id": 58,
+    "question": "Welches Frontend-Framework wird in diesem Projekt verwendet?",
+    "options": [
+      "Angular mit Material UI",
+      "Vue.js mit Vuetify",
+      "React mit TypeScript, Vite und Tailwind CSS",
+      "Svelte mit SvelteKit"
+    ],
+    "answer": 2,
+    "explanation": "Das Frontend nutzt React 18+ mit TypeScript (strict mode), Vite als Build-Tool und Dev-Server, Tailwind CSS für Styling und shadcn/ui für UI-Komponenten."
+  },
+  {
+    "id": 59,
+    "question": "Was ist shadcn/ui und wie unterscheidet es sich von z. B. Material UI?",
+    "options": [
+      "Ein npm-Package, das als Dependency installiert wird",
+      "Kopierbarer Source-Code für UI-Komponenten, der ins Projekt eingebettet wird",
+      "Ein CSS-Framework ohne JavaScript",
+      "Ein Backend-Framework für REST-APIs"
+    ],
+    "answer": 1,
+    "explanation": "shadcn/ui ist keine Dependency — die Komponenten werden als Source-Code ins Projekt kopiert (z. B. components/ui/button.tsx). Sie nutzen Tailwind CSS + class-variance-authority und sind vollständig anpassbar. Im Projekt: Badge, Button, Card, Input, Label."
+  },
+  {
+    "id": 60,
+    "question": "Was macht die Funktion formatIban() im Frontend?",
+    "options": [
+      "Sie sendet die IBAN an die API",
+      "Sie entfernt Nicht-Alphanumerisches, konvertiert zu Uppercase und gruppiert in 4er-Blöcke",
+      "Sie validiert die IBAN per Modulo 97",
+      "Sie speichert die IBAN in localStorage"
+    ],
+    "answer": 1,
+    "explanation": "formatIban() bereinigt die Eingabe (replace(/[^a-zA-Z0-9]/g, '')), konvertiert zu Uppercase und formatiert in 4er-Gruppen mit Leerzeichen (DIN 5008). Beispiel: de89370400440532013000 → DE89 3704 0044 0532 0130 00."
+  },
+  {
+    "id": 61,
+    "question": "Was macht cleanIban() und warum wird es vor dem API-Aufruf verwendet?",
+    "options": [
+      "Es formatiert die IBAN in 4er-Gruppen",
+      "Es entfernt alle Nicht-Alphanumerischen Zeichen und konvertiert zu Uppercase",
+      "Es validiert die Prüfziffern",
+      "Es speichert die IBAN in der Datenbank"
+    ],
+    "answer": 1,
+    "explanation": "cleanIban() entfernt Leerzeichen, Bindestriche, Punkte etc. und macht alles Uppercase. Die API erwartet eine reine alphanumerische IBAN ohne Trennzeichen — die Formatierung ist nur für die Anzeige."
+  },
+  {
+    "id": 62,
+    "question": "Warum wird im API-Client fetch statt axios verwendet?",
+    "options": [
+      "axios ist in TypeScript nicht verfügbar",
+      "fetch ist die native Browser-API und benötigt keine zusätzliche Dependency",
+      "fetch ist schneller als axios",
+      "axios unterstützt kein JSON"
+    ],
+    "answer": 1,
+    "explanation": "fetch ist die native Web-API — keine zusätzliche Dependency nötig. Für die drei einfachen API-Aufrufe (validate, save, getAll) reicht fetch vollkommen aus. axios wäre erst bei komplexeren Anforderungen (Interceptors, automatische Retries) sinnvoll."
+  },
+  {
+    "id": 63,
+    "question": "Wie löst Vite den Import-Alias @/components/... auf?",
+    "options": [
+      "Über eine Webpack-Konfiguration",
+      "Über die resolve.alias-Konfiguration in vite.config.ts, die @ auf ./src mappt",
+      "Über eine globale TypeScript-Einstellung",
+      "Das ist ein Node.js-Native-Feature"
+    ],
+    "answer": 1,
+    "explanation": "In vite.config.ts: resolve: { alias: { '@': path.resolve(__dirname, './src') } }. Das mapped @/components/IbanInput auf ./src/components/IbanInput. Die tsconfig.app.json hat das gleiche Mapping für TypeScript-Typchecking."
+  },
+  {
+    "id": 64,
+    "question": "Was ist der Unterschied zwischen den beiden Buttons „Validieren\" und „Validieren & Speichern\"?",
+    "options": [
+      "Beide machen den gleichen API-Aufruf",
+      "„Validieren\" ruft POST /api/ibans/validate auf (ohne Speicherung), „Speichern\" ruft POST /api/ibans auf (mit DB-Speicherung)",
+      "„Validieren\" prüft nur im Frontend, „Speichern\" prüft im Backend",
+      "„Validieren\" nutzt die lokale API, „Speichern\" nutzt openiban.com"
+    ],
+    "answer": 1,
+    "explanation": "Zwei separate Endpunkte: POST /api/ibans/validate validiert die IBAN und gibt das Ergebnis zurück, POST /api/ibans validiert UND speichert in der Datenbank. Die Validierungslogik ist identisch (DRY über buildResponse())."
+  },
+  {
+    "id": 65,
+    "question": "Warum verwendet die IBAN-Eingabe die CSS-Klasse font-mono tracking-wider?",
+    "options": [
+      "Es ist eine Pflicht von shadcn/ui",
+      "Monospace-Schrift und breiteres Tracking machen IBANs lesbarer (feste Zeichenbreite)",
+      "Es beschleunigt das Rendering",
+      "Es verhindert Copy-Paste-Fehler"
+    ],
+    "answer": 1,
+    "explanation": "Monospace-Schrift (font-mono) gibt jedem Zeichen die gleiche Breite — wichtig für IBANs mit 15–34 Zeichen. tracking-wider vergrößert den Buchstabenabstand. Zusammen mit der 4er-Gruppierung wird die IBAN deutlich lesbarer."
+  },
+  {
+    "id": 66,
+    "question": "Was passiert im Frontend, wenn der Benutzer die Eingabe ändert?",
+    "options": [
+      "Die IBAN wird sofort an die API geschickt",
+      "Das vorherige Validierungsergebnis wird gelöscht und die Eingabe neu formatiert",
+      "Die Seite wird neu geladen",
+      "Die Eingabe wird direkt in die Datenbank gespeichert"
+    ],
+    "answer": 1,
+    "explanation": "Bei onChange wird formatIban() auf die Eingabe angewendet und der Validierungs-State zurückgesetzt (result: null, error: null). Die API wird erst beim Button-Klick aufgerufen — nicht bei jeder Eingabeänderung."
+  },
+  {
+    "id": 67,
+    "question": "Wann lädt die IbanList-Komponente die gespeicherten IBANs?",
+    "options": [
+      "Bei jedem Render",
+      "Einmalig beim Mounten via useEffect mit leerem Dependency-Array",
+      "Alle 5 Sekunden per Polling",
+      "Nur wenn der Benutzer einen Button klickt"
+    ],
+    "answer": 1,
+    "explanation": "useEffect(() => { void fetchIbans() }, [fetchIbans]) — die Liste wird einmalig beim Mounten geladen. fetchIbans ist mit useCallback memoisiert und hat ein leeres Dependency-Array [], sodass es sich nie ändert."
+  },
+  {
+    "id": 68,
+    "question": "Was ist der Unterschied zwischen den Unit-Tests und den Integrationstests im Backend?",
+    "options": [
+      "Kein Unterschied — beide brauchen den vollen Spring-Kontext",
+      "Unit-Tests testen den Service direkt (kein Spring), Integrationstests laden den Web-Layer mit MockMvc",
+      "Unit-Tests laufen im Browser, Integrationstests auf dem Server",
+      "Integrationstests testen nur die Datenbank"
+    ],
+    "answer": 1,
+    "explanation": "IbanValidationServiceTest sind pure Unit-Tests: new IbanValidationService() ohne Spring. IbanControllerTest nutzt @WebMvcTest für einen Mini-Spring-Kontext (nur Web-Layer) mit MockMvc als Fake-HTTP-Client und gemockten Services."
+  },
+  {
+    "id": 69,
+    "question": "Was ist @WebMvcTest(IbanController.class)?",
+    "options": [
+      "Es startet die gesamte Spring-Boot-Anwendung inkl. Datenbank",
+      "Es lädt nur den Web-Layer (Controller + JSON-Serialisierung + Validation), keine DB/Services",
+      "Es ist ein Frontend-Test-Framework",
+      "Es generiert automatisch API-Dokumentation"
+    ],
+    "answer": 1,
+    "explanation": "@WebMvcTest startet einen \"dünnen\" Spring-Kontext: nur Controller, Jackson-Serialisierung und Jakarta Validation. Keine echten Services, keine Datenbank. Abhängigkeiten werden per @MockitoBean gemockt. Analog zu Supertest mit isoliertem Router in Express."
+  },
+  {
+    "id": 70,
+    "question": "Was bewirkt @MockitoBean in den Controller-Tests?",
+    "options": [
+      "Es erstellt einen echten Service mit Datenbankzugriff",
+      "Es erstellt eine Mock-Implementierung und registriert sie als Spring Bean",
+      "Es deaktiviert den Test",
+      "Es startet einen separaten Testserver"
+    ],
+    "answer": 1,
+    "explanation": "@MockitoBean erstellt ein Mockito-Mock-Objekt und registriert es im Spring-Kontext als Bean. Der Controller erhält den Mock per Constructor Injection statt des echten Services. Analog zu vi.mock('./service') in Vitest."
+  },
+  {
+    "id": 71,
+    "question": "Was macht when(service.validate(\"DE89...\")).thenReturn(result)?",
+    "options": [
+      "Es testet, ob validate aufgerufen wurde",
+      "Es definiert, was der Mock zurückgeben soll, wenn er mit diesen Argumenten aufgerufen wird",
+      "Es ruft die echte validate-Methode auf",
+      "Es wartet auf das Ergebnis der Validierung"
+    ],
+    "answer": 1,
+    "explanation": "when().thenReturn() ist Mockito-Syntax zum Definieren von Mock-Verhalten: „Wenn validate mit genau diesem Argument aufgerufen wird, gib dieses Ergebnis zurück.\" Analog zu vi.mocked(service.validate).mockReturnValue({...}) in Vitest."
+  },
+  {
+    "id": 72,
+    "question": "Was ist MockMvc?",
+    "options": [
+      "Ein echtes HTTP-Netzwerk-Tool",
+      "Ein Fake-HTTP-Client, der Requests direkt an den Controller schickt (ohne Netzwerk)",
+      "Ein Datenbank-Mock",
+      "Ein CSS-Testing-Framework"
+    ],
+    "answer": 1,
+    "explanation": "MockMvc simuliert HTTP-Requests, ohne einen echten Server zu starten. Requests gehen direkt an den DispatcherServlet. perform(post(\"/api/ibans/validate\").content(...)) ist analog zu supertest(app).post('/api/ibans/validate').send(...) in Node.js."
+  },
+  {
+    "id": 73,
+    "question": "Wie prüft man in MockMvc, ob ein JSON-Feld einen bestimmten Wert hat?",
+    "options": [
+      "andExpect(content(\"valid\"))",
+      "andExpect(jsonPath(\"$.valid\").value(true))",
+      "andAssert(json.valid == true)",
+      "assertEquals(response.valid, true)"
+    ],
+    "answer": 1,
+    "explanation": "JsonPath-Ausdrücke ($.valid, $.bankName) prüfen einzelne Felder der JSON-Response. andExpect(jsonPath(\"$.valid\").value(true)) ist analog zu expect(res.body.valid).toBe(true) in Vitest/Jest."
+  },
+  {
+    "id": 74,
+    "question": "Warum braucht der Test validateEmptyIbanReturnsBadRequest kein Mock-Setup?",
+    "options": [
+      "Weil leere IBANs automatisch gültig sind",
+      "Weil @Valid + @NotBlank die Anfrage ablehnt, BEVOR die Controller-Methode aufgerufen wird",
+      "Weil MockMvc keine Mocks unterstützt",
+      "Weil die Datenbank den Fehler abfängt"
+    ],
+    "answer": 1,
+    "explanation": "@Valid auf dem Parameter und @NotBlank auf IbanRequest.iban sorgen dafür, dass Spring die Validierung durchführt, bevor die Controller-Methode aufgerufen wird. Der Service-Mock wird nie erreicht — daher kein when().thenReturn() nötig."
+  },
+  {
+    "id": 75,
+    "question": "In welcher Reihenfolge stehen bei JUnit 5 assertEquals() die Parameter?",
+    "options": [
+      "assertEquals(actual, expected)",
+      "assertEquals(expected, actual)",
+      "Die Reihenfolge ist egal",
+      "assertEquals(message, expected, actual)"
+    ],
+    "answer": 1,
+    "explanation": "JUnit-Konvention: Erwartet zuerst, dann tatsächlich: assertEquals(\"Commerzbank\", result.bankName()). Das ist umgekehrt zu Vitest/Jest: expect(result.bankName).toBe(\"Commerzbank\"). Bei Fehlern zeigt JUnit: „Expected: Commerzbank, Actual: null\"."
+  },
+  {
+    "id": 76,
+    "question": "Was ist Vitest und wofür wird es im Frontend verwendet?",
+    "options": [
+      "Ein Bundler für React-Komponenten",
+      "Ein Test-Framework, das nativ mit Vite integriert ist (Vitest + jsdom + React Testing Library)",
+      "Ein Linting-Tool für TypeScript",
+      "Ein HTTP-Client für API-Tests"
+    ],
+    "answer": 1,
+    "explanation": "Vitest ist ein schnelles Test-Framework, das direkt den Vite-Bundler nutzt. Im Projekt wird es mit jsdom (DOM-Simulation) und React Testing Library (Rendering + Assertions) für Komponenten-Tests verwendet."
+  },
+  {
+    "id": 77,
+    "question": "Was testen die drei Frontend-Tests in IbanInput.test.tsx?",
+    "options": [
+      "Die Modulo-97-Validierung im Browser",
+      "Ob Input-Feld, Validieren-Button und Speichern-Button gerendert werden (Smoke-Tests)",
+      "End-to-End-Flows mit echtem Backend",
+      "Datenbank-Abfragen"
+    ],
+    "answer": 1,
+    "explanation": "Die drei Tests sind Smoke-Tests: Sie prüfen, ob die Kernelemente (placeholder, „Validieren\"-Button, „Validieren & Speichern\"-Button) korrekt gerendert werden. Es gibt noch keine Tests für User-Interaktion oder API-Aufrufe."
+  },
+  {
+    "id": 78,
+    "question": "Wie werden alle Backend-Tests ausgeführt?",
+    "options": [
+      "mvn test oder mvn verify -B",
+      "npm test",
+      "java -jar test.jar",
+      "gradle test"
+    ],
+    "answer": 0,
+    "explanation": "mvn test führt alle JUnit-5-Tests aus. mvn verify -B macht dasselbe im Batch-Modus (keine interaktive Eingabe) — ideal für CI/CD. Die Frontend-Tests laufen separat mit pnpm test."
+  },
+  {
+    "id": 79,
+    "question": "Welche drei API-Endpunkte bietet das Backend?",
+    "options": [
+      "GET /validate, POST /save, DELETE /ibans",
+      "POST /api/ibans/validate, POST /api/ibans, GET /api/ibans",
+      "PUT /api/ibans, PATCH /api/ibans, GET /api/ibans",
+      "GET /api/validate/{iban}, POST /api/save, GET /api/list"
+    ],
+    "answer": 1,
+    "explanation": "Drei Endpunkte: POST /api/ibans/validate (Validierung ohne Speicherung), POST /api/ibans (Validierung + Speicherung) und GET /api/ibans (alle gespeicherten IBANs abrufen)."
+  },
+  {
+    "id": 80,
+    "question": "Was bedeutet ResponseEntity<IbanResponse> als Rückgabetyp?",
+    "options": [
+      "Es gibt immer HTTP 200 zurück",
+      "Es erlaubt, HTTP-Statuscode und Body als typisiertes Objekt zusammen zurückzugeben",
+      "Es serialisiert automatisch zu XML",
+      "Es ist ein Fehler-Wrapper"
+    ],
+    "answer": 1,
+    "explanation": "ResponseEntity ist ein Wrapper, der HTTP-Statuscode, Headers und Body kombiniert. ResponseEntity.ok(body) = Status 200 + JSON-Body. Man könnte auch ResponseEntity.status(201).body(...) für andere Statuscodes verwenden."
+  },
+  {
+    "id": 81,
+    "question": "Was macht @RestControllerAdvice im Projekt?",
+    "options": [
+      "Es loggt alle Requests",
+      "Es ist ein globaler Error-Handler, der Exceptions fängt und konsistente JSON-Fehlerantworten liefert",
+      "Es generiert API-Dokumentation",
+      "Es aktiviert CORS"
+    ],
+    "answer": 1,
+    "explanation": "@RestControllerAdvice im GlobalExceptionHandler fängt Exceptions aus allen Controllern: MethodArgumentNotValidException → HTTP 400, allgemeine Exception → HTTP 500. Jede Fehlerantwort ist konsistentes JSON. Analog zu Express Error-Handling Middleware."
+  },
+  {
+    "id": 82,
+    "question": "Was passiert, wenn ein Client {\"iban\": \"\"} an /api/ibans/validate schickt?",
+    "options": [
+      "Die IBAN wird als gültig validiert",
+      "@NotBlank greift → HTTP 400 mit strukturierter Fehlermeldung",
+      "Der Server gibt HTTP 500 zurück",
+      "Die leere IBAN wird in der Datenbank gespeichert"
+    ],
+    "answer": 1,
+    "explanation": "@Valid auf dem Parameter triggert die Jakarta-Validation. @NotBlank auf IbanRequest.iban lehnt leere Strings und null ab. Der GlobalExceptionHandler fängt die MethodArgumentNotValidException und gibt HTTP 400 mit JSON-Fehlermeldung zurück."
+  },
+  {
+    "id": 83,
+    "question": "Was ist „Graceful Degradation\" im Kontext der externen API?",
+    "options": [
+      "Die Anwendung stürzt kontrolliert ab",
+      "Wenn openiban.com nicht erreichbar ist, funktioniert die App trotzdem — nur ohne Bankname",
+      "Die Datenbank wird beim Fehler automatisch bereinigt",
+      "Das Frontend zeigt einen Ladebalken"
+    ],
+    "answer": 1,
+    "explanation": "Die externe API (openiban.com) ist in einen try/catch gewickelt. Bei Fehler wird null zurückgegeben — der Controller nutzt dann nur die lokale Validierung. Die IBAN wird trotzdem korrekt als gültig/ungültig erkannt, nur der Bankname fehlt möglicherweise."
+  },
+  {
+    "id": 84,
+    "question": "Was bedeutet validationMethod: \"local\" vs. \"external\" in der API-Response?",
+    "options": [
+      "local = Frontend-Validierung, external = Backend-Validierung",
+      "local = Eigen-Implementierung (Mod 97 + BLZ-Lookup), external = Bankname über openiban.com aufgelöst",
+      "local = Datenbank-Abfrage, external = Cache-Abfrage",
+      "local = Docker, external = Cloud"
+    ],
+    "answer": 1,
+    "explanation": "local bedeutet, Mod-97-Validierung und BLZ-Auflösung liefen komplett mit eigener Logik. external bedeutet, der Bankname wurde über die openiban.com-API aufgelöst, weil die BLZ nicht in der lokalen KNOWN_BANKS-Map war."
+  },
+  {
+    "id": 85,
+    "question": "Was ist der RestClient in Spring und wofür wird er im Projekt verwendet?",
+    "options": [
+      "Ein Datenbank-Client",
+      "Ein fluent HTTP-Client (seit Spring 6.1) für externe API-Aufrufe",
+      "Ein Test-Framework",
+      "Ein WebSocket-Client"
+    ],
+    "answer": 1,
+    "explanation": "RestClient (seit Spring 6.1) ist ein fluenter HTTP-Client — Nachfolger von RestTemplate. Im Projekt wird er in ExternalIbanApiService für den Aufruf von openiban.com/validate/{iban} verwendet. Analog zu fetch() oder axios in JavaScript."
+  },
+  {
+    "id": 86,
+    "question": "Werden auch ungültige IBANs in der Datenbank gespeichert?",
+    "options": [
+      "Nein, nur gültige IBANs werden gespeichert",
+      "Ja, beim Endpunkt POST /api/ibans werden sowohl gültige als auch ungültige IBANs gespeichert",
+      "Nur wenn der Benutzer es explizit bestätigt",
+      "Nur bei externen Validierungen"
+    ],
+    "answer": 1,
+    "explanation": "validateAndSaveIban() speichert das Validierungsergebnis unabhängig davon, ob die IBAN gültig ist. Das valid-Feld in der DB speichert den Status. Das ermöglicht eine Audit-Historie aller Validierungsversuche."
+  },
+  {
+    "id": 87,
+    "question": "Warum wurde PostgreSQL statt H2 (embedded DB) gewählt?",
+    "options": [
+      "H2 ist nicht kompatibel mit Java 21",
+      "PostgreSQL zeigt realistische Produktions-Patterns: Flyway, Docker, Environment-Variablen",
+      "H2 ist langsamer als PostgreSQL",
+      "Spring Boot unterstützt H2 nicht"
+    ],
+    "answer": 1,
+    "explanation": "H2 wäre einfacher (kein Docker-Container nötig), aber PostgreSQL zeigt Patterns, die in Produktion relevant sind: Flyway-Migrations gegen eine echte DB, Docker Compose Service-Orchestrierung, depends_on mit Healthchecks, Environment-Variablen für Credentials (ADR #4)."
+  },
+  {
+    "id": 88,
+    "question": "Warum wird Maven statt Gradle verwendet?",
+    "options": [
+      "Gradle unterstützt kein Java 21",
+      "Maven (pom.xml) ist deklarativ und für Java-Neulinge leichter verständlich als Gradle (Groovy/Kotlin DSL)",
+      "Maven ist schneller als Gradle",
+      "Spring Boot erfordert Maven"
+    ],
+    "answer": 1,
+    "explanation": "Maven's pom.xml ist deklaratives XML — konzeptionell nah an package.json. Gradle erfordert zusätzlich Groovy oder Kotlin DSL. Für ein einfaches Projekt (compile → test → package) bringen Gradle's Stärken (Build-Scripts, inkrementelle Builds) keinen Vorteil (ADR #12)."
+  },
+  {
+    "id": 89,
+    "question": "Warum verwendet das Projekt Java 21 statt Java 25?",
+    "options": [
+      "Java 25 existiert noch nicht",
+      "Java 21 ist der bewährte LTS-Release mit voller Ökosystem-Unterstützung; Java 25 ist erst 6 Monate alt",
+      "Java 25 hat keine Records",
+      "Maven unterstützt Java 25 nicht"
+    ],
+    "answer": 1,
+    "explanation": "Java 21 (September 2023) ist der industrie-standard LTS-Release. Spring Boot 3.x, Hibernate, Mockito sind vollständig dagegen getestet. Java 25 (September 2025) ist erst 6 Monate alt — Teams migrieren LTS-zu-LTS nach 6–12 Monaten GA-Reife (ADR #11)."
+  },
+  {
+    "id": 90,
+    "question": "Warum wird Spring Boot 3.5.x statt 4.0.x verwendet?",
+    "options": [
+      "Spring Boot 4.0 existiert noch nicht",
+      "3.5.x ist ein non-breaking Upgrade von 3.4.x; 4.0 erfordert umfangreiche Migrationsarbeit ohne Lerngewinn",
+      "3.5.x ist schneller als 4.0.x",
+      "4.0 unterstützt kein PostgreSQL"
+    ],
+    "answer": 1,
+    "explanation": "3.4→3.5 ist ein Minor-Upgrade (gleiches Jakarta EE 10, Jackson 2, Spring Framework 6.x). 4.0 erfordert neue Starter-Namen, Jackson 3, @MockitoBean-Migration etc. — das ist Migrationsarbeit ohne Bezug zu den Lernzielen dieses Projekts (ADR #14)."
+  },
+  {
+    "id": 91,
+    "question": "Was bedeutet „Convention over Configuration\" in Spring Boot?",
+    "options": [
+      "Man muss jede Konfiguration manuell schreiben",
+      "Spring konfiguriert sinnvolle Defaults automatisch — man überschreibt nur bei Bedarf",
+      "Es gibt keine Konfigurationsdateien",
+      "Konventionen werden vom Frontend vorgegeben"
+    ],
+    "answer": 1,
+    "explanation": "Man sagt Spring was man will (über Annotations/Dependencies), Spring konfiguriert das wie automatisch. Beispiel: Füge spring-boot-starter-web hinzu → Tomcat, Jackson, Routing sind automatisch konfiguriert. Man überschreibt nur Abweichungen (z. B. server.port=8080)."
+  },
+  {
+    "id": 92,
+    "question": "Warum wird kein Lombok im Projekt verwendet?",
+    "options": [
+      "Lombok ist in Java 21 nicht verfügbar",
+      "Expliziter Code ist für Lernzwecke verständlicher; Records ersetzen Lombok für DTOs",
+      "Lombok ist ein Sicherheitsrisiko",
+      "Spring Boot verbietet Lombok"
+    ],
+    "answer": 1,
+    "explanation": "Lombok generiert Code unsichtbar zur Compile-Zeit (Getter, Setter, Konstruktoren). Für Lernzwecke ist expliziter Code besser verständlich. Java Records ersetzen Lombok für DTOs (immutable, kein Boilerplate). Die Entity Iban.java nutzt handgeschriebene Getter."
+  },
+  {
+    "id": 93,
+    "question": "Warum liegt das Schema in SQL-Dateien (Flyway) und nicht in JPA-Annotations?",
+    "options": [
+      "JPA unterstützt keine Schema-Definition",
+      "SQL-Dateien sind die Schema-Quelle (schema-first); Hibernate validiert nur, ändert aber nie das Schema",
+      "Flyway ist schneller als Hibernate",
+      "SQL-Dateien sind einfacher als Annotations"
+    ],
+    "answer": 1,
+    "explanation": "Schema-first-Ansatz: Die SQL-Datei (V1__initial_schema.sql) ist die Single Source of Truth für das DB-Schema. ddl-auto=validate stellt sicher, dass Entity und Schema übereinstimmen, ohne dass Hibernate riskante Schema-Änderungen macht (ADR #6)."
+  },
+  {
+    "id": 94,
+    "question": "Was ist CORS und warum wird es in der Entwicklung gebraucht?",
+    "options": [
+      "Ein Verschlüsselungsprotokoll",
+      "Cross-Origin Resource Sharing — erlaubt dem Frontend auf localhost:5173 Requests an das Backend auf localhost:8080 zu senden",
+      "Ein Datenbank-Zugriffsprotokoll",
+      "Ein Docker-Netzwerk-Feature"
+    ],
+    "answer": 1,
+    "explanation": "Browser blockieren Requests an andere Origins (Port = anderer Origin). In der Entwicklung läuft das Frontend auf Port 5173 (Vite) und das Backend auf Port 8080. CORS-Header erlauben diese Cross-Origin-Requests. In Produktion nicht nötig (Nginx proxied alles über Port 80)."
+  },
+  {
+    "id": 95,
+    "question": "Warum ist die CORS-Konfiguration mit @Profile(\"dev\") annotiert?",
+    "options": [
+      "Damit CORS immer aktiv ist",
+      "Damit CORS nur im Entwicklungsprofil aktiv ist — in Produktion nicht nötig",
+      "CORS funktioniert nur mit dem dev-Profil",
+      "Es ist eine Spring-Boot-Pflicht"
+    ],
+    "answer": 1,
+    "explanation": "In Produktion wird alles über Nginx auf Port 80 ausgeliefert (Same Origin) — CORS ist irrelevant. @Profile(\"dev\") stellt sicher, dass die offene CORS-Config nur beim Entwickeln aktiv ist, aktiviert mit mvn spring-boot:run -Dspring-boot.run.profiles=dev."
+  },
+  {
+    "id": 96,
+    "question": "Was bewirkt @Value(\"${app.cors.allowed-origins:http://localhost}\") in der CORS-Config?",
+    "options": [
+      "Es setzt einen festen Wert",
+      "Es liest den Wert aus der Property-Datei, mit http://localhost als Fallback",
+      "Es definiert eine Umgebungsvariable",
+      "Es erstellt einen neuen Bean"
+    ],
+    "answer": 1,
+    "explanation": "@Value(\"${key:default}\") liest einen Wert aus application-dev.properties. Falls der Key nicht existiert, wird der Default (http://localhost) verwendet. Analog zu process.env.CORS_ORIGINS ?? 'http://localhost' in Node.js."
+  },
+  {
+    "id": 97,
+    "question": "Welche Security-Headers setzt die Nginx-Konfiguration?",
+    "options": [
+      "Keine",
+      "X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy",
+      "Nur Content-Security-Policy",
+      "Nur Strict-Transport-Security"
+    ],
+    "answer": 1,
+    "explanation": "Die nginx.conf setzt drei Security-Headers: X-Content-Type-Options: nosniff (verhindert MIME-Sniffing), X-Frame-Options: DENY (verhindert Iframe-Embedding) und Referrer-Policy: no-referrer-when-downgrade. HSTS fehlt, weil kein HTTPS konfiguriert ist."
+  },
+  {
+    "id": 98,
+    "question": "Was ist „Primitive Obsession\" und wie zeigt sie sich im aktuellen Code?",
+    "options": [
+      "Zu viele primitive Datentypen werden als Konstanten gespeichert",
+      "Die IBAN wird überall als String durchgereicht statt als fachlicher Typ",
+      "Es werden zu viele int-Variablen verwendet",
+      "Alle Felder sind public"
+    ],
+    "answer": 1,
+    "explanation": "Primitive Obsession = fachliche Konzepte werden durch primitive Typen dargestellt. Die IBAN ist überall ein String — nichts verhindert, dass ein nicht-normalisierter String verwendet wird. Ein Value Object wie IbanNumber würde den fachlichen Typ abbilden und Normalisierung im Konstruktor erzwingen."
+  },
+  {
+    "id": 99,
+    "question": "Was ist ein Value Object im DDD-Kontext?",
+    "options": [
+      "Ein Objekt mit einer Datenbank-ID",
+      "Ein immutables Objekt, das durch seine Werte definiert ist (nicht durch eine Identität)",
+      "Ein Objekt, das nur Getter hat",
+      "Ein JSON-Objekt"
+    ],
+    "answer": 1,
+    "explanation": "Ein Value Object ist durch seine Werte definiert, nicht durch eine ID. Zwei IbanNumber(\"DE89...\") sind gleich, wenn der Wert gleich ist. Value Objects sind immutable und können sich selbst validieren/normalisieren. Analog zu Readonly<{value: string}> in TypeScript."
+  },
+  {
+    "id": 100,
+    "question": "Was ist das „Anemic Domain Model\"-Problem im aktuellen Code?",
+    "options": [
+      "Die Datenbank hat zu wenige Spalten",
+      "Die Entity Iban.java ist ein reiner Datenbehälter ohne fachliches Verhalten",
+      "Es gibt zu viele Services",
+      "Die API hat zu wenige Endpunkte"
+    ],
+    "answer": 1,
+    "explanation": "Iban.java hat nur Felder + Getter, kein Verhalten. Die Fachlogik (Normalisierung, Mod-97, BLZ-Extraktion) steckt im IbanValidationService. In DDD gehört fachliches Verhalten in die Domänenobjekte — z. B. IbanNumber.countryCode(), IbanNumber.bban()."
+  },
+  {
+    "id": 101,
+    "question": "Was ist die „Dependency Rule\" in der Clean Architecture?",
+    "options": [
+      "Dependencies müssen immer aktuell sein",
+      "Abhängigkeiten zeigen immer nach innen — die Domain kennt keine Frameworks",
+      "Jede Klasse muss eine Dependency haben",
+      "Dependencies müssen alphabetisch sortiert sein"
+    ],
+    "answer": 1,
+    "explanation": "Die Dependency Rule besagt: Äußere Schichten (Controller, Infrastruktur) kennen innere (Domain), aber nie umgekehrt. Die Domain definiert Interfaces (Ports), die von der Infrastruktur implementiert werden (Adapters). Die Domain ist framework-frei."
+  },
+  {
+    "id": 102,
+    "question": "Was ist ein „Port\" in der Hexagonalen Architektur?",
+    "options": [
+      "Ein Netzwerk-Port wie 8080",
+      "Ein Interface an der Domänengrenze, das definiert was die Domain braucht",
+      "Ein Docker-Port-Mapping",
+      "Ein Maven-Plugin"
+    ],
+    "answer": 1,
+    "explanation": "Ein Port ist ein Interface, das die Domain definiert: „Ich brauche jemanden, der Bankinformationen extern auflöst.\" Die Implementierung (OpenIbanApiAdapter → openiban.com) ist ein Adapter. Die Domain weiß nicht, ob REST, SOAP oder ein Mock dahintersteckt."
+  },
+  {
+    "id": 103,
+    "question": "Warum wird das vollständige DDD-Refactoring (Hexagonale Architektur) im Projekt NICHT umgesetzt?",
+    "options": [
+      "DDD ist veraltet",
+      "Die Domänen-Komplexität rechtfertigt die Architektur-Komplexität nicht (YAGNI)",
+      "Spring Boot unterstützt DDD nicht",
+      "Die Tests würden nicht mehr funktionieren"
+    ],
+    "answer": 1,
+    "explanation": "Das Projekt hat ~130 Zeilen Logik, 1 Domänenregel, 1 DB-Tabelle. Vollständiges DDD (20+ Dateien, 10+ Packages) wäre Indirektion ohne Nutzen. Drei gezielte Verbesserungen (Value Object, Orchestrierung verschieben, Mod97Validator extrahieren) lösen die realen Probleme."
+  },
+  {
+    "id": 104,
+    "question": "Welches Prinzip beschreibt am besten die Architektur-Entscheidung dieses Projekts?",
+    "options": [
+      "Over-Engineering für maximale Flexibilität",
+      "YAGNI + proportionale Architektur — Komplexität passt zur Domäne",
+      "Alle Design Patterns immer anwenden",
+      "Architektur spielt keine Rolle"
+    ],
+    "answer": 1,
+    "explanation": "YAGNI (You Aren't Gonna Need It) + proportionale Architektur: Die Architektur-Komplexität soll proportional zur Domänen-Komplexität sein. Interfaces, Ports, JPA/Domain-Trennung werden erst eingeführt, wenn ein realer Bedarf entsteht — nicht prophylaktisch."
+  },
+  {
+    "id": 105,
+    "question": "Wo können Records in Java definiert werden?",
+    "options": [
+      "Nur als Top-Level-Klasse in einer eigenen Datei",
+      "Nur innerhalb anderer Klassen (als Nested Record)",
+      "Sowohl als Top-Level-Klasse als auch als Nested Record innerhalb einer Klasse",
+      "Nur innerhalb von Interfaces"
+    ],
+    "answer": 2,
+    "explanation": "Records können als eigene .java-Datei (Top-Level) oder innerhalb einer Klasse (Nested Record) definiert werden. Im Projekt sind DTOs wie IbanRequest nested im Controller (nur dort gebraucht), während eine eigene Datei sinnvoll wird, wenn mehrere Klassen den Record nutzen."
+  },
+  {
+    "id": 106,
+    "question": "Warum sind IbanRequest, IbanResponse und IbanListEntry als Nested Records im IbanController definiert?",
+    "options": [
+      "Java erfordert, dass Records innerhalb einer Klasse stehen",
+      "Sie sind DTOs, die nur von diesem Controller verwendet werden — Nesting hält sie nah am Konsumenten (hohe Kohäsion)",
+      "Nested Records sind schneller als Top-Level Records",
+      "Jackson kann nur Nested Records serialisieren"
+    ],
+    "answer": 1,
+    "explanation": "Die DTOs sind reine HTTP-Shapes für diesen einen Controller. Kein anderer Code im Projekt referenziert sie. Nesting folgt dem Prinzip der hohen Kohäsion: wer den Controller liest, sieht Request- und Response-Format sofort. Analog zu einem type in einer TypeScript-Route-Datei, der nicht re-exportiert wird."
+  },
+  {
+    "id": 107,
+    "question": "Warum sind die Records im IbanController (z. B. IbanRequest, IbanResponse) als public deklariert?",
+    "options": [
+      "public ist der Default-Modifier für Records in Java",
+      "Sie erscheinen in public Method-Signaturen (ResponseEntity<IbanResponse>, @RequestBody IbanRequest) — die Sichtbarkeit muss konsistent sein",
+      "Jackson kann nur public Records serialisieren",
+      "Spring Boot erfordert public für alle DTOs"
+    ],
+    "answer": 1,
+    "explanation": "Wenn ein Record als Parameter oder Rückgabetyp einer public-Methode auftritt, sollte er ebenfalls public sein — sonst exportiert man einen nicht-öffentlichen Typ über eine öffentliche API (Code-Smell). Jackson/Spring könnte zwar auch private Records per Reflection verarbeiten, aber die Code-Sichtbarkeit sollte konsistent mit der API-Sichtbarkeit sein. Analog: In TypeScript würde eine exportierte Funktion, die ein nicht-exportiertes Interface als Parameter hat, einen Compiler-Fehler erzeugen."
+  },
+  {
+    "id": 108,
+    "question": "Warum ist @Valid auf dem Controller-Parameter nötig, obwohl @NotBlank schon auf dem Record-Feld steht?",
+    "options": [
+      "@Valid und @NotBlank machen dasselbe — eins davon ist redundant",
+      "@NotBlank definiert die Validierungsregel, @Valid triggert die Prüfung — ohne @Valid wird @NotBlank ignoriert",
+      "@Valid validiert den HTTP-Header, @NotBlank den Body",
+      "@NotBlank funktioniert nur in Kombination mit @RequestParam, nicht mit @RequestBody"
+    ],
+    "answer": 1,
+    "explanation": "Es ist ein Zwei-Stufen-System: @NotBlank definiert die Regel (≈ zod-Schema: z.string().min(1)), @Valid aktiviert die Prüfung (≈ Express-Middleware, die schema.parse(req.body) aufruft). Ohne @Valid deserialisiert Spring den Body, führt aber keine Validierung durch — ein leerer String käme ungeprüft in die Methode."
+  },
+  {
+    "id": 109,
+    "question": "Was passiert, wenn @Valid die Validierung auslöst und ein Constraint wie @NotBlank verletzt wird?",
+    "options": [
+      "Die Controller-Methode wird aufgerufen und erhält null als Parameter",
+      "Spring gibt automatisch HTTP 200 mit einer Fehlermeldung zurück",
+      "Spring wirft eine MethodArgumentNotValidException — die Controller-Methode wird nie betreten",
+      "Die Anwendung stürzt mit einer NullPointerException ab"
+    ],
+    "answer": 2,
+    "explanation": "Spring führt die Bean-Validierung vor dem Methodenaufruf durch. Bei Verletzung wird eine MethodArgumentNotValidException geworfen — die Methode wird nie betreten, der Service nie aufgerufen. Der GlobalExceptionHandler fängt die Exception und gibt HTTP 400 mit {\"error\": \"Validation failed\", \"details\": \"must not be blank\"} zurück. Analog: Eine Express-Middleware lehnt den Request ab, bevor der Handler erreicht wird."
+  }
+]
