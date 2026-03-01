@@ -90,7 +90,6 @@ cd frontend && pnpm lint && pnpm test
   "valid": true,
   "iban": "DE89370400440532013000",
   "bankName": "Commerzbank",
-  "bankIdentifier": "37040044",
   "reason": null
 }
 

@@ -3,9 +3,7 @@ package de.nicograef.iban.controller;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import de.nicograef.iban.model.Iban;
+import de.nicograef.iban.model.IbanFormatException;
 import de.nicograef.iban.repository.IbanRepository;
 import de.nicograef.iban.service.IbanValidationService;
 
@@ -61,9 +60,9 @@ class IbanControllerTest {
 
         @Test
         void validateValidIban() throws Exception {
-                when(validationService.validateOrLookup(any()))
+                when(validationService.validateOrLookup(anyString()))
                                 .thenReturn(new IbanValidationService.ValidationResult(
-                                                true, "DE89370400440532013000", "Commerzbank", "37040044",
+                                                true, "DE89370400440532013000", "Commerzbank",
                                                 null));
 
                 mockMvc.perform(post("/api/ibans")
@@ -79,20 +78,41 @@ class IbanControllerTest {
         }
 
         @Test
-        void validateInvalidIban() throws Exception {
-                when(validationService.validateRaw("INVALID"))
-                                .thenReturn(new IbanValidationService.ValidationResult(
-                                                false, "INVALID", null, null,
-                                                "IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
+        void structurallyInvalidIbanReturnsBadRequest() throws Exception {
+                // "INVALID" is structurally not an IBAN → IbanFormatException → 400
+                when(validationService.validateOrLookup("INVALID"))
+                                .thenThrow(new IbanFormatException(
+                                                "IBAN zu kurz: 7 Zeichen (Minimum: 15)", "INVALID"));
 
                 mockMvc.perform(post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                                 {"iban": "INVALID"}
                                                 """))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.valid").value(false))
+                                .andExpect(jsonPath("$.iban").value("INVALID"))
+                                .andExpect(jsonPath("$.reason").value("IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
+        }
+
+        @Test
+        void semanticallyInvalidIbanReturnsOkWithValidFalse() throws Exception {
+                // Wrong check digit — structurally valid but Mod-97 fails → 200 with
+                // valid=false
+                when(validationService.validateOrLookup("DE00370400440532013000"))
+                                .thenReturn(new IbanValidationService.ValidationResult(
+                                                false, "DE00370400440532013000", null,
+                                                "Prüfziffern ungültig (Modulo-97-Prüfung fehlgeschlagen)"));
+
+                mockMvc.perform(post("/api/ibans")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {"iban": "DE00370400440532013000"}
+                                                """))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.valid").value(false))
-                                .andExpect(jsonPath("$.reason").value("IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
+                                .andExpect(jsonPath("$.reason").value(
+                                                "Prüfziffern ungültig (Modulo-97-Prüfung fehlgeschlagen)"));
         }
 
         @Test
@@ -119,7 +139,7 @@ class IbanControllerTest {
 
         @Test
         void getAllIbansReturnsSavedEntries() throws Exception {
-                Iban entity = new Iban("DE89370400440532013000", "Commerzbank", "37040044", true, null);
+                Iban entity = new Iban("DE89370400440532013000", "Commerzbank", true, null);
                 when(ibanRepository.findAll()).thenReturn(List.of(entity));
 
                 mockMvc.perform(get("/api/ibans"))

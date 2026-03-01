@@ -67,11 +67,6 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
     }
   }
 
-  /** Dynamic label: "BLZ" for German IBANs, "Bank Identifier" for others */
-  const bankIdentifierLabel = cleanIban(input).startsWith('DE')
-    ? 'BLZ'
-    : 'Bank Identifier'
-
   // Character counter: show current length vs. expected length for the detected country
   const cleaned = cleanIban(input)
   const countryCode = cleaned.length >= 2 ? cleaned.substring(0, 2) : ''
@@ -165,11 +160,6 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
               <p className="text-sm font-mono">{validation.result.iban}</p>
               {validation.result.bankName && (
                 <p className="text-sm">Bank: {validation.result.bankName}</p>
-              )}
-              {validation.result.bankIdentifier && (
-                <p className="text-sm text-muted-foreground">
-                  {bankIdentifierLabel}: {validation.result.bankIdentifier}
-                </p>
               )}
             </CardContent>
           </Card>

@@ -37,9 +37,6 @@ public class Iban {
     @Column(length = 255)
     private String bankName;
 
-    @Column(length = 20)
-    private String bankIdentifier;
-
     @Column(nullable = false)
     private boolean valid;
 
@@ -53,11 +50,10 @@ public class Iban {
     protected Iban() {
     }
 
-    public Iban(String iban, String bankName, String bankIdentifier,
+    public Iban(String iban, String bankName,
             boolean valid, String reason) {
         this.iban = iban;
         this.bankName = bankName;
-        this.bankIdentifier = bankIdentifier;
         this.valid = valid;
         this.reason = reason;
         this.createdAt = Instant.now();
@@ -71,10 +67,6 @@ public class Iban {
 
     public String getBankName() {
         return bankName;
-    }
-
-    public String getBankIdentifier() {
-        return bankIdentifier;
     }
 
     public boolean isValid() {

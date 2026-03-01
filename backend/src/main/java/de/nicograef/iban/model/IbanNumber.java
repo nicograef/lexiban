@@ -6,11 +6,19 @@ import java.util.regex.Pattern;
 /**
  * Value Object for a normalized IBAN string.
  *
- * Self-normalizing: removes all non-alphanumeric characters and converts to
- * uppercase.
+ * Responsibilities:
+ * 1. Normalize raw input (strip non-alphanumeric chars, uppercase).
+ * 2. Validate structural format (2 letters + 2 digits + 11–30 alphanumeric).
+ * 3. Provide human-readable error messages for invalid input.
+ * 4. Expose derived properties (countryCode, checkDigits, bban,
+ * etc.).
+ *
  * A valid IbanNumber instance is guaranteed to be normalized and structurally
- * valid
- * (correct format: 2 letters + 2 digits + 11-30 alphanumeric characters).
+ * valid. The constructor throws IbanFormatException (a subclass of
+ * IllegalArgumentException) with a descriptive German-language message if
+ * the input is invalid — callers can use e.getMessage() directly as an
+ * error reason. The exception also carries the normalized IBAN string so
+ * error handlers can include it in the HTTP response.
  *
  * This is a DDD Value Object — defined by its value, immutable, with behavior.
  * TS equivalent: a class that validates in the constructor and exposes readonly
@@ -35,19 +43,63 @@ public record IbanNumber(String value) {
             "^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$");
 
     /**
+     * Normalizes a raw IBAN string: removes all non-alphanumeric characters
+     * and converts to uppercase. Returns an empty string for null input.
+     *
+     * Public so callers (e.g. error handlers) can normalize without creating
+     * an IbanNumber instance. Used internally by the compact constructor.
+     */
+    public static String normalize(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        return raw.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
+    }
+
+    /**
      * Compact constructor: normalizes and validates on creation.
      * If you hold an IbanNumber, you know it's normalized and structurally valid.
      */
     public IbanNumber {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("IBAN darf nicht leer sein");
+        value = normalize(value);
+
+        if (value.isEmpty()) {
+            throw new IbanFormatException("IBAN ist leer", value);
         }
-        // Normalize: remove all non-alphanumeric characters, uppercase
-        value = value.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
 
         if (!IBAN_STRUCTURE.matcher(value).matches()) {
-            throw new IllegalArgumentException("Ungültiges IBAN-Format: " + value);
+            throw new IbanFormatException(describeStructuralError(value), value);
         }
+    }
+
+    /**
+     * Provides a specific German-language reason why the structural check failed.
+     * Inspects the normalized IBAN step by step to return the most helpful error.
+     *
+     * TS analogy: a private helper that builds a user-facing error string.
+     */
+    private static String describeStructuralError(String iban) {
+        if (iban.isEmpty()) {
+            return "IBAN ist leer";
+        }
+
+        if (iban.length() < 15) {
+            return "IBAN zu kurz: " + iban.length() + " Zeichen (Minimum: 15)";
+        }
+
+        if (iban.length() > 34) {
+            return "IBAN zu lang: " + iban.length() + " Zeichen (Maximum: 34)";
+        }
+
+        if (!Character.isLetter(iban.charAt(0)) || !Character.isLetter(iban.charAt(1))) {
+            return "IBAN muss mit 2 Buchstaben (Ländercode) beginnen";
+        }
+
+        if (!Character.isDigit(iban.charAt(2)) || !Character.isDigit(iban.charAt(3))) {
+            return "Stelle 3-4 müssen Ziffern sein (Prüfziffern)";
+        }
+
+        return "Ungültiges IBAN-Format";
     }
 
     /** Country code as a string (first 2 characters), e.g. "DE", "AT", "GB". */

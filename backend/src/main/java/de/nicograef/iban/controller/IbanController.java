@@ -3,15 +3,12 @@ package de.nicograef.iban.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import de.nicograef.iban.model.IbanNumber;
 import de.nicograef.iban.repository.IbanRepository;
 import de.nicograef.iban.service.IbanValidationService;
 import de.nicograef.iban.service.IbanValidationService.ValidationResult;
@@ -33,80 +30,68 @@ import jakarta.validation.constraints.NotBlank;
 @RequestMapping("/api/ibans")
 public class IbanController {
 
-    private final IbanValidationService validationService;
-    private final IbanRepository ibanRepository;
+        private final IbanValidationService validationService;
+        private final IbanRepository ibanRepository;
 
-    public IbanController(
-            IbanValidationService validationService,
-            IbanRepository ibanRepository) {
-        this.validationService = validationService;
-        this.ibanRepository = ibanRepository;
-    }
-
-    public record IbanRequest(@NotBlank String iban) {
-    }
-
-    public record IbanResponse(
-            boolean valid,
-            String iban,
-            String bankName,
-            String bankIdentifier,
-            String reason) {
-    }
-
-    public record IbanListEntry(
-            String iban,
-            String bankName,
-            String bankIdentifier,
-            boolean valid,
-            String reason) {
-    }
-
-    /**
-     * POST /api/ibans — Validate (or lookup cached result) and save the IBAN.
-     *
-     * Flow (handled by the service):
-     * 1. Normalize input → IbanNumber value object.
-     * 2. Check database for existing result (cache hit → return immediately).
-     * 3. On cache miss: validate locally → external API fallback → save.
-     *
-     * Both valid and invalid IBANs are persisted. Each IBAN exists exactly once
-     * in the database (natural primary key prevents duplicates).
-     *
-     * If the raw input fails structural validation (can't create IbanNumber),
-     * we use validateRaw() which returns a descriptive error without saving.
-     */
-    @PostMapping
-    public ResponseEntity<IbanResponse> validateAndSaveIban(@Valid @RequestBody IbanRequest request) {
-        ValidationResult result;
-        try {
-            IbanNumber ibanNumber = new IbanNumber(request.iban());
-            result = validationService.validateOrLookup(ibanNumber);
-        } catch (IllegalArgumentException e) {
-            // Input failed IbanNumber structural validation — return error without saving
-            result = validationService.validateRaw(request.iban());
+        public IbanController(
+                        IbanValidationService validationService,
+                        IbanRepository ibanRepository) {
+                this.validationService = validationService;
+                this.ibanRepository = ibanRepository;
         }
 
-        return ResponseEntity.ok(new IbanResponse(
-                result.valid(),
-                result.iban(),
-                result.bankName(),
-                result.bankIdentifier(),
-                result.reason()));
-    }
+        public record IbanRequest(@NotBlank String iban) {
+        }
 
-    /** GET /api/ibans — List all saved IBANs (unique, one per IBAN). */
-    @GetMapping
-    public ResponseEntity<List<IbanListEntry>> getAllIbans() {
-        List<IbanListEntry> entries = ibanRepository.findAll().stream()
-                .map(iban -> new IbanListEntry(
-                        iban.getIban(),
-                        iban.getBankName(),
-                        iban.getBankIdentifier(),
-                        iban.isValid(),
-                        iban.getReason()))
-                .toList();
+        public record IbanResponse(
+                        boolean valid,
+                        String iban,
+                        String bankName,
+                        String reason) {
+        }
 
-        return ResponseEntity.ok(entries);
-    }
+        public record IbanListEntry(
+                        String iban,
+                        String bankName,
+                        boolean valid,
+                        String reason) {
+        }
+
+        /**
+         * POST /api/ibans — Validate (or lookup cached result) and save the IBAN.
+         *
+         * HTTP status semantics:
+         * - 400 Bad Request: structurally malformed input (too short, wrong format).
+         *   IbanFormatException is thrown by IbanNumber → caught by GlobalExceptionHandler.
+         * - 200 OK: structurally valid IBAN — response contains valid=true/false
+         *   (e.g. wrong check digit → valid=false with reason, but still 200).
+         *
+         * Valid and semantically-invalid IBANs (wrong Mod-97, wrong length) are
+         * persisted. Structurally malformed input is rejected with 400 and never
+         * touches the database.
+         */
+        @PostMapping
+        public ResponseEntity<IbanResponse> validateAndSaveIban(@Valid @RequestBody IbanRequest request) {
+                ValidationResult result = validationService.validateOrLookup(request.iban());
+
+                return ResponseEntity.ok(new IbanResponse(
+                                result.valid(),
+                                result.iban(),
+                                result.bankName(),
+                                result.reason()));
+        }
+
+        /** GET /api/ibans — List all saved IBANs (unique, one per IBAN). */
+        @GetMapping
+        public ResponseEntity<List<IbanListEntry>> getAllIbans() {
+                List<IbanListEntry> entries = ibanRepository.findAll().stream()
+                                .map(iban -> new IbanListEntry(
+                                                iban.getIban(),
+                                                iban.getBankName(),
+                                                iban.isValid(),
+                                                iban.getReason()))
+                                .toList();
+
+                return ResponseEntity.ok(entries);
+        }
 }

@@ -25,7 +25,6 @@ CREATE TABLE
     IF NOT EXISTS ibans (
         iban VARCHAR(34) PRIMARY KEY,
         bank_name VARCHAR(255),
-        bank_identifier VARCHAR(20),
         valid BOOLEAN NOT NULL,
         reason VARCHAR(255),
         created_at TIMESTAMPTZ NOT NULL DEFAULT now ()
@@ -38,8 +37,6 @@ COMMENT ON TABLE ibans IS 'Unique IBANs with cached validation results (one row 
 COMMENT ON COLUMN ibans.iban IS 'Normalized IBAN string (uppercase, no separators) — natural primary key';
 
 COMMENT ON COLUMN ibans.bank_name IS 'Resolved bank name (if known)';
-
-COMMENT ON COLUMN ibans.bank_identifier IS 'BLZ or bank code extracted from IBAN';
 
 COMMENT ON COLUMN ibans.valid IS 'Whether the IBAN passed Modulo-97 validation';
 

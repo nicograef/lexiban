@@ -368,7 +368,7 @@
       "Ein Spring-Boot-Plugin"
     ],
     "answer": 1,
-    "explanation": "**Hibernate** implementiert die JPA-Spezifikation und bildet die Brücke zwischen Java-Objekten und relationalen Datenbanken.\n\nDie Aufruf-Kette: `Spring Data JPA` → `Hibernate` → `JDBC` → `PostgreSQL`.\n\n≈ Prisma als ORM über dem `pg`-Treiber. Oder in Go: `GORM` über `database/sql`.\n\nHibernate konvertiert auch automatisch **camelCase → snake_case** für Spaltennamen: `bankName` → `bank_name`, `bankIdentifier` → `bank_identifier`, `updatedAt` → `updated_at`. Das ist eine Spring-Boot-Convention (konfigurierbar)."
+    "explanation": "**Hibernate** implementiert die JPA-Spezifikation und bildet die Brücke zwischen Java-Objekten und relationalen Datenbanken.\n\nDie Aufruf-Kette: `Spring Data JPA` → `Hibernate` → `JDBC` → `PostgreSQL`.\n\n≈ Prisma als ORM über dem `pg`-Treiber. Oder in Go: `GORM` über `database/sql`.\n\nHibernate konvertiert auch automatisch **camelCase → snake_case** für Spaltennamen: `bankName` → `bank_name`. Das ist eine Spring-Boot-Convention (konfigurierbar)."
   },
   {
     "id": 34,
@@ -1442,7 +1442,7 @@
       "Es wird ein Hash des Feldnamens als Spaltenname verwendet"
     ],
     "answer": 1,
-    "explanation": "Spring Boot's Default-Namenstrategie konvertiert automatisch **camelCase → snake_case**:\n\n• `bankName` → `bank_name`\n• `bankIdentifier` → `bank_identifier`\n• `createdAt` → `created_at`\n\nDas ist eine **Spring-Boot-Convention** (konfigurierbar über `spring.jpa.hibernate.naming.physical-strategy`). Ohne Spring Boot müsste man `@Column(name = \"bank_name\")` auf jedes Feld schreiben.\n\n≈ Prisma macht dasselbe: Felder in camelCase im Code, snake_case in der DB. Go's GORM hat eine ähnliche Convention.",
+    "explanation": "Spring Boot's Default-Namenstrategie konvertiert automatisch **camelCase → snake_case**:\n\n• `bankName` → `bank_name`\n\nDas ist eine **Spring-Boot-Convention** (konfigurierbar über `spring.jpa.hibernate.naming.physical-strategy`). Ohne Spring Boot müsste man `@Column(name = \"bank_name\")` auf jedes Feld schreiben.\n\n≈ Prisma macht dasselbe: Felder in camelCase im Code, snake_case in der DB. Go's GORM hat eine ähnliche Convention.",
     "id": 123
   },
   {
@@ -1722,18 +1722,6 @@
     "explanation": "Das `IbanNumber`-Record bietet **fachlich benannte Methoden** statt magischer String-Operationen:\n\n• `countryCode()` → z.B. `\"DE\"` (statt `iban.substring(0, 2)`)\n• `checkDigits()` → z.B. `\"89\"` (statt `iban.substring(2, 4)`)\n• `bban()` → z.B. `\"370400440532013000\"` (statt `iban.substring(4)`)\n• `bankIdentifier()` → z.B. `Optional.of(\"37040044\")` (nur für Länder mit bekannter BLZ-Position)\n• `formatted()` → z.B. `\"DE89 3704 0044 0532 0130 00\"` (4er-Gruppen nach DIN 5008)\n\nDas beseitigt **Primitive Obsession**: Keine magischen Zahlen (`substring(4, 12)`), stattdessen sprechende Methodennamen."
   },
   {
-    "id": 147,
-    "question": "Was ist der Vorteil des DELETE /api/ibans/{iban} Endpoints für die Cache-Strategie?",
-    "options": [
-      "Er löscht alle IBANs aus der Datenbank",
-      "Er ermöglicht manuelle Cache-Invalidierung: Ein gespeichertes Ergebnis kann gelöscht werden, sodass die nächste Anfrage eine frische Validierung durchführt",
-      "Er wird für die UI-Sortierung benötigt",
-      "Er ist nur für Tests relevant"
-    ],
-    "answer": 1,
-    "explanation": "Da die Tabelle als **Lookup-Cache** fungiert (einmal validiert → gespeichert), braucht es einen Weg zur **manuellen Invalidierung**. Der DELETE-Endpoint löscht einen einzelnen Cache-Eintrag.\n\n**Use Case:** Eine Bank fusioniert, der `bankName` ändert sich → DELETE + erneutes POST holt frische Daten von der externen API.\n\nDas Projekt verzichtet bewusst auf **automatisches TTL** (Time-to-Live) — IBANs sind statisch, Bankdaten ändern sich selten. Das `updated_at`-Feld ist vorbereitet, wird aber nicht aktiv für Expiry genutzt (YAGNI).\n\n≈ In Redis: `DEL iban:DE89...` — Cache-Eintrag manuell löschen."
-  },
-  {
     "id": 148,
     "question": "Wie orchestriert der IbanValidationService den vollständigen Validierungs-Use-Case?",
     "options": [
@@ -1756,30 +1744,6 @@
     ],
     "answer": 1,
     "explanation": "In PostgreSQL (und allen gängigen RDBMS) erzeugt ein `PRIMARY KEY`-Constraint **automatisch** einen eindeutigen B-Tree-Index auf der PK-Spalte.\n\n**Vorher:** Die IBAN war eine normale Spalte mit separatem Index (`CREATE INDEX idx_ibans_iban ON ibans(iban)`) — nötig für effiziente Lookups.\n\n**Nachher:** Die IBAN **ist** der PK → der Index existiert automatisch. Ein zweiter Index auf derselben Spalte wäre **redundant** und würde nur Speicherplatz verschwenden + INSERTs verlangsamen.\n\n≈ In Prisma: `@@index([iban])` wird zu `@id` — kein separater Index nötig."
-  },
-  {
-    "id": 150,
-    "question": "Welche Felder hat die ibans-Tabelle nach dem Refactoring?",
-    "options": [
-      "id, iban, bank_name, bank_identifier, valid, validation_method, created_at",
-      "iban (PK), bank_name, bank_identifier, valid, reason, created_at",
-      "iban (PK), bank_name, valid, created_at",
-      "id, iban, valid, reason"
-    ],
-    "answer": 1,
-    "explanation": "Die Tabelle hat nach dem Refactoring **6 Spalten**:\n\n• `iban VARCHAR(34) PRIMARY KEY` — natürlicher PK, nicht mehr auto-generiert\n• `bank_name VARCHAR(255)` — nullable (nicht alle Banken sind bekannt)\n• `bank_identifier VARCHAR(34)` — nullable (BLZ / Sort Code / BC-Nummer)\n• `valid BOOLEAN NOT NULL` — Validierungsergebnis\n• `reason VARCHAR(255)` — Fehlergrund bei ungültigen IBANs (nullable)\n• `created_at TIMESTAMPTZ NOT NULL DEFAULT now()` — Erstellungszeitpunkt\n\n`updated_at` wurde entfernt, da nie ein UPDATE stattfindet und das Feld nirgendwo gelesen wurde.\n\n**Entfallen:** `id` (Surrogate Key) und `validation_method` (Implementierungsdetail)."
-  },
-  {
-    "id": 151,
-    "question": "Warum wurde `updated_at` aus der ibans-Tabelle entfernt?",
-    "options": [
-      "Weil PostgreSQL keine TIMESTAMPTZ-Spalten unterstützt",
-      "Weil es nie ein UPDATE auf eine bestehende Zeile gibt und das Feld nirgendwo gelesen wird",
-      "Weil Hibernate das Feld nicht mappen kann",
-      "Weil created_at und updated_at in JPA automatisch synchronisiert werden"
-    ],
-    "answer": 1,
-    "explanation": "Der Service prüft per `findById()`, ob eine IBAN bereits existiert, und gibt in dem Fall sofort das gecachte Ergebnis zurück. `save()` wird **nur** mit `new Iban(...)` aufgerufen — es gibt **keinen** Code-Pfad, der eine existierende Entity ändert. Deshalb wäre `updated_at` immer identisch mit `created_at` — toter Code ohne Nutzen.\n\nDer SQL-Kommentar ‚for cache freshness' beschrieb ein Feature (TTL-basierte Re-Validierung), das nie implementiert wurde. YAGNI — You Aren't Gonna Need It."
   },
   {
     "id": 152,

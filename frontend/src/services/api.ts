@@ -12,14 +12,12 @@ export interface IbanValidationResponse {
   valid: boolean
   iban: string
   bankName: string | null
-  bankIdentifier: string | null
   reason: string | null
 }
 
 export interface IbanListEntry {
   iban: string
   bankName: string | null
-  bankIdentifier: string | null
   valid: boolean
   reason: string | null
 }
@@ -28,7 +26,12 @@ export interface IbanListEntry {
  * POST /api/ibans — Validate and save IBAN.
  * Calls IbanController.validateAndSaveIban() on the backend.
  * The IBAN is cleaned (non-alphanumeric chars removed) before sending.
- * Every IBAN is saved regardless of validity.
+ *
+ * HTTP status semantics:
+ * - 200: structurally valid IBAN → response has valid=true/false.
+ * - 400: structurally malformed input → response has the same shape
+ *         (valid=false, iban, reason) so the UI can display it uniformly.
+ * - Other errors: network failure etc. → thrown as Error.
  */
 export async function validateIban(
   rawIban: string,
@@ -38,10 +41,14 @@ export async function validateIban(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ iban: cleanIban(rawIban) }),
   })
-  if (!response.ok) {
-    throw new Error(`Validation failed: ${response.status.toString()}`)
+
+  // Both 200 (semantic result) and 400 (structural format error) return
+  // the same JSON shape { valid, iban, reason } — parse and return both.
+  if (response.ok || response.status === 400) {
+    return (await response.json()) as IbanValidationResponse
   }
-  return (await response.json()) as IbanValidationResponse
+
+  throw new Error(`Validation failed: ${response.status.toString()}`)
 }
 
 /**
