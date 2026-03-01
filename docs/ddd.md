@@ -11,8 +11,10 @@
 2. [Warum ist das so? — Historische Gründe](#2-warum-ist-das-so--historische-gründe)
 3. [Was genau ist das Problem? — Anemic Domain Model](#3-was-genau-ist-das-problem--anemic-domain-model)
 4. [Der alternative Ansatz: Rich Domain Model](#4-der-alternative-ansatz-rich-domain-model)
+   - 4.9 [Exkurs: Auswirkungen des Entity-Umbaus auf die DDD-Bewertung](#49-exkurs-auswirkungen-des-entity-umbaus-auf-die-ddd-bewertung)
 5. [Vollständige DDD-/Hexagonal-Architektur (Referenz)](#5-vollständige-ddd-hexagonal-architektur-referenz)
 6. [Pragmatische Bewertung: Was davon wirklich umsetzen?](#6-pragmatische-bewertung-was-davon-wirklich-umsetzen)
+7. [Zusammenfassung](#7-zusammenfassung)
 
 ---
 
@@ -95,8 +97,8 @@ public class IbanValidationService {
 ### Dazu kommt: Controller enthält Geschäftslogik
 
 ```java
-// controller/IbanController.java — buildResponse() enthält Fach-Entscheidungslogik
-private IbanResponse buildResponse(String rawIban) {
+// controller/IbanController.java — validateIban() enthält Fach-Entscheidungslogik
+private IbanResponse validateIban(String rawIban) {
     ValidationResult result = validationService.validate(rawIban);
     String bankName = result.bankName();
     String validationMethod = result.validationMethod();
@@ -212,6 +214,8 @@ Das ist prozedurale Programmierung mit Java-Syntax.
 | **Value Object**        | Objekt, definiert durch seine Werte, immutable, mit Verhalten         | `Iban.java` ist ein mutable JPA-Entity ohne Verhalten                |
 | **Ubiquitous Language** | Fachbegriffe im Code abbilden                                         | "Ländercode", "BLZ", "BBAN", "Prüfziffer" existieren nicht als Typen |
 | **Primitive Obsession** | Fachliche Konzepte als String/int durchreichen statt als eigene Typen | IBAN ist überall ein `String`                                        |
+
+> **Hinweis**: Mit dem geplanten Entity-Umbau (IBAN als natürlicher Primary Key, siehe [iban-as-entity-refactoring.md](iban-as-entity-refactoring.md)) verschärft sich die Primitive Obsession: ein nicht-normalisierter `String` als PK würde zu Duplikaten führen (`DE89 3704...` vs. `DE89370400...`). Das `IbanNumber` Value Object löst dieses Problem direkt.
 
 ---
 
@@ -402,7 +406,7 @@ public class Mod97Validator {
 
 ### 4.6 Orchestrierung in den Service statt in den Controller
 
-**Vorher**: `IbanController.buildResponse()` enthält die Fach-Entscheidung "erst lokal validieren, dann bei Bedarf extern nachschlagen".
+**Vorher**: `IbanController.validateIban()` enthält die Fach-Entscheidung "erst lokal validieren, dann bei Bedarf extern nachschlagen".
 
 **Nachher**: Der Service orchestriert. Der Controller wird zum Einzeiler.
 
@@ -474,13 +478,74 @@ public ResponseEntity<IbanResponse> validateIban(@Valid @RequestBody IbanRequest
 
 ### 4.8 Was sind die Nachteile des Rich Domain Model?
 
-| Nachteil                      | Erklärung                                                                                                                      |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Mehr Klassen**              | `IbanNumber`, `CountryCode`, `BankIdentifier`, `Mod97Validator` — statt einer Service-Klasse                                   |
-| **JPA-Entity bleibt separat** | Das JPA-Entity (`Iban.java`) bleibt ein Datenbehälter — Hibernate braucht das. Man hat also Domain-Objekt + Persistenz-Objekt. |
-| **Mapping nötig**             | Zwischen `IbanNumber` (Domain) und `Iban` (JPA Entity) muss hin- und hergemappt werden                                         |
-| **Lernkurve**                 | Für Teams, die das Transaction-Script-Pattern gewohnt sind, ist der Umstieg ein Paradigmenwechsel                              |
-| **Over-Engineering-Risiko**   | Für kleine CRUD-Apps kann ein Rich Domain Model überdimensioniert sein                                                         |
+| Nachteil                      | Erklärung                                                                                                                                                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Mehr Klassen**              | `IbanNumber`, `CountryCode`, `BankIdentifier`, `Mod97Validator` — statt einer Service-Klasse                                                                                                                                                                             |
+| **JPA-Entity bleibt separat** | Das JPA-Entity (`Iban.java`) bleibt ein Datenbehälter — Hibernate braucht das. Man hat also Domain-Objekt + Persistenz-Objekt. Wird mit dem Entity-Umbau (IBAN als PK) aber **weniger problematisch**, da beide Objekte um denselben natürlichen Schlüssel konvergieren. |
+| **Mapping nötig**             | Zwischen `IbanNumber` (Domain) und `Iban` (JPA Entity) muss hin- und hergemappt werden. Bei natürlichem PK wird das Mapping einfacher, da `IbanNumber.value()` direkt dem PK entspricht.                                                                                 |
+| **Lernkurve**                 | Für Teams, die das Transaction-Script-Pattern gewohnt sind, ist der Umstieg ein Paradigmenwechsel                                                                                                                                                                        |
+| **Over-Engineering-Risiko**   | Für kleine CRUD-Apps kann ein Rich Domain Model überdimensioniert sein                                                                                                                                                                                                   |
+
+### 4.9 Exkurs: Auswirkungen des Entity-Umbaus auf die DDD-Bewertung
+
+> Der geplante Umbau ([iban-as-entity-refactoring.md](iban-as-entity-refactoring.md)) ersetzt den synthetischen `BIGINT id` durch die IBAN selbst als Primary Key. Das hat direkte Auswirkungen auf die DDD-Analyse.
+
+#### Die Entity/Value Object-Grenze verschiebt sich
+
+Im aktuellen Modell gibt es eine klare Trennung:
+
+- **Value Object** `IbanNumber` (geplant): definiert durch seinen Wert, immutable, mit Verhalten
+- **Entity** `Iban.java`: identifiziert durch eine DB-generierte `Long id`, mutation durch Hibernate
+
+Nach dem Umbau hat die gespeicherte IBAN **keine synthetische ID mehr** — sie ist durch ihren Wert (den IBAN-String) identifiziert. Streng nach DDD ist das kein klassisches Entity mehr, sondern eher ein **persistiertes Value Object**. Das `IbanNumber` Value Object und das JPA `Iban` Entity konvergieren um denselben natürlichen Schlüssel:
+
+```java
+// Domain: IbanNumber.value()  →  "DE89370400440532013000"
+// JPA:    Iban.getIban()      →  "DE89370400440532013000"  (= @Id)
+```
+
+Das stärkt paradoxerweise das Argument, die JPA-Entity-Trennung **nicht** zu machen: wenn Domain-Objekt und Persistenz-Objekt fast identisch sind, ist Mapping dazwischen reine Zeremonie.
+
+#### `IbanNumber` wird zur Normalisierungs-Garantie für den PK
+
+Wenn die IBAN der Primary Key ist, muss **jeder Zugriff** — ob INSERT oder SELECT — den exakt gleichen normalisierten String verwenden. Ohne `IbanNumber` müsste die Normalisierung an _jeder_ Stelle passieren, die einen DB-Zugriff macht:
+
+```java
+// OHNE Value Object — Normalisierung manuell an jeder Stelle:
+String normalized = rawIban.replaceAll("[^A-Za-z0-9]", "").toUpperCase();  // hier
+ibanRepository.findById(normalized);                                       // richtig?
+// ... und woanders:
+String iban = request.iban().trim().toUpperCase();                         // anders normalisiert!
+ibanRepository.save(new Iban(iban, ...));                                  // Bug: anderer Key
+
+// MIT Value Object — Normalisierung genau einmal:
+IbanNumber iban = new IbanNumber(rawIban);                                 // immer konsistent
+ibanRepository.findById(iban.value());                                     // garantiert gleicher Key
+```
+
+Das ist kein theoretischer Vorteil — es ist ein **Bug-Prävention-Mechanismus**, der durch den natürlichen PK zwingend wird.
+
+#### Neues JPA-Problem: `Persistable<String>`
+
+Der Entity-Umbau erzeugt eine neue JPA-Eigenheit: Bei String-PKs kann Hibernate nicht automatisch unterscheiden, ob eine Entity „neu" ist (INSERT) oder „existierend" (UPDATE). Bei auto-generierten `Long id` war das trivial (`id == null` → neu). Mit String-PK muss die Entity `Persistable<String>` implementieren — ein weiteres Beispiel für die in [Abschnitt 2.2](#22-jpahibernate-einschränkungen) beschriebenen JPA-Einschränkungen.
+
+#### Controller wird noch fetter — Orchestrierung noch dringlicher
+
+Der Entity-Umbau fügt Lookup-Logik hinzu: vor jeder Validierung prüft der Controller, ob die IBAN schon in der DB existiert. Zusammen mit der bestehenden Validate+Fallback-Logik ergäbe das:
+
+```
+Controller heute:   HTTP + Validate-Orchestrierung
+Controller nachher: HTTP + Lookup + Validate-Orchestrierung + Save
+```
+
+Das verstärkt das Argument aus [Abschnitt 4.6](#46-orchestrierung-in-den-service-statt-in-den-controller): der Service sollte eine Methode wie `validateOrLookup(IbanNumber iban)` anbieten, die den gesamten Use Case kapselt. Der Controller bleibt ein Einzeiler:
+
+```java
+@PostMapping
+public ResponseEntity<IbanResponse> validateAndSave(@Valid @RequestBody IbanRequest req) {
+    return ResponseEntity.ok(ibanService.validateOrLookup(new IbanNumber(req.iban())));
+}
+```
 
 ---
 
@@ -490,15 +555,15 @@ public ResponseEntity<IbanResponse> validateIban(@Valid @RequestBody IbanRequest
 
 ### 5.1 DDD-Kernkonzepte und ihre Bedeutung für dieses Projekt
 
-| Konzept                 | Beschreibung                                                 | Relevanz für dieses Projekt                                      |
-| ----------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **Ubiquitous Language** | Fachbegriffe aus der Domäne im Code verwenden                | IBAN, BLZ, Prüfziffer, BBAN, Ländercode → als Typen und Methoden |
-| **Value Object**        | Definiert durch seine Werte (nicht durch eine ID), immutable | `IbanNumber`, `CountryCode`, `BankIdentifier`                    |
-| **Entity**              | Objekt mit eigener Identität über die Zeit                   | Gespeicherte IBAN-Validierung (hat eine DB-ID)                   |
-| **Domain Service**      | Fachlogik, die keinem einzelnen Objekt gehört                | `Mod97Validator` — operiert auf IbanNumber                       |
-| **Repository**          | Abstraktion für Persistenz aus Sicht der Domäne              | Port-Interface, implementiert durch JPA-Adapter                  |
-| **Port**                | Interface an der Domänengrenze                               | `ExternalIbanLookupPort` — "ich brauche externe Bankinfos"       |
-| **Adapter**             | Implementierung eines Ports für ein Framework/System         | `OpenIbanApiAdapter` — openiban.com REST-Aufruf                  |
+| Konzept                 | Beschreibung                                                 | Relevanz für dieses Projekt                                                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Ubiquitous Language** | Fachbegriffe aus der Domäne im Code verwenden                | IBAN, BLZ, Prüfziffer, BBAN, Ländercode → als Typen und Methoden                                                                                                                                 |
+| **Value Object**        | Definiert durch seine Werte (nicht durch eine ID), immutable | `IbanNumber`, `CountryCode`, `BankIdentifier`                                                                                                                                                    |
+| **Entity**              | Objekt mit eigener Identität über die Zeit                   | Gespeicherte IBAN (wird nach dem geplanten Umbau durch ihren natürlichen Wert statt einer DB-ID identifiziert — siehe [Exkurs](#49-exkurs-auswirkungen-des-entity-umbaus-auf-die-ddd-bewertung)) |
+| **Domain Service**      | Fachlogik, die keinem einzelnen Objekt gehört                | `Mod97Validator` — operiert auf IbanNumber                                                                                                                                                       |
+| **Repository**          | Abstraktion für Persistenz aus Sicht der Domäne              | Port-Interface, implementiert durch JPA-Adapter                                                                                                                                                  |
+| **Port**                | Interface an der Domänengrenze                               | `ExternalIbanLookupPort` — "ich brauche externe Bankinfos"                                                                                                                                       |
+| **Adapter**             | Implementierung eines Ports für ein Framework/System         | `OpenIbanApiAdapter` — openiban.com REST-Aufruf                                                                                                                                                  |
 
 ### 5.2 Clean Architecture — Dependency Rule
 
@@ -611,6 +676,8 @@ public interface BankDirectory {
 
 **TypeScript-Analogie**: Ein `interface IbanLookup { lookup(iban: string): Promise<BankInfo | null> }` das von einem `FetchIbanLookup` oder `MockIbanLookup` implementiert wird.
 
+> **Nach dem Entity-Umbau**: Das `IbanPersistencePort` würde um Lookup-Semantik erweitert (`Optional<ValidationResult> findByIban(IbanNumber iban)`). Das stärkt das Port-Pattern _theoretisch_, weil der Persistence-Port jetzt sowohl schreiben als auch nachschlagen kann. Praktisch bleibt es aber beim YAGNI-Urteil (siehe [Abschnitt 6.3](#63-was-nicht-umgesetzt-wird--und-warum)).
+
 ---
 
 ## 6. Pragmatische Bewertung: Was davon wirklich umsetzen?
@@ -634,13 +701,17 @@ Der vollständige Hexagonal-Plan aus Abschnitt 5 würde aus ~130 Zeilen **~20+ D
 
 Ein `IbanNumber`-Record mit Normalisierung im Konstruktor und Methoden wie `countryCode()`, `bban()`, `bankIdentifier()`, `formatted()`. Nichts verhindert heute, dass ein nicht-normalisierter `String` als IBAN durchläuft. Das Value Object macht invalide Zustände unmöglich.
 
+**Durch den geplanten Entity-Umbau** (IBAN als natürlicher Primary Key) wird `IbanNumber` nicht nur empfehlenswert, sondern **quasi notwendig**: Wenn die IBAN der PK ist, muss die Normalisierung _vor_ dem DB-Zugriff garantiert sein — sonst entstehen Duplikate (`DE89 3704...` vs. `DE89370400...`). Das Value Object ist die einzige Stelle, die diese Konsistenz zuverlässig sicherstellt.
+
 Lebt als `record` im bestehenden `model`-Package — keine Umstrukturierung nötig.
 
 #### ✅ Orchestrierung aus Controller in Service verschieben
 
 **Löst**: Controller enthält fachliche Entscheidungslogik.
 
-`IbanController.buildResponse()` enthält die Fach-Entscheidung "lokal validieren → bei Erfolg ohne Bankname → extern nachschlagen". Diese Logik gehört in `IbanValidationService`. Der Controller wird zum Einzeiler pro Endpunkt.
+`IbanController.validateIban()` enthält die Fach-Entscheidung "lokal validieren → bei Erfolg ohne Bankname → extern nachschlagen". Diese Logik gehört in `IbanValidationService`. Der Controller wird zum Einzeiler pro Endpunkt.
+
+**Durch den geplanten Entity-Umbau verstärkt**: Der Refactoring-Plan sieht eine zusätzliche Lookup-Logik vor (DB-Abfrage vor Validierung). Wenn beides im Controller bleibt — Lookup **und** Validate-Fallback — wird der Controller noch fetter. Stattdessen sollte der Service eine Methode `validateOrLookup(IbanNumber iban)` anbieten, die sowohl den Cache-Check als auch die Validate+Fallback-Logik kapselt. Die beiden Refactorings (DDD-Verbesserungen + Entity-Umbau) sollten daher **als ein Sprint** geplant werden.
 
 #### ✅ `Mod97Validator` als eigene Klasse extrahieren
 
@@ -650,14 +721,14 @@ Der Modulo-97-Algorithmus ist ein klar abgegrenztes Fachkonzept (siehe [iban.md 
 
 ### 6.3 Was NICHT umgesetzt wird — und warum
 
-| Pattern                                 | Entscheidung | Begründung                                                                                                                                                                           |
-| --------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Port-Interfaces** (Output-Ports)      | ❌ NEIN      | **YAGNI** — genau eine Implementierung pro Port. Interface + Implementierung verdoppelt Dateien ohne Nutzen. Falls doch nötig: Extract Interface = 15 Minuten.                       |
-| **Input-Port-Interfaces** (Use Cases)   | ❌ NEIN      | Reine Zeremonie — `ValidateIbanUseCase`-Interface mit genau einer Implementierung. Der Controller kann den Service direkt injizieren.                                                |
-| **JPA Entity vom Domain Model trennen** | ❌ NEIN      | Mapping-Hölle für 7 Felder. Hin- und Rück-Mapper sind fehleranfällig und lösen kein reales Problem.                                                                                  |
-| **10+ Package-Struktur**                | ❌ NEIN      | `domain/model/`, `domain/service/`, `domain/port/in/`, `domain/port/out/`, `application/`, `infrastructure/...` — für 5 fachliche Klassen. Erhöht Cognitive Load, nicht Verständnis. |
-| **"Framework-freie Domain"**            | ❌ NEIN      | `@Service` ist eine Marker-Annotation ohne Verhalten. Spring wird nie gegen ein anderes DI-Framework getauscht.                                                                      |
-| **Frontend DDD-Schichten**              | ❌ NEIN      | Vier Architekturschichten für eine Eingabe, einen API-Call, eine Liste. `formatIban()` und `cleanIban()` als reine Funktionen sind die richtige Abstraktion.                         |
+| Pattern                                 | Entscheidung | Begründung                                                                                                                                                                                                                                          |
+| --------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Port-Interfaces** (Output-Ports)      | ❌ NEIN      | **YAGNI** — genau eine Implementierung pro Port. Interface + Implementierung verdoppelt Dateien ohne Nutzen. Falls doch nötig: Extract Interface = 15 Minuten.                                                                                      |
+| **Input-Port-Interfaces** (Use Cases)   | ❌ NEIN      | Reine Zeremonie — `ValidateIbanUseCase`-Interface mit genau einer Implementierung. Der Controller kann den Service direkt injizieren.                                                                                                               |
+| **JPA Entity vom Domain Model trennen** | ❌ NEIN      | Mapping-Hölle für 7 Felder. Wird durch den Entity-Umbau (natürlicher PK) sogar **noch weniger sinnvoll**: `IbanNumber` (Value Object) und `Iban` (JPA Entity) identifizieren sich beide über denselben Wert — die Kluft wird kleiner, nicht größer. |
+| **10+ Package-Struktur**                | ❌ NEIN      | `domain/model/`, `domain/service/`, `domain/port/in/`, `domain/port/out/`, `application/`, `infrastructure/...` — für 5 fachliche Klassen. Erhöht Cognitive Load, nicht Verständnis.                                                                |
+| **"Framework-freie Domain"**            | ❌ NEIN      | `@Service` ist eine Marker-Annotation ohne Verhalten. Spring wird nie gegen ein anderes DI-Framework getauscht.                                                                                                                                     |
+| **Frontend DDD-Schichten**              | ❌ NEIN      | Vier Architekturschichten für eine Eingabe, einen API-Call, eine Liste. `formatIban()` und `cleanIban()` als reine Funktionen sind die richtige Abstraktion.                                                                                        |
 
 ### 6.4 Entscheidungsprinzipien
 
@@ -695,11 +766,26 @@ Die Architektur aus Abschnitt 5 wird sinnvoll, wenn mindestens zwei dieser Bedin
 
 **Drei gezielte Verbesserungen** statt einer vollständigen Architektur-Transformation:
 
-1. **`IbanNumber` Value Object** — Daten + Verhalten zusammen, invalide Zustände unmöglich
-2. **Orchestrierung in den Service** — Controller wird dünn, fachliche Logik im Service
+1. **`IbanNumber` Value Object** — Daten + Verhalten zusammen, invalide Zustände unmöglich. Wird durch den Entity-Umbau (IBAN als PK) sogar **notwendig** für konsistente Normalisierung.
+2. **Orchestrierung in den Service** — Controller wird dünn, fachliche Logik im Service. Durch die hinzukommende Lookup-Logik des Entity-Umbaus **noch dringlicher**.
 3. **`Mod97Validator` als eigene Klasse** — isoliert testbar, selbstdokumentierend
 
-**Nicht umgesetzt** werden Ports, Input-Port-Interfaces, JPA/Domain-Trennung, Hexagonal-Packages — weil die Domäne eines IBAN-Validators mit ~130 Zeilen Logik sie nicht rechtfertigt.
+**Nicht umgesetzt** werden Ports, Input-Port-Interfaces, JPA/Domain-Trennung, Hexagonal-Packages — weil die Domäne eines IBAN-Validators mit ~130 Zeilen Logik sie nicht rechtfertigt. Der Entity-Umbau ändert an dieser Bewertung nichts; er macht die JPA/Domain-Trennung sogar _noch weniger_ sinnvoll, da Value Object und JPA Entity um denselben natürlichen Schlüssel konvergieren.
+
+### Zusammenspiel mit dem Entity-Umbau
+
+Die DDD-Verbesserungen und der Entity-Umbau ([iban-as-entity-refactoring.md](iban-as-entity-refactoring.md)) sind **komplementär** und sollten als ein Sprint geplant werden:
+
+| DDD-Verbesserung             | Auswirkung durch den Entity-Umbau                                            |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `IbanNumber` Value Object    | **Verstärkt** — wird quasi notwendig für konsistente PKs                     |
+| Orchestrierung in Service    | **Verstärkt** — Lookup-Logik kommt hinzu, Controller würde sonst noch fetter |
+| `Mod97Validator` extrahieren | **Unverändert**                                                              |
+| ❌ Port-Interfaces           | **Unverändert** — weiterhin YAGNI                                            |
+| ❌ JPA/Domain-Trennung       | **Noch weniger sinnvoll** — Value Object und Entity konvergieren             |
+| ❌ Hexagonal-Packages        | **Unverändert**                                                              |
+
+Insbesondere sollte `IbanNumber` **vor oder gleichzeitig** mit dem PK-Umbau implementiert werden, da es die Normalisierungs-Konsistenz sicherstellt, die der natürliche Key zwingend braucht.
 
 ### Das eigentliche Wissen
 

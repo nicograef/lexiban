@@ -7,7 +7,7 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
 - **IBAN-Eingabe** mit automatischer 4er-Gruppen-Formatierung (Leerzeichen/Trennzeichen erlaubt)
 - **Backend-Validierung** via eigener Modulo-97-Prüfziffer-Logik
 - **Externe API** als Fallback (openiban.com) für Bankauflösung
-- **Banknamen-Auflösung** für 3 bekannte Banken (Deutsche Bank, Commerzbank, Berliner Sparkasse)
+- **Banknamen-Auflösung** für bekannte deutsche Banken (via BLZ-Lookup)
 - **IBAN-Speicherung** in PostgreSQL
 - **Gespeicherte IBANs** im Frontend als Liste anzeigen
 
@@ -25,53 +25,14 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
 
 ```
 /
-├── backend/                          # Spring Boot App
-│   ├── pom.xml                       # Maven Build + Dependencies (≈ package.json)
-│   ├── Dockerfile
-│   ├── src/main/java/de/nicograef/iban/
-│   │   ├── IbanApplication.java      # Einstiegspunkt (≈ index.ts)
-│   │   ├── config/
-│   │   │   ├── CorsConfig.java       # CORS-Konfiguration (nur Dev-Profil)
-│   │   │   └── GlobalExceptionHandler.java  # Zentrales Error-Handling (≈ Express error MW)
-│   │   ├── controller/
-│   │   │   └── IbanController.java   # REST-Endpunkte (≈ Express Router)
-│   │   ├── service/
-│   │   │   ├── IbanValidationService.java   # Mod-97-Logik + BLZ-Lookup
-│   │   │   └── ExternalIbanApiService.java  # openiban.com Fallback-Client
-│   │   ├── model/
-│   │   │   └── Iban.java             # JPA Entity (≈ Prisma Model)
-│   │   └── repository/
-│   │       └── IbanRepository.java   # DB-Zugriff (≈ Prisma Client)
-│   └── src/test/java/de/nicograef/iban/
-│       ├── controller/IbanControllerTest.java   # MockMvc-Integrationstests
-│       └── service/IbanValidationServiceTest.java  # Unit-Tests
-├── frontend/                         # React SPA
-│   ├── package.json
-│   ├── Dockerfile
-│   ├── nginx.conf                    # Serves SPA + proxies /api → Backend
-│   ├── vite.config.ts
-│   ├── src/
-│   │   ├── App.tsx                   # Root-Komponente
-│   │   ├── components/
-│   │   │   └── IbanInput.tsx         # IBAN-Eingabe + Liste
-│   │   ├── services/
-│   │   │   └── api.ts               # API-Client (fetch)
-│   │   └── __tests__/
-│   │       └── IbanInput.test.tsx    # Vitest + React Testing Library
-│   └── src/components/ui/            # shadcn/ui Primitives (Badge, Button, Card, Input, Label)
-├── docker-compose.yml                # 3 Services: postgres, backend, frontend
-├── README.md                         # ← Du bist hier
-├── AGENTS.md                         # Kontext für Coding-Agents
-└── docs/                             # Weitere Dokumentation
-    ├── decisions.md                  # Architecture Decision Records
-    ├── future.md                    # Backlog möglicher Erweiterungen
-    ├── iban.md                      # Fachliches IBAN-Wissen
-    ├── lernfragen.md                # Java/Spring-Boot-Lernguide
-    ├── presentation.md              # Präsentations-Skript
-├── quiz/                              # Quiz-App (109 Single-Choice-Fragen)
-    └── questions.json               # Fragenkatalog (IBAN, Java, Spring Boot, DDD)
-    └── h2-migration.md              # Anleitung: PostgreSQL → H2 Umstieg
+├── backend/       # Spring Boot App (Controller → Service → Repository)
+├── frontend/      # React SPA (Vite + TypeScript + shadcn/ui)
+├── docs/          # Weitere Dokumentation (ADRs, Fachliches, Lernguide)
+├── quiz/          # Quiz-App (Single-Choice-Fragen zu IBAN, Java, Spring Boot, DDD)
+└── docker-compose.yml
 ```
+
+Das Backend folgt einer klassischen Schichtenarchitektur: Controller (REST-Endpunkte) → Service (Geschäftslogik) → Repository (DB-Zugriff). Flyway-Migrations verwalten das DB-Schema.
 
 ## Lokale Entwicklung
 
@@ -136,23 +97,20 @@ cd frontend && pnpm lint && pnpm test
 
 ## Implementierungsdetails
 
-### Backend — IBAN-Validierung (eigene Modulo-97-Implementierung)
+### IBAN-Validierung (eigene Modulo-97-Implementierung)
 
 1. Trennzeichen (Leerzeichen, Bindestriche, Punkte) entfernen und uppercase.
 2. Länge prüfen (DE = 22 Zeichen).
 3. Modulo-97-Prüfung: Ersten 4 Zeichen ans Ende verschieben, Buchstaben in Zahlen umwandeln (A=10, B=11, ...), Modulo 97 == 1.
 4. BLZ extrahieren (Stellen 5–12 bei DE-IBANs) und gegen bekannte Banken matchen.
 
-Bekannte Banken: Deutsche Bank (50070010), Commerzbank (50040000), Berliner Sparkasse (10050000).
+### Externe API (Fallback)
 
-### Backend — Externe API (Fallback)
-
-- `GET https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true`
-- Wird aufgerufen wenn lokale Validierung keine Bank findet oder als zusätzliche Verifikation.
+Wird über openiban.com aufgerufen, wenn die lokale Validierung keine Bank findet oder als zusätzliche Verifikation.
 
 ### Frontend — Eingabeformat
 
-- Eingabe: Freitext, automatisches Formatting zu 4er-Gruppen (DE89 3704 0044 0532 0130 00).
+- Eingabe: Freitext, automatisches Formatting zu 4er-Gruppen.
 - Vor API-Aufruf: Alle Nicht-Alphanumerischen Zeichen entfernen.
 
 ## Coding-Konventionen
