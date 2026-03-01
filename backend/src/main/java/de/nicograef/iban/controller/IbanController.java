@@ -38,12 +38,10 @@ public class IbanController {
         this.ibanRepository = ibanRepository;
     }
 
-    // DTOs — see lernfragen.md → "Records" and "DTOs".
-
-    record IbanRequest(@NotBlank String iban) {
+    public record IbanRequest(@NotBlank String iban) {
     }
 
-    record IbanResponse(
+    public record IbanResponse(
             boolean valid,
             String iban,
             String bankName,
@@ -51,7 +49,7 @@ public class IbanController {
             String validationMethod) {
     }
 
-    record IbanListEntry(
+    public record IbanListEntry(
             Long id,
             String iban,
             String bankName,
