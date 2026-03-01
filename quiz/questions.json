@@ -1762,11 +1762,59 @@
     "question": "Welche Felder hat die ibans-Tabelle nach dem Refactoring?",
     "options": [
       "id, iban, bank_name, bank_identifier, valid, validation_method, created_at",
-      "iban (PK), bank_name, bank_identifier, valid, reason, created_at, updated_at",
+      "iban (PK), bank_name, bank_identifier, valid, reason, created_at",
       "iban (PK), bank_name, valid, created_at",
       "id, iban, valid, reason"
     ],
     "answer": 1,
-    "explanation": "Die Tabelle hat nach dem Refactoring **7 Spalten**:\n\n• `iban VARCHAR(34) PRIMARY KEY` — natürlicher PK, nicht mehr auto-generiert\n• `bank_name VARCHAR(255)` — nullable (nicht alle Banken sind bekannt)\n• `bank_identifier VARCHAR(34)` — nullable (BLZ / Sort Code / BC-Nummer)\n• `valid BOOLEAN NOT NULL` — Validierungsergebnis\n• `reason VARCHAR(255)` — **NEU:** Fehlergrund bei ungültigen IBANs (nullable)\n• `created_at TIMESTAMPTZ NOT NULL DEFAULT now()` — Erstellungszeitpunkt\n• `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()` — **NEU:** für Cache-Frische\n\n**Entfallen:** `id` (Surrogate Key) und `validation_method` (Implementierungsdetail)."
+    "explanation": "Die Tabelle hat nach dem Refactoring **6 Spalten**:\n\n• `iban VARCHAR(34) PRIMARY KEY` — natürlicher PK, nicht mehr auto-generiert\n• `bank_name VARCHAR(255)` — nullable (nicht alle Banken sind bekannt)\n• `bank_identifier VARCHAR(34)` — nullable (BLZ / Sort Code / BC-Nummer)\n• `valid BOOLEAN NOT NULL` — Validierungsergebnis\n• `reason VARCHAR(255)` — Fehlergrund bei ungültigen IBANs (nullable)\n• `created_at TIMESTAMPTZ NOT NULL DEFAULT now()` — Erstellungszeitpunkt\n\n`updated_at` wurde entfernt, da nie ein UPDATE stattfindet und das Feld nirgendwo gelesen wurde.\n\n**Entfallen:** `id` (Surrogate Key) und `validation_method` (Implementierungsdetail)."
+  },
+  {
+    "id": 151,
+    "question": "Warum wurde `updated_at` aus der ibans-Tabelle entfernt?",
+    "options": [
+      "Weil PostgreSQL keine TIMESTAMPTZ-Spalten unterstützt",
+      "Weil es nie ein UPDATE auf eine bestehende Zeile gibt und das Feld nirgendwo gelesen wird",
+      "Weil Hibernate das Feld nicht mappen kann",
+      "Weil created_at und updated_at in JPA automatisch synchronisiert werden"
+    ],
+    "answer": 1,
+    "explanation": "Der Service prüft per `findById()`, ob eine IBAN bereits existiert, und gibt in dem Fall sofort das gecachte Ergebnis zurück. `save()` wird **nur** mit `new Iban(...)` aufgerufen — es gibt **keinen** Code-Pfad, der eine existierende Entity ändert. Deshalb wäre `updated_at` immer identisch mit `created_at` — toter Code ohne Nutzen.\n\nDer SQL-Kommentar ‚for cache freshness' beschrieb ein Feature (TTL-basierte Re-Validierung), das nie implementiert wurde. YAGNI — You Aren't Gonna Need It."
+  },
+  {
+    "id": 152,
+    "question": "Was ist das Problem mit natürlichen String-PKs und JPA's `save()`-Methode?",
+    "options": [
+      "String-PKs werden von JPA nicht unterstützt",
+      "JPA kann nicht erkennen, ob eine Entity mit String-PK neu ist, weil der PK nie null ist",
+      "String-PKs verursachen immer Duplikate",
+      "JPA wandelt String-PKs automatisch in Long-IDs um"
+    ],
+    "answer": 1,
+    "explanation": "Spring Data JPA's `save()` entscheidet intern:\n```\nif (entity.isNew()) → persist() (INSERT)\nelse → merge() (SELECT + INSERT/UPDATE)\n```\n\nBei auto-generierten Long-IDs prüft JPA `id == null` → neu. Bei einem String-PK ist der Wert **nie null** (die IBAN ist immer gesetzt), deshalb nimmt JPA fälschlich an, die Entity existiere bereits, und ruft `merge()` statt `persist()` auf.\n\n≈ In TypeScript: Prisma erkennt `@id @default(autoincrement())` automatisch als neu. Bei einem manuell gesetzten `@id` (z.B. `String`) muss man explizit `create()` statt `upsert()` verwenden."
+  },
+  {
+    "id": 153,
+    "question": "Was ist `Persistable<String>` in Spring Data JPA?",
+    "options": [
+      "Ein Interface, mit dem die Entity selbst bestimmt, ob sie neu ist (isNew())",
+      "Eine Annotation für automatische Persistierung",
+      "Ein Repository-Pattern für String-basierte Primärschlüssel",
+      "Eine abstrakte Klasse für Audit-Felder wie createdAt"
+    ],
+    "answer": 0,
+    "explanation": "`Persistable<T>` ist ein Spring-Data-Interface mit zwei Methoden:\n• `getId()` — liefert den Primärschlüssel\n• `isNew()` — sagt JPA, ob die Entity neu ist\n\nBei String-PKs kann JPA nicht automatisch erkennen, ob INSERT oder UPDATE nötig ist (weil der PK nie null ist). Mit `Persistable` und einem `@Transient boolean isNew`-Flag steuert die Entity selbst das Verhalten.\n\n≈ In Go: Ein `struct` mit einem `IsNew bool`-Feld, das du vor dem DB-Insert auf `true` setzt, damit dein ORM weiß, ob es `INSERT` oder `UPDATE` machen soll."
+  },
+  {
+    "id": 154,
+    "question": "Warum implementiert die Iban-Entity in diesem Projekt NICHT Persistable<String>, obwohl sie einen String-PK hat?",
+    "options": [
+      "Weil String-PKs in PostgreSQL nicht unterstützt werden",
+      "Weil Einfachheit und Lesbarkeit der marginalen Performance-Optimierung vorgezogen wurde",
+      "Weil Persistable nur mit Long-IDs funktioniert",
+      "Weil Spring Boot 3 kein Persistable mehr unterstützt"
+    ],
+    "answer": 1,
+    "explanation": "Ohne `Persistable` ruft `save()` intern `merge()` auf, was erst ein SELECT macht und dann ein INSERT (weil die Entity nicht existiert). **Das funktioniert korrekt**, kostet aber einen zusätzlichen SELECT pro neuem INSERT.\n\nDa der Service ohnehin per `findById()` prüft, ob die IBAN schon existiert, ist das extra SELECT von `merge()` nur ein minimaler Overhead — kein Bug, nur ~1 redundante Query pro neuer IBAN.\n\nDie Entscheidung: **Einfachheit > Performance**. Die Entity ist ohne `Persistable` + `@Transient isNew`-Flag deutlich kürzer und leichter verständlich."
   }
 ]

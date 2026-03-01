@@ -311,9 +311,9 @@ Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express E
 
 ### Entity (Iban.java)
 
-7 Felder: `iban` (natürlicher Primary Key), `bankName`, `bankIdentifier`, `valid`, `reason`, `createdAt`, `updatedAt`.
+6 Felder: `iban` (natürlicher Primary Key), `bankName`, `bankIdentifier`, `valid`, `reason`, `createdAt`.
 
-**IBAN als Primary Key:** Jede IBAN existiert genau einmal in der DB. Wiederholte Anfragen liefern das gespeicherte Ergebnis (Cache-Lookup). Implementiert `Persistable<String>` damit JPA bei String-PKs zwischen INSERT und UPDATE unterscheiden kann.
+**IBAN als Primary Key:** Jede IBAN existiert genau einmal in der DB. Wiederholte Anfragen liefern das gespeicherte Ergebnis (Cache-Lookup). Kein `Persistable<String>` nötig — der Service prüft per `findById()` vor dem Speichern; Einfachheit vor Performance.
 
 **Warum kein Record?** JPA/Hibernate braucht Mutabilität + leeren Konstruktor (Reflection), Records sind immutable. DTOs sind Records, Entities sind Klassen.
 
@@ -385,20 +385,20 @@ graph LR
 
 ## 13. Was ich gelernt habe
 
-| Spring Boot / Java                       | Mein Vergleich (TS/Node/Go)                 |
-| ---------------------------------------- | ------------------------------------------- |
-| `@RestController` + `@RequestMapping`    | Express Router                              |
-| Constructor Injection (IoC)              | Manuelles Wiring in Go / Angulars DI        |
-| `@Service`, `@Repository` — Schichten    | Domain-Layer-Pattern, das ich aus DDD kenne |
-| `JpaRepository` (0 Zeilen eigener Code)  | Prisma Client                               |
-| Flyway Migrations                        | Prisma Migrate / golang-migrate             |
-| `@Valid` + `@NotBlank`                   | zod-Validation                              |
-| `@RestControllerAdvice`                  | Express Error-Handling Middleware           |
-| `BigInteger` für Mod 97                  | JavaScript `BigInt`                         |
-| Maven `pom.xml` + Starter Dependencies   | `package.json` + npm-Scripts                |
-| `@WebMvcTest` + `MockMvc`                | Vitest + Supertest                          |
-| Java Records als Value Objects (DDD)     | TypeScript branded types / Go value structs |
-| `Persistable<String>` für natürliche PKs | Custom isNew()-Logik in ORMs                |
+| Spring Boot / Java                          | Mein Vergleich (TS/Node/Go)                 |
+| ------------------------------------------- | ------------------------------------------- |
+| `@RestController` + `@RequestMapping`       | Express Router                              |
+| Constructor Injection (IoC)                 | Manuelles Wiring in Go / Angulars DI        |
+| `@Service`, `@Repository` — Schichten       | Domain-Layer-Pattern, das ich aus DDD kenne |
+| `JpaRepository` (0 Zeilen eigener Code)     | Prisma Client                               |
+| Flyway Migrations                           | Prisma Migrate / golang-migrate             |
+| `@Valid` + `@NotBlank`                      | zod-Validation                              |
+| `@RestControllerAdvice`                     | Express Error-Handling Middleware           |
+| `BigInteger` für Mod 97                     | JavaScript `BigInt`                         |
+| Maven `pom.xml` + Starter Dependencies      | `package.json` + npm-Scripts                |
+| `@WebMvcTest` + `MockMvc`                   | Vitest + Supertest                          |
+| Java Records als Value Objects (DDD)        | TypeScript branded types / Go value structs |
+| Natürliche PKs (String-PK ohne Persistable) | Custom IDs in ORMs (z.B. Prisma `@id`)      |
 
 **Mein Key Takeaway:** Spring Boot ist überraschend produktiv, sobald man die Annotation-Magie versteht. Die Convention-over-Configuration-Philosophie erinnert mich an Angular (DI, Decoratoren, strikte Struktur). Die Projektstruktur Controller → Service → Repository ist letztlich das gleiche Layered-Architecture-Pattern, das ich aus Node.js/Go-Projekten kenne.
 

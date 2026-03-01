@@ -50,17 +50,6 @@ public record IbanNumber(String value) {
         }
     }
 
-    /**
-     * Factory method that creates an IbanNumber without structural validation.
-     * Used when loading already-normalized IBANs from the database.
-     * The DB guarantees the value is already normalized (it was validated on first
-     * save).
-     */
-    public static IbanNumber ofNormalized(String normalized) {
-        // Skip re-validation for trusted sources (database)
-        return new IbanNumber(normalized);
-    }
-
     /** Country code as a string (first 2 characters), e.g. "DE", "AT", "GB". */
     public String countryCode() {
         return value.substring(0, 2);

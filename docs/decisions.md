@@ -264,7 +264,7 @@ Spring Boot **4.0.3** was not chosen because:
 - Service orchestriert den gesamten Use Case (`validateOrLookup()`): Lookup → Validate → External Fallback → Save.
 - Controller ist dünn: nur HTTP ↔ Service Mapping + neuer `DELETE /api/ibans/{iban}` Endpoint.
 - `validationMethod` entfällt komplett; `reason`-Feld für Fehlergründe hinzugefügt.
-- Entity implementiert `Persistable<String>` für korrekte JPA isNew()-Erkennung.
+- Entity ist ein einfaches JPA-Entity ohne `Persistable<String>` — Einfachheit vor Performance (siehe Kommentar in Iban.java).
 
 **Reasoning**:
 
@@ -278,10 +278,10 @@ Spring Boot **4.0.3** was not chosen because:
 **Trade-offs**:
 
 - Mehr Klassen (IbanNumber, Mod97Validator) — aber jede hat eine klare Verantwortung.
-- `Persistable<String>` ist eine JPA-Eigenheit, die bei Auto-Generated IDs nicht nötig war.
+- Kein `Persistable<String>`: Wäre performanter (vermeidet ein extra SELECT bei `merge()`), aber der Service prüft bereits per `findById()` vor dem Speichern. Einfachheit und Lesbarkeit wurden der marginalen Performance-Optimierung vorgezogen.
 - Bereits gecachte IBANs werden nicht revalidiert — für deterministische Ergebnisse ist das korrekt.
 
-**In production**: Natürliche Keys sind Standard, wenn die fachliche Domäne einen eindeutigen Identifier liefert. DDD Value Objects und dedizierte Domain Services sind Best Practice für komplexere Geschäftslogik. Die `Persistable`-Lösung ist das empfohlene Spring-Data-Pattern für nicht-generierte PKs.
+**In production**: Natürliche Keys sind Standard, wenn die fachliche Domäne einen eindeutigen Identifier liefert. DDD Value Objects und dedizierte Domain Services sind Best Practice für komplexere Geschäftslogik. `Persistable<String>` wäre das empfohlene Spring-Data-Pattern für maximale Performance bei nicht-generierten PKs.
 
 ---
 

@@ -28,8 +28,7 @@ CREATE TABLE
         bank_identifier VARCHAR(20),
         valid BOOLEAN NOT NULL,
         reason VARCHAR(255),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now (),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT now ()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now ()
     );
 
 -- No separate index needed — the PRIMARY KEY creates a B-tree index on `iban`.
@@ -47,5 +46,3 @@ COMMENT ON COLUMN ibans.valid IS 'Whether the IBAN passed Modulo-97 validation';
 COMMENT ON COLUMN ibans.reason IS 'Human-readable reason when IBAN is invalid (null when valid)';
 
 COMMENT ON COLUMN ibans.created_at IS 'Timestamp when the IBAN was first validated';
-
-COMMENT ON COLUMN ibans.updated_at IS 'Timestamp of the last validation (for cache freshness)';

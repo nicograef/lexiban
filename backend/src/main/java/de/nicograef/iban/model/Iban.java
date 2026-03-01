@@ -2,13 +2,10 @@ package de.nicograef.iban.model;
 
 import java.time.Instant;
 
-import org.springframework.data.domain.Persistable;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 
 /**
  * JPA Entity — maps to the "ibans" table.
@@ -17,19 +14,21 @@ import jakarta.persistence.Transient;
  * Each IBAN exists exactly once in the database. Repeated validation requests
  * for the same IBAN return the cached result (lookup by PK).
  *
- * Implements Persistable<String> because JPA cannot auto-detect whether a
- * String-PK entity is "new" (INSERT) or "existing" (UPDATE). With
- * auto-generated
- * Long IDs, JPA checks id == null → new. With String PKs, we must tell JPA
- * explicitly via isNew().
- * TS analogy: like implementing a custom "isNewRecord" flag for an ORM.
+ * Note on Persistable<String>: With a String PK, JPA cannot auto-detect
+ * whether an entity is "new" (INSERT) vs "existing" (UPDATE). Implementing
+ * Persistable<String> with a transient isNew flag would let save() call
+ * persist() directly (one INSERT) instead of merge() (SELECT + INSERT).
+ * This would be slightly more performant, but we intentionally chose
+ * simplicity and readability over that optimization. The service layer
+ * already checks findById() before saving, so the extra SELECT from
+ * merge() only hits an empty result — functionally identical.
  *
  * Must be a mutable class (not a Record) because Hibernate uses reflection
  * + no-arg constructor for instantiation.
  */
 @Entity
 @Table(name = "ibans")
-public class Iban implements Persistable<String> {
+public class Iban {
 
     @Id
     @Column(nullable = false, length = 34)
@@ -50,20 +49,7 @@ public class Iban implements Persistable<String> {
     @Column(nullable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
-    private Instant updatedAt;
-
-    /**
-     * Transient flag to track whether this entity is new (not yet persisted).
-     * JPA uses this via Persistable.isNew() to decide between persist (INSERT)
-     * and merge (UPDATE). After Hibernate loads an entity from DB, this is false.
-     * After creating via constructor, this is true.
-     */
-    @Transient
-    private boolean isNew = false;
-
     // Required by JPA/Hibernate (reflection-based instantiation).
-    // When Hibernate loads from DB, isNew stays false → merge behavior.
     protected Iban() {
     }
 
@@ -75,21 +61,6 @@ public class Iban implements Persistable<String> {
         this.valid = valid;
         this.reason = reason;
         this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-        this.isNew = true; // New entity → JPA should INSERT, not UPDATE
-    }
-
-    // ── Persistable implementation ──
-
-    @Override
-    public String getId() {
-        return iban;
-    }
-
-    @Override
-    @Transient
-    public boolean isNew() {
-        return isNew;
     }
 
     // ── Getters ──
@@ -116,9 +87,5 @@ public class Iban implements Persistable<String> {
 
     public Instant getCreatedAt() {
         return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 }

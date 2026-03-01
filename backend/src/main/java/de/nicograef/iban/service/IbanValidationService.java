@@ -243,7 +243,7 @@ public class IbanValidationService {
             return "IBAN muss mit 2 Buchstaben (Ländercode) beginnen";
         }
         if (!Character.isDigit(iban.charAt(2)) || !Character.isDigit(iban.charAt(3))) {
-            return "Stelle 3–4 müssen Ziffern sein (Prüfziffern)";
+            return "Stelle 3-4 müssen Ziffern sein (Prüfziffern)";
         }
         return "Ungültiges IBAN-Format";
     }
