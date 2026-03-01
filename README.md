@@ -28,7 +28,7 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
 ├── backend/                          # Spring Boot App
 │   ├── pom.xml                       # Maven Build + Dependencies (≈ package.json)
 │   ├── Dockerfile
-│   ├── src/main/java/com/iban/
+│   ├── src/main/java/de/nicograef/iban/
 │   │   ├── IbanApplication.java      # Einstiegspunkt (≈ index.ts)
 │   │   ├── config/
 │   │   │   ├── CorsConfig.java       # CORS-Konfiguration (nur Dev-Profil)
@@ -42,7 +42,7 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
 │   │   │   └── Iban.java             # JPA Entity (≈ Prisma Model)
 │   │   └── repository/
 │   │       └── IbanRepository.java   # DB-Zugriff (≈ Prisma Client)
-│   └── src/test/java/com/iban/
+│   └── src/test/java/de/nicograef/iban/
 │       ├── controller/IbanControllerTest.java   # MockMvc-Integrationstests
 │       └── service/IbanValidationServiceTest.java  # Unit-Tests
 ├── frontend/                         # React SPA

@@ -60,7 +60,7 @@ Maven ist Javas Build-Tool + Dependency-Manager. Die `pom.xml` (Project Object M
 </parent>
 
 <!-- Projekt-Koordinaten — eindeutige Identifikation. ≈ npm @scope/name -->
-<groupId>com.iban</groupId>           <!-- ≈ npm-Scope: @iban -->
+<groupId>de.nicograef</groupId>           <!-- ≈ npm-Scope: @nicograef -->
 <artifactId>iban-validator</artifactId> <!-- ≈ Paketname: validator -->
 <version>0.0.1-SNAPSHOT</version>      <!-- SNAPSHOT = Entwicklungsversion -->
 
@@ -194,7 +194,7 @@ Reflection erlaubt es, zur Laufzeit Klassen zu inspizieren und zu manipulieren �
 
 ```java
 // Pseudo-Code — was Hibernate intern bei Entity-Loading tut:
-Class<?> clazz = Class.forName("com.iban.model.Iban");  // Klasse über Namen laden
+Class<?> clazz = Class.forName("de.nicograef.iban.model.Iban");  // Klasse über Namen laden
 Object entity = clazz.getDeclaredConstructor().newInstance();  // new Iban() per Reflection
 Field field = clazz.getDeclaredField("iban");
 field.setAccessible(true);  // Umgeht "private"!
@@ -863,7 +863,7 @@ mvn verify -B      # CI-Modus (batch, keine interaktive Eingabe)
 | Klassen: PascalCase               | `IbanController`, `ValidationResult`                 | Standard seit Java 1.0                          |
 | Methoden/Variablen: camelCase     | `validateIban()`, `bankName`                         | Einheitlichkeit                                 |
 | Konstanten: UPPER_SNAKE_CASE      | `KNOWN_BANKS`, `COUNTRY_LENGTHS`                     | Sofort als Konstante erkennbar                  |
-| Packages: lowercase               | `com.iban.service`                                   | Convention, alles lowercase                     |
+| Packages: lowercase               | `de.nicograef.iban.service`                          | Convention, alles lowercase                     |
 | Eine öffentliche Klasse pro Datei | `IbanController.java` enthält `class IbanController` | Dateiname = Klassenname                         |
 | Getter: `getX()` / `isX()`        | `getIban()`, `isValid()`                             | JavaBeans-Standard, Frameworks bauen darauf auf |
 

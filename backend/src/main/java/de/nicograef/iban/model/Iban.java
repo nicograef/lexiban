@@ -1,4 +1,4 @@
-package com.iban.model;
+package de.nicograef.iban.model;
 
 import java.time.Instant;
 

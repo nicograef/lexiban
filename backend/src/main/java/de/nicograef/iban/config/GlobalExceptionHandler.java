@@ -1,4 +1,4 @@
-package com.iban.config;
+package de.nicograef.iban.config;
 
 import java.util.Map;
 

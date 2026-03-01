@@ -1,22 +1,22 @@
-package com.iban.controller;
+package de.nicograef.iban.controller;
 
-import com.iban.repository.IbanRepository;
-import com.iban.service.ExternalIbanApiService;
-import com.iban.service.IbanValidationService;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import de.nicograef.iban.repository.IbanRepository;
+import de.nicograef.iban.service.ExternalIbanApiService;
+import de.nicograef.iban.service.IbanValidationService;
 
 /**
  * Integration-style tests for IbanController using MockMvc.

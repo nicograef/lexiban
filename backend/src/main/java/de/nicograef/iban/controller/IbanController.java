@@ -1,4 +1,4 @@
-package com.iban.controller;
+package de.nicograef.iban.controller;
 
 import java.util.List;
 
@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.iban.model.Iban;
-import com.iban.repository.IbanRepository;
-import com.iban.service.ExternalIbanApiService;
-import com.iban.service.IbanValidationService;
-import com.iban.service.IbanValidationService.ValidationResult;
+import de.nicograef.iban.model.Iban;
+import de.nicograef.iban.repository.IbanRepository;
+import de.nicograef.iban.service.ExternalIbanApiService;
+import de.nicograef.iban.service.IbanValidationService;
+import de.nicograef.iban.service.IbanValidationService.ValidationResult;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

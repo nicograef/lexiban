@@ -10,7 +10,7 @@
 Das Projekt folgt dem typischen Spring-Boot-Pattern **Controller → Service → Repository** mit technischer Paketierung:
 
 ```
-com.iban/
+de.nicograef.iban/
 ├── controller/    ← REST-Endpunkte + DTOs + Orchestrierungslogik
 ├── service/       ← Validierung + externe API (alles in einem Layer)
 ├── model/         ← JPA Entity (= Persistenz-Objekt, nicht Domäne)
@@ -96,7 +96,7 @@ com.iban/
 ### 3.1 Backend — Paketstruktur
 
 ```
-com.iban/
+de.nicograef.iban/
 │
 ├── domain/                                  ← Innerster Ring: framework-frei, rein Java
 │   ├── model/

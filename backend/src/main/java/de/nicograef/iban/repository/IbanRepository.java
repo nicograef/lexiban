@@ -1,8 +1,8 @@
-package com.iban.repository;
+package de.nicograef.iban.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.iban.model.Iban;
+import de.nicograef.iban.model.Iban;
 
 /**
  * Spring Data JPA repository — auto-generates CRUD operations for the Iban entity.

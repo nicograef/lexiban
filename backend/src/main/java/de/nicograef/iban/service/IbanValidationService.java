@@ -1,4 +1,4 @@
-package com.iban.service;
+package de.nicograef.iban.service;
 
 import java.math.BigInteger;
 import java.util.Map;

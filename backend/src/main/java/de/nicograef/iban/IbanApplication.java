@@ -1,4 +1,4 @@
-package com.iban;
+package de.nicograef.iban;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

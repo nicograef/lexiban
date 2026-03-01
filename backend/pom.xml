@@ -24,9 +24,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Inherit version management from Spring Boot's parent POM.
-         This sets default versions for all spring-boot-starter-* dependencies
-         so we don't have to specify version numbers manually.
-         ≈ Using a shared pnpm workspace config or Go's toolchain directive. -->
+    This sets default versions for all spring-boot-starter-* dependencies
+    so we don't have to specify version numbers manually.
+    ≈ Using a shared pnpm workspace config or Go's toolchain directive. -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -35,8 +35,8 @@
     </parent>
 
     <!-- Project coordinates — uniquely identify this artifact.
-         groupId + artifactId ≈ npm package scope + name (@iban/validator). -->
-    <groupId>com.iban</groupId>
+    groupId + artifactId ≈ npm package scope + name (@iban/validator). -->
+    <groupId>de.nicograef</groupId>
     <artifactId>iban-validator</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>iban-validator</name>
@@ -50,20 +50,20 @@
 
     <dependencies>
         <!-- ── Web (REST API) ──
-             Includes: embedded Tomcat, Spring MVC, Jackson (JSON serialization).
-             With this single dependency you get a working HTTP server.
-             ≈ express + body-parser in Node.js. -->
+        Includes: embedded Tomcat, Spring MVC, Jackson (JSON serialization).
+        With this single dependency you get a working HTTP server.
+        ≈ express + body-parser in Node.js. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- ── JPA + PostgreSQL (Database ORM) ──
-             spring-boot-starter-data-jpa includes Hibernate (the ORM engine)
-             and Spring Data JPA (repository abstractions).
-             ≈ prisma + @prisma/client in TS, or gorm.io/gorm in Go.
-             The postgresql driver is the JDBC driver for connecting to Postgres.
-             scope=runtime means it's only needed at runtime, not compile time. -->
+        spring-boot-starter-data-jpa includes Hibernate (the ORM engine)
+        and Spring Data JPA (repository abstractions).
+        ≈ prisma + @prisma/client in TS, or gorm.io/gorm in Go.
+        The postgresql driver is the JDBC driver for connecting to Postgres.
+        scope=runtime means it's only needed at runtime, not compile time. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -75,9 +75,9 @@
         </dependency>
 
         <!-- ── Flyway (Database Migrations) ──
-             Runs versioned SQL scripts on startup to keep the DB schema in sync.
-             ≈ prisma migrate deploy (TS) or golang-migrate (Go).
-             Migration files: src/main/resources/db/migration/V1__*.sql -->
+        Runs versioned SQL scripts on startup to keep the DB schema in sync.
+        ≈ prisma migrate deploy (TS) or golang-migrate (Go).
+        Migration files: src/main/resources/db/migration/V1__*.sql -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -88,17 +88,17 @@
         </dependency>
 
         <!-- ── Validation ──
-             Enables @Valid, @NotBlank, @Size etc. annotations on DTOs.
-             ≈ zod schema validation in TypeScript. -->
+        Enables @Valid, @NotBlank, @Size etc. annotations on DTOs.
+        ≈ zod schema validation in TypeScript. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
         <!-- ── Test ──
-             Includes JUnit 5, Mockito, MockMvc, AssertJ, Spring Test utilities.
-             ≈ vitest + @testing-library + supertest in the TS world.
-             scope=test means these are only available in src/test/. -->
+        Includes JUnit 5, Mockito, MockMvc, AssertJ, Spring Test utilities.
+        ≈ vitest + @testing-library + supertest in the TS world.
+        scope=test means these are only available in src/test/. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -109,8 +109,8 @@
     <build>
         <plugins>
             <!-- spring-boot-maven-plugin packages the app as an executable .jar
-                 with embedded Tomcat. ≈ vite build producing a self-contained bundle.
-                 Also enables: mvn spring-boot:run for development. -->
+            with embedded Tomcat. ≈ vite build producing a self-contained bundle.
+            Also enables: mvn spring-boot:run for development. -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
