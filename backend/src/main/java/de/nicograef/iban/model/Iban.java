@@ -12,7 +12,6 @@ import jakarta.persistence.Table;
 /**
  * JPA Entity — maps to the "ibans" table.
  * Must be a mutable class (not a Record) because Hibernate uses reflection.
- * See lernfragen.md → "JPA und Hibernate" and "Records vs. Klassen".
  */
 @Entity
 @Table(name = "ibans")

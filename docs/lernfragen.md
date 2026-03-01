@@ -45,6 +45,19 @@ java -jar target/iban-validator-0.0.1-SNAPSHOT.jar
 
 Das ist vergleichbar mit Go: `go build` erzeugt ein Binary, `./binary` startet es. Der Unterschied: Go erzeugt echten Maschinencode, Java erzeugt Bytecode, der von der JVM interpretiert/JIT-kompiliert wird.
 
+### Compile-Zeit vs. Laufzeit: Wann passiert was?
+
+Eine häufige Frage: Wenn `IbanApplication.java` nur **eine Zeile** hat (`SpringApplication.run(...)`) — wie entstehen daraus drei HTTP-Endpunkte? Die Antwort: Annotations wie `@RestController` oder `@GetMapping` werden bei `mvn compile` **nur als Metadaten** in den Bytecode eingebettet. Sie lösen noch nichts aus. Erst zur **Laufzeit** — wenn `SpringApplication.run()` aufgerufen wird — liest Spring diese Metadaten per **Reflection** (siehe unten) und baut daraus die gesamte Applikation zusammen.
+
+| Phase                            | Was passiert                                                                                                                        | Analogie                                                                                           |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Compile-Zeit** (`mvn compile`) | `javac` prüft Syntax + Typen, erzeugt `.class`-Bytecode. Annotations werden als Metadaten eingebettet — **nichts wird ausgeführt**. | `tsc` — TypeScript prüft Typen, erzeugt `.js`. Aber `express.Router()` wird noch nicht aufgerufen. |
+| **Laufzeit** (`java -jar ...`)   | Spring liest Annotations per Reflection, erstellt Beans, injiziert Dependencies, registriert Routes, startet Tomcat.                | `node server.js` — erst jetzt werden `app.use()`, `router.get()` etc. aufgerufen.                  |
+
+**Trade-off:** Weil alles zur Laufzeit passiert, können Fehler (z.B. fehlende Bean, falscher Typ) erst beim **Start** auftreten — nicht schon beim Build. In Go kompiliert der Code nicht, wenn eine Dependency fehlt. In Spring kann der Build erfolgreich sein, aber die App crasht beim Starten.
+
+**Alternative Frameworks** wie **Quarkus** und **Micronaut** lösen dieses Trade-off anders: Sie verarbeiten Annotations zur **Compile-Zeit** statt zur Laufzeit. Vorteil: schnellerer Start, Fehler früher erkannt. Nachteil: weniger Flexibilität (z.B. keine dynamischen Profile/Conditions). Spring Boot setzt bewusst auf Runtime-Flexibilität.
+
 ### Maven — der Build-Manager
 
 Maven ist Javas Build-Tool + Dependency-Manager. Die `pom.xml` (Project Object Model) ist die zentrale Konfigurationsdatei — ≈ `package.json` in Node.js / `go.mod` in Go.
@@ -201,10 +214,37 @@ field.setAccessible(true);  // Umgeht "private"!
 field.set(entity, "DE89370400440532013000");  // Setzt Wert ohne Setter
 ```
 
-**Warum ist das wichtig?** Zwei Schlüssel-Technologien in diesem Projekt nutzen Reflection:
+**Warum ist das wichtig?** Drei Schlüssel-Mechanismen in diesem Projekt nutzen Reflection:
 
 1. **Hibernate/JPA** — lädt Daten aus der DB und setzt die Felder der Entity per Reflection. Deshalb braucht `Iban.java` den leeren `protected Iban() {}` Konstruktor und mutable Felder (keine Records als Entities möglich — dazu mehr in Teil 3).
 2. **Spring DI** — findet Klassen mit `@Service`/`@Controller` per Classpath-Scanning, liest deren Konstruktor-Parameter und injiziert die richtigen Beans.
+3. **Route-Registrierung** — Spring liest `@RequestMapping`, `@GetMapping`, `@PostMapping` per Reflection und registriert die Methoden als HTTP-Handler im Tomcat.
+
+```java
+// Pseudo-Code — was Spring beim Start intern macht, um Routes zu registrieren:
+Class<?> clazz = IbanController.class;
+
+// 1. Hat die Klasse @RestController? → als Bean registrieren
+if (clazz.isAnnotationPresent(RestController.class)) {
+    // 2. Basis-Pfad aus @RequestMapping lesen
+    String basePath = clazz.getAnnotation(RequestMapping.class).value(); // "/api/ibans"
+
+    // 3. Alle Methoden durchgehen, HTTP-Annotations suchen
+    for (Method m : clazz.getMethods()) {
+        if (m.isAnnotationPresent(PostMapping.class)) {
+            String subPath = m.getAnnotation(PostMapping.class).value(); // "/validate"
+            // → POST /api/ibans/validate → ruft m.invoke(controllerInstance, ...) auf
+            tomcat.registerRoute("POST", basePath + subPath, m);
+        }
+        if (m.isAnnotationPresent(GetMapping.class)) {
+            // → GET /api/ibans → ruft getAllIbans() auf
+            tomcat.registerRoute("GET", basePath, m);
+        }
+    }
+}
+```
+
+**Express-Analogie:** Stell dir vor, Express würde automatisch alle Dateien in `src/` scannen und jede Funktion mit einem `// @get /users`-Kommentar als Route registrieren — ohne dass du `router.get("/users", handler)` schreibst. Genau das macht Spring per Reflection.
 
 In TS/JS gibt es kein echtes Reflection, aber `Reflect.metadata` (TypeScript Decorators) kommt dem nahe. Go hat das `reflect`-Package.
 
@@ -417,6 +457,40 @@ Spring Boot ist ein **Framework auf dem Spring Framework**, das die Konfiguratio
     <!-- Bringt mit: Tomcat + Spring MVC + Jackson. ≈ npm install express -->
 </dependency>
 ```
+
+### Was passiert bei `SpringApplication.run()`?
+
+`IbanApplication.java` hat nur **eine Zeile** in der `main()`-Methode — aber diese eine Zeile löst eine ganze Kette von Automatismen aus:
+
+```
+SpringApplication.run(IbanApplication.class, args)
+  │
+  ├── 1. Component Scan
+  │     Spring durchsucht alle Packages ab de.nicograef.iban per Reflection
+  │     nach annotierten Klassen (@RestController, @Service, @Repository, @Configuration)
+  │     ≈ Express scannt automatisch src/ nach Dateien mit export default router
+  │
+  ├── 2. Bean-Erstellung + Dependency Injection
+  │     Gefundene Klassen werden instanziiert, Constructor-Parameter aufgelöst
+  │     ≈ In Go: repo := NewRepo(db); svc := NewService(); ctrl := NewController(svc, repo)
+  │     Spring macht das automatisch per Reflection
+  │
+  ├── 3. Route-Registrierung
+  │     @RequestMapping, @GetMapping, @PostMapping werden gelesen und im Tomcat registriert
+  │     ≈ app.use("/api/ibans", router); router.post("/validate", handler)
+  │
+  ├── 4. Flyway Migrations
+  │     SQL-Dateien aus db/migration/ werden gegen die DB ausgeführt
+  │     ≈ prisma migrate deploy / golang-migrate up
+  │
+  └── 5. Embedded Tomcat starten
+        HTTP-Server lauscht auf Port 8080
+        ≈ app.listen(8080)
+```
+
+All das passiert zur **Laufzeit**, nicht zur Compile-Zeit (siehe Teil 1 → "Compile-Zeit vs. Laufzeit"). Die Annotations (`@RestController`, `@Service` etc.) sind beim Kompilieren nur passive Metadaten. Erst `SpringApplication.run()` liest sie per Reflection und setzt alles zusammen.
+
+**Das Prinzip heißt „Convention over Configuration":** Du sagst Spring _was_ du willst (über Annotations), und Spring kümmert sich um das _wie_. In Express/Go machst du beides selbst — expliziter, aber mehr Boilerplate.
 
 ### Was ist ein Bean?
 

@@ -14,7 +14,6 @@ import de.nicograef.iban.repository.IbanRepository;
 import de.nicograef.iban.service.ExternalIbanApiService;
 import de.nicograef.iban.service.IbanValidationService;
 import de.nicograef.iban.service.IbanValidationService.ValidationResult;
-
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -97,8 +96,6 @@ public class IbanController {
 
         return ResponseEntity.ok(entries);
     }
-
-    // ── Private helpers ──
 
     /**
      * Shared validation logic used by both validate and validateAndSave.
