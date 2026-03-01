@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import de.nicograef.iban.model.ValidationResult;
 import de.nicograef.iban.repository.IbanRepository;
-import de.nicograef.iban.service.IbanValidationService;
-import de.nicograef.iban.service.IbanValidationService.ValidationResult;
+import de.nicograef.iban.service.IbanService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -24,19 +24,19 @@ import jakarta.validation.constraints.NotBlank;
  * - Delegating to the service layer for all business logic
  *
  * The orchestration (lookup → validate → external fallback → save) lives in
- * IbanValidationService.validateOrLookup(). The controller is a one-liner.
+ * IbanService.validateOrLookup(). The controller is a one-liner.
  */
 @RestController
 @RequestMapping("/api/ibans")
 public class IbanController {
 
-        private final IbanValidationService validationService;
+        private final IbanService ibanService;
         private final IbanRepository ibanRepository;
 
         public IbanController(
-                        IbanValidationService validationService,
+                        IbanService ibanService,
                         IbanRepository ibanRepository) {
-                this.validationService = validationService;
+                this.ibanService = ibanService;
                 this.ibanRepository = ibanRepository;
         }
 
@@ -62,9 +62,10 @@ public class IbanController {
          *
          * HTTP status semantics:
          * - 400 Bad Request: structurally malformed input (too short, wrong format).
-         *   IbanFormatException is thrown by IbanNumber → caught by GlobalExceptionHandler.
+         * IbanFormatException is thrown by IbanNumber → caught by
+         * GlobalExceptionHandler.
          * - 200 OK: structurally valid IBAN — response contains valid=true/false
-         *   (e.g. wrong check digit → valid=false with reason, but still 200).
+         * (e.g. wrong check digit → valid=false with reason, but still 200).
          *
          * Valid and semantically-invalid IBANs (wrong Mod-97, wrong length) are
          * persisted. Structurally malformed input is rejected with 400 and never
@@ -72,7 +73,7 @@ public class IbanController {
          */
         @PostMapping
         public ResponseEntity<IbanResponse> validateAndSaveIban(@Valid @RequestBody IbanRequest request) {
-                ValidationResult result = validationService.validateOrLookup(request.iban());
+                ValidationResult result = ibanService.validateOrLookup(request.iban());
 
                 return ResponseEntity.ok(new IbanResponse(
                                 result.valid(),

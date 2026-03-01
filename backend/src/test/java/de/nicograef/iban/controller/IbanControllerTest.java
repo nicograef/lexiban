@@ -17,8 +17,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import de.nicograef.iban.model.Iban;
 import de.nicograef.iban.model.IbanFormatException;
+import de.nicograef.iban.model.ValidationResult;
 import de.nicograef.iban.repository.IbanRepository;
-import de.nicograef.iban.service.IbanValidationService;
+import de.nicograef.iban.service.IbanService;
 
 /**
  * Integration-style tests for IbanController using MockMvc.
@@ -39,10 +40,8 @@ import de.nicograef.iban.service.IbanValidationService;
  *              these mocks instead of real service/repository beans.
  *              ≈ vi.mock('./service') in Vitest.
  *
- *              Note: ExternalIbanApiService is no longer injected into the
- *              controller — it's now inside IbanValidationService. The
- *              controller only depends on IbanValidationService +
- *              IbanRepository.
+ *              The controller only depends on IbanService + IbanRepository.
+ *              All validation logic lives behind the IbanValidator interface.
  */
 @WebMvcTest(IbanController.class)
 class IbanControllerTest {
@@ -51,7 +50,7 @@ class IbanControllerTest {
         private MockMvc mockMvc;
 
         @MockitoBean
-        private IbanValidationService validationService;
+        private IbanService ibanService;
 
         @MockitoBean
         private IbanRepository ibanRepository;
@@ -60,8 +59,8 @@ class IbanControllerTest {
 
         @Test
         void validateValidIban() throws Exception {
-                when(validationService.validateOrLookup(anyString()))
-                                .thenReturn(new IbanValidationService.ValidationResult(
+                when(ibanService.validateOrLookup(anyString()))
+                                .thenReturn(new ValidationResult(
                                                 true, "DE89370400440532013000", "Commerzbank",
                                                 null));
 
@@ -80,7 +79,7 @@ class IbanControllerTest {
         @Test
         void structurallyInvalidIbanReturnsBadRequest() throws Exception {
                 // "INVALID" is structurally not an IBAN → IbanFormatException → 400
-                when(validationService.validateOrLookup("INVALID"))
+                when(ibanService.validateOrLookup("INVALID"))
                                 .thenThrow(new IbanFormatException(
                                                 "IBAN zu kurz: 7 Zeichen (Minimum: 15)", "INVALID"));
 
@@ -99,8 +98,8 @@ class IbanControllerTest {
         void semanticallyInvalidIbanReturnsOkWithValidFalse() throws Exception {
                 // Wrong check digit — structurally valid but Mod-97 fails → 200 with
                 // valid=false
-                when(validationService.validateOrLookup("DE00370400440532013000"))
-                                .thenReturn(new IbanValidationService.ValidationResult(
+                when(ibanService.validateOrLookup("DE00370400440532013000"))
+                                .thenReturn(new ValidationResult(
                                                 false, "DE00370400440532013000", null,
                                                 "Prüfziffern ungültig (Modulo-97-Prüfung fehlgeschlagen)"));
 
