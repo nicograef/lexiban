@@ -15,7 +15,75 @@
 
 ---
 
-## 2. Anforderungen
+## 2. Fachlichkeit: Was ist eine IBAN?
+
+_(Kurzer fachlicher Überblick, damit die Interviewer den Kontext haben — Detailalgorithmus folgt in Abschnitt 7.)_
+
+Eine **internationale Kontonummer** (max. 34 Zeichen, alphanumerisch), die Bankverbindungen weltweit eindeutig identifiziert. Seit 2014 Pflicht in der EU (SEPA). 89 Länder nutzen das System.
+
+**Aufbau — immer gleich:**
+
+```
+[Ländercode 2 Buchstaben][Prüfziffern 2 Ziffern][BBAN länderspezifisch]
+```
+
+### Deutsche IBAN — das relevanteste Format im Projekt
+
+Immer **exakt 22 Stellen**:
+
+```
+D E 6 8 2 1 0 5 0 1 7 0 0 0 1 2 3 4 5 6 7 8
+├─┤ ├─┤ ├───────────────┤ ├─────────────────────┤
+ │   │    BLZ (8 Stellen)   Kontonummer (10 Stellen)
+ │   Prüfziffern (68)
+ Ländercode ("DE")
+```
+
+- **BLZ** (Bankleitzahl, Pos. 5–12): identifiziert die Bank. Im Code ein simpler Substring.
+- **Kontonummer** (Pos. 13–22): mit führenden Nullen auf 10 Stellen aufgefüllt.
+
+### Validierungsprinzip (Modulo 97)
+
+```mermaid
+flowchart LR
+    A["DE68 2105 ..."] -->|Bereinigen| B["DE68210501..."]
+    B -->|Länge = 22?| C{"✓"}
+    C -->|4 Zeichen ans Ende| D["210501...DE68"]
+    D -->|Buchstaben → Zahlen| E["210501...131468"]
+    E -->|mod 97| F{"= 1?"}
+    F -->|Ja| G["✅ Gültig"]
+    F -->|Nein| H["❌ Ungültig"]
+```
+
+| Schritt | Was passiert                                | Beispiel                        |
+| ------- | ------------------------------------------- | ------------------------------- |
+| 1       | Länge prüfen (DE = 22)                      | `DE68210501700012345678` → 22 ✓ |
+| 2       | Erste 4 Zeichen ans **Ende** schieben       | `210501700012345678DE68`        |
+| 3       | Buchstaben → Zahlen (`A=10, B=11, …, Z=35`) | `210501700012345678131468`      |
+| 4       | Diese riesige Zahl **mod 97** rechnen       | `= 1` → gültig ✓                |
+
+`BigInteger` in Java nötig, weil die Zahl 60+ Stellen haben kann (≈ JavaScript `BigInt`).
+
+### Fehlererkennungsfähigkeit
+
+- **100 %** aller einzelnen Tippfehler erkannt
+- **100 %** aller Zahlendreher zweier benachbarter Ziffern erkannt
+- Auslassung/Verdopplung durch feste Länge erkannt
+
+→ Mathematisch beweisbar, dass Modulo 97 ausreicht.
+
+### Schreibweise — Frontend-relevant
+
+| Kontext                    | Format                      | Beispiel                      |
+| -------------------------- | --------------------------- | ----------------------------- |
+| **Elektronisch** (API, DB) | Ohne Trennzeichen           | `DE68210501700012345678`      |
+| **Anzeige** (DIN 5008)     | 4er-Gruppen mit Leerzeichen | `DE68 2105 0170 0012 3456 78` |
+
+Das Frontend entfernt Leerzeichen, Bindestriche und Punkte **vor** dem API-Aufruf. Die Anzeige erfolgt in 4er-Gruppen.
+
+---
+
+## 3. Anforderungen
 
 Sechs Kern-Features, die alle umgesetzt sind:
 
@@ -28,7 +96,30 @@ Sechs Kern-Features, die alle umgesetzt sind:
 
 ---
 
-## 3. Architektur & Tech-Stack
+## 4. Architektur & Tech-Stack
+
+```mermaid
+graph TB
+    subgraph Docker Compose
+        direction TB
+        subgraph frontend-container ["Frontend-Container :80"]
+            Nginx["Nginx"]
+            SPA["React SPA\n(TypeScript, Vite)"]
+        end
+        subgraph backend-container ["Backend-Container :8080"]
+            Spring["Spring Boot 3\n(Java 21, Maven)"]
+        end
+        subgraph db-container ["DB-Container :5432"]
+            PG[("PostgreSQL 17")]
+        end
+    end
+
+    Browser["🌐 Browser"] -->|":80"| Nginx
+    Nginx -->|"/ → SPA"| SPA
+    Nginx -->|"/api/* → Proxy"| Spring
+    Spring -->|"JDBC"| PG
+    Spring -.->|"Fallback"| ExtAPI["openiban.com"]
+```
 
 | Schicht    | Technologie                   | Warum diese Wahl?                                       |
 | ---------- | ----------------------------- | ------------------------------------------------------- |
@@ -42,7 +133,7 @@ Sechs Kern-Features, die alle umgesetzt sind:
 
 ---
 
-## 4. Live-Demo
+## 5. Live-Demo
 
 ### Happy Path
 
@@ -60,15 +151,32 @@ Sechs Kern-Features, die alle umgesetzt sind:
 
 ---
 
-## 5. Backend-Architektur (Code-Walkthrough)
+## 6. Backend-Architektur (Code-Walkthrough)
 
 ### Die drei Schichten
 
-```
-IbanController  →  IbanValidationService  →  IbanRepository
-(HTTP-Schicht)     (Business-Logik)           (Datenzugriff)
-  ≈ Express           ≈ Domain Service           ≈ Prisma Client
-    Router               in Node.js
+```mermaid
+graph LR
+    subgraph Controller ["HTTP-Schicht"]
+        IC["IbanController\n≈ Express Router"]
+    end
+    subgraph Service ["Business-Logik"]
+        IVS["IbanValidationService\n≈ Domain Service"]
+        EAS["ExternalIbanApiService\n≈ fetch/axios"]
+    end
+    subgraph Repository ["Datenzugriff"]
+        IR["IbanRepository\n≈ Prisma Client"]
+    end
+    subgraph External ["Extern"]
+        API["openiban.com"]
+    end
+
+    IC --> IVS
+    IC --> EAS
+    IC --> IR
+    IVS -.->|"BLZ unbekannt"| EAS
+    EAS -.->|"REST"| API
+    IR -->|"JPA"| DB[("PostgreSQL")]
 ```
 
 ### Controller (IbanController.java)
@@ -93,7 +201,7 @@ IbanController  →  IbanValidationService  →  IbanRepository
 
 ---
 
-## 6. Modulo-97 — Die Validierungslogik
+## 7. Modulo-97 — Die Validierungslogik
 
 Der Algorithmus nach ISO 13616 (Folie oder Code zeigen):
 
@@ -112,9 +220,37 @@ Schritt 5:  mod 97 → Ergebnis = 1 → gültig ✓
 
 ---
 
-## 7. Externe API — Graceful Degradation
+## 8. Externe API — Graceful Degradation
 
 Wenn die lokale BLZ-Tabelle die Bank nicht kennt, fragt `ExternalIbanApiService` die openiban.com-API:
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend
+    participant Ctrl as IbanController
+    participant Svc as ValidationService
+    participant Ext as ExternalIbanApiService
+    participant API as openiban.com
+
+    FE->>Ctrl: POST /api/ibans/validate
+    Ctrl->>Svc: validate(iban)
+    Svc-->>Ctrl: valid=true, BLZ bekannt?
+
+    alt BLZ in lokaler Map
+        Ctrl-->>FE: ✅ valid, bankName, method="local"
+    else BLZ unbekannt
+        Ctrl->>Ext: validate(iban)
+        Ext->>API: GET /validate/{iban}
+        alt API erreichbar
+            API-->>Ext: bankName, BIC
+            Ext-->>Ctrl: ExternalResult
+            Ctrl-->>FE: ✅ valid, bankName, method="external"
+        else API down / Fehler
+            Ext-->>Ctrl: null
+            Ctrl-->>FE: ✅ valid, kein bankName
+        end
+    end
+```
 
 ```
 GET https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true
@@ -127,7 +263,7 @@ GET https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true
 
 ---
 
-## 8. Error Handling
+## 9. Error Handling
 
 Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express Error-Handling Middleware:
 
@@ -137,7 +273,7 @@ Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express E
 
 ---
 
-## 9. Datenbankschicht
+## 10. Datenbankschicht
 
 ### Entity (Iban.java)
 
@@ -153,7 +289,7 @@ Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express E
 
 ---
 
-## 10. Testing
+## 11. Testing
 
 **16 Backend-Tests** (JUnit 5), alle grün:
 
@@ -175,14 +311,31 @@ cd frontend && pnpm test           # Frontend: 3 Tests
 
 ---
 
-## 11. Docker Compose
+## 12. Docker Compose
 
 Drei Services, ein Befehl: `docker compose up --build`
 
-```
-Browser → :80 → Nginx (Frontend-Container)
-                  ├── / → SPA (Static Build)
-                  └── /api/* → Backend (:8080) → PostgreSQL (:5432)
+```mermaid
+graph LR
+    Browser["🌐 Browser"] -->|":80"| Nginx
+
+    subgraph frontend ["frontend :80"]
+        Nginx["Nginx"]
+        Static["SPA Build"]
+    end
+
+    subgraph backend ["backend :8080"]
+        Spring["Spring Boot"]
+    end
+
+    subgraph db ["db :5432"]
+        PG[("PostgreSQL")]
+    end
+
+    Nginx -->|"/ "| Static
+    Nginx -->|"/api/*"| Spring
+    Spring -->|"JDBC"| PG
+    PG -.->|"pg_isready\nhealthcheck"| Spring
 ```
 
 - **Kein separater Reverse-Proxy-Container** — Nginx im Frontend-Container übernimmt beides
@@ -191,7 +344,7 @@ Browser → :80 → Nginx (Frontend-Container)
 
 ---
 
-## 12. Was ich gelernt habe
+## 13. Was ich gelernt habe
 
 | Spring Boot / Java                      | Mein Vergleich (TS/Node/Go)                 |
 | --------------------------------------- | ------------------------------------------- |
@@ -210,7 +363,7 @@ Browser → :80 → Nginx (Frontend-Container)
 
 ---
 
-## 13. Was ich als nächstes bauen würde
+## 14. Was ich als nächstes bauen würde
 
 _(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
 
@@ -224,7 +377,7 @@ _(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
 
 ---
 
-## 14. Abschluss
+## 15. Abschluss
 
 - **Projekt:** IBAN Validator — React + Spring Boot + PostgreSQL + Docker
 - **Eigene Modulo-97-Implementierung** nach ISO 13616
