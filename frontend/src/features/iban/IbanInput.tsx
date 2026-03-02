@@ -1,5 +1,5 @@
 import { CheckIcon, Loader2Icon, XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -62,29 +62,22 @@ function CharCounter({
   )
 }
 
-/** Shows the validation result card (success or failure). */
+/** Shows the validation result (success or failure). */
 function ValidationResult({ result }: { result: IbanValidationResponse }) {
   const isValid = result.valid
 
   return (
-    <Card
+    <div
       className={cn(
-        'animate-fade-in',
-        isValid
-          ? 'ring-success/30 bg-success/5'
-          : 'ring-destructive/30 bg-destructive/5',
+        'animate-fade-in flex items-baseline gap-2 text-sm',
+        isValid ? 'text-success' : 'text-destructive',
       )}
     >
-      <CardContent className="space-y-1">
-        <p className="font-medium">
-          {isValid ? '✓ IBAN gültig' : '✗ IBAN ungültig'}
-        </p>
-        {!isValid && result.reason && (
-          <p className="text-sm text-destructive">{result.reason}</p>
-        )}
-        {result.bankName && <p>{result.bankName}</p>}
-      </CardContent>
-    </Card>
+      <span>{isValid ? '✓ Gültig!' : '✗ Ungültig'}</span>
+      <span className="font-bold text-foreground">
+        {isValid ? result.bankName : result.reason}
+      </span>
+    </div>
   )
 }
 
@@ -98,16 +91,6 @@ export function IbanInput({ onSaved }: IbanInputProps) {
   const [input, setInput] = useState('')
   const [validation, setValidation] =
     useState<ValidationState>(INITIAL_VALIDATION)
-  const [successFlash, setSuccessFlash] = useState(false)
-  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (flashTimer.current) clearTimeout(flashTimer.current)
-    }
-  }, [])
-
   const cleaned = cleanIban(input)
   const countryCode = cleaned.length >= 2 ? cleaned.substring(0, 2) : ''
   const expectedLength = countryCode ? getExpectedLength(countryCode) : null
@@ -129,12 +112,6 @@ export function IbanInput({ onSaved }: IbanInputProps) {
     try {
       const result = await validateIban(input)
       setValidation({ loading: false, result, error: null })
-      if (result.valid) {
-        setSuccessFlash(true)
-        flashTimer.current = setTimeout(() => {
-          setSuccessFlash(false)
-        }, 2000)
-      }
       onSaved?.()
     } catch {
       setValidation({
@@ -194,10 +171,18 @@ export function IbanInput({ onSaved }: IbanInputProps) {
             </div>
             <Button
               type="submit"
-              disabled={validation.loading || !input.trim()}
+              disabled={
+                validation.loading ||
+                !input.trim() ||
+                !!validation.result ||
+                !!validation.error
+              }
               className={cn(
                 'select-none transition-colors duration-300',
-                successFlash && 'bg-success text-white hover:bg-success/90',
+                validation.result?.valid === true &&
+                  'bg-success text-white hover:bg-success/90',
+                (validation.result?.valid === false || validation.error) &&
+                  'bg-destructive text-white hover:bg-destructive/90',
               )}
             >
               {validation.loading ? (
@@ -205,21 +190,28 @@ export function IbanInput({ onSaved }: IbanInputProps) {
                   <Loader2Icon className="size-4 animate-spin" />
                   Prüfe…
                 </>
-              ) : successFlash ? (
+              ) : validation.result?.valid === true ? (
                 <>
                   <CheckIcon className="size-4" />
                   Gültig
+                </>
+              ) : validation.result?.valid === false || validation.error ? (
+                <>
+                  <XIcon className="size-4" />
+                  Ungültig
                 </>
               ) : (
                 'IBAN Prüfen'
               )}
             </Button>
           </div>
-          <CharCounter
-            currentLength={currentLength}
-            expectedLength={expectedLength}
-            countryCode={countryCode}
-          />
+          {!validation.result && !validation.error && (
+            <CharCounter
+              currentLength={currentLength}
+              expectedLength={expectedLength}
+              countryCode={countryCode}
+            />
+          )}
         </form>
 
         {validation.error && (
