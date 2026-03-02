@@ -5,22 +5,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.nicograef.iban.model.IbanNumber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import de.nicograef.iban.model.IbanNumber;
-import de.nicograef.iban.model.ValidationResult;
 
 /**
  * Unit tests for LocalIbanValidator — pure logic, no Spring context needed.
  *
- * Tests the three possible outcomes:
- * 1. Optional.of(invalid) — definitive failure (wrong length or bad Mod-97)
- * 2. Optional.of(valid + bankName) — known German bank
- * 3. Optional.empty() — checks passed but bank unknown (needs external)
+ * <p>Tests the three possible outcomes: 1. Optional.of(invalid) — definitive failure (wrong length
+ * or bad Mod-97) 2. Optional.of(valid + bankName) — known German bank 3. Optional.empty() — checks
+ * passed but bank unknown (needs external)
  *
- * Uses a real Mod97Validator (pure algorithm, no mocks).
- * ≈ In Vitest: testing a pure function in complete isolation.
+ * <p>Uses a real Mod97Validator (pure algorithm, no mocks). ≈ In Vitest: testing a pure function in
+ * complete isolation.
  */
 class LocalIbanValidatorTest {
 
@@ -47,8 +44,8 @@ class LocalIbanValidatorTest {
         var result = validator.validate(new IbanNumber("DE00370400440532013000"));
         assertTrue(result.isPresent());
         assertFalse(result.get().valid());
-        assertEquals("Prüfziffern ungültig (Modulo-97-Prüfung fehlgeschlagen)",
-                result.get().reason());
+        assertEquals(
+                "Prüfziffern ungültig (Modulo-97-Prüfung fehlgeschlagen)", result.get().reason());
     }
 
     @Test

@@ -9,9 +9,8 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * CORS configuration — only active in the "dev" profile.
- * In production, nginx proxies everything from one origin, so CORS is not
- * needed.
+ * CORS configuration — only active in the "dev" profile. In production, nginx proxies everything
+ * from one origin, so CORS is not needed.
  */
 @Configuration
 @Profile("dev")

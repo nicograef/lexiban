@@ -64,15 +64,29 @@ Drei Docker-Services: `postgres` (PostgreSQL 17), `backend` (Java 21), `frontend
 Frontend wird als Static Build via Nginx ausgeliefert und proxied `/api` ans Backend.
 Kein separater Reverse-Proxy-Container — die Frontend-Nginx übernimmt beides.
 
-## Tests
+## Tests & Code-Qualität
 
 ```bash
-# Backend (JUnit 5 + MockMvc)
+# Backend — Tests (JUnit 5 + MockMvc)
+cd backend && ./mvnw test
+
+# Backend — Formatting + Linting + Tests (alles auf einmal)
 cd backend && ./mvnw verify -B
+
+# Backend — nur Formatting prüfen (≈ prettier --check)
+cd backend && ./mvnw spotless:check
+
+# Backend — Formatting auto-fix (≈ prettier --write)
+cd backend && ./mvnw spotless:apply
+
+# Backend — nur Linting (≈ eslint .)
+cd backend && ./mvnw checkstyle:check
 
 # Frontend (Vitest + React Testing Library)
 cd frontend && pnpm lint && pnpm test
 ```
+
+`./mvnw verify` führt automatisch Spotless + Checkstyle + Tests aus.
 
 ## API-Endpunkte
 
@@ -125,4 +139,5 @@ Wird über openiban.com aufgerufen, wenn die lokale Validierung keine Bank finde
 - CORS nur in Dev-Profil offen, in Prod via Nginx-Proxy
 - Fehlerbehandlung: `@RestControllerAdvice` mit konsistenten Error-Responses
 - Environment-Variablen für DB-Credentials (nicht hardcoded)
+- Backend: Spotless (google-java-format, AOSP) für Formatting, Checkstyle für Linting
 - Frontend: Strict TypeScript, ESLint mit `--max-warnings=0`, Tailwind CSS + shadcn/ui

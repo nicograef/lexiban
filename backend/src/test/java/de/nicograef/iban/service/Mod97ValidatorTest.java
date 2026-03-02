@@ -2,15 +2,15 @@ package de.nicograef.iban.service;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for the Mod97Validator — isolated algorithm tests.
  *
- * This class was extracted from IbanValidationService to make
- * the Modulo-97 algorithm independently testable.
- * ≈ In Vitest: testing a pure utility function in isolation.
+ * <p>This class was extracted from IbanValidationService to make the Modulo-97 algorithm
+ * independently testable. ≈ In Vitest: testing a pure utility function in isolation.
  */
 class Mod97ValidatorTest {
 

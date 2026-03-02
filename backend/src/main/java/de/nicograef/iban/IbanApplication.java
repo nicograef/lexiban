@@ -3,9 +3,7 @@ package de.nicograef.iban;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * Entry point — boots embedded Tomcat, scans components, runs Flyway migrations.
- */
+/** Entry point — boots embedded Tomcat, scans components, runs Flyway migrations. */
 @SpringBootApplication
 public class IbanApplication {
 

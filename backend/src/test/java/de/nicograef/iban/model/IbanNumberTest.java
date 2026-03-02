@@ -3,17 +3,17 @@ package de.nicograef.iban.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for the IbanNumber value object.
  *
- * Tests that IbanNumber:
- * 1. Self-normalizes input (removes whitespace, uppercase).
- * 2. Rejects structurally invalid input (too short, wrong format).
- * 3. Exposes correct derived properties (countryCode, bankIdentifier, etc.).
+ * <p>Tests that IbanNumber: 1. Self-normalizes input (removes whitespace, uppercase). 2. Rejects
+ * structurally invalid input (too short, wrong format). 3. Exposes correct derived properties
+ * (countryCode, bankIdentifier, etc.).
  *
- * ≈ In Vitest: testing a class constructor + readonly properties.
+ * <p>≈ In Vitest: testing a class constructor + readonly properties.
  */
 class IbanNumberTest {
 
@@ -89,14 +89,14 @@ class IbanNumberTest {
 
     @Test
     void rejectsTooLongInput() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> new IbanNumber("DE89370400440532013000EXTRA1234567890"));
     }
 
     @Test
     void rejectsNonLetterCountryCode() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new IbanNumber("12345678901234567890"));
+        assertThrows(IllegalArgumentException.class, () -> new IbanNumber("12345678901234567890"));
     }
 
     @Test
