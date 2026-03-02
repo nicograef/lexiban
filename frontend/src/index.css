@@ -4,80 +4,139 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Lexware Theme
+ * ─────────────────────────────────────────────
+ * Extracted from lexware.css
+ *
+ * Font:     Urbanist (500 body, 600 inputs, 800 headings)
+ * Palette:  Warm neutrals (#131010 … #fcfafa) + Lexware Red #ff4554
+ * Radius:   0 — Lexware uses sharp edges
+ *
+ * Color reference (hex → CSS variable):
+ *   --color-lexware-red-500  #ff4554   primary
+ *   --color-red-600          #cc3743   primary hover / dark-mode primary
+ *   --color-red-650          #b2303b   link color
+ *   --color-red-400          #ff6a76   light variant
+ *   --color-red-50           #ffedee   primary tint
+ *   --color-blue-500         #03acf4   accent / info
+ *   --color-success-green    #1c865a   success
+ *   --color-error-red        #d93845   destructive / error
+ *   --color-warning-yellow   #ffdb5c   warning
+ *   --color-neutral-12       #131010   foreground (near-black, warm)
+ *   --color-neutral-11       #2c2525
+ *   --color-neutral-10       #483c3c
+ *   --color-neutral-9        #615151
+ *   --color-neutral-8        #7a6666   muted foreground / labels
+ *   --color-neutral-6        #a79595   placeholder
+ *   --color-neutral-3        #eae6e6   border
+ *   --color-neutral-2        #f3f1f1   muted / disabled bg
+ *   --color-neutral-1        #fcfafa   background
+ *   --color-neutral-0        #ffffff   card / white
+ */
+
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.577 0.245 27.325);
-  --primary-foreground: oklch(0.971 0.013 17.38);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.808 0.114 19.571);
-  --chart-2: oklch(0.637 0.237 25.331);
-  --chart-3: oklch(0.577 0.245 27.325);
-  --chart-4: oklch(0.505 0.213 27.518);
-  --chart-5: oklch(0.444 0.177 26.899);
+  /* surfaces */
+  --background: #fcfafa; /* neutral-1 */
+  --foreground: #131010; /* neutral-12 */
+  --card: #ffffff; /* neutral-0 */
+  --card-foreground: #131010;
+  --popover: #ffffff;
+  --popover-foreground: #131010;
+
+  /* brand */
+  --primary: #ff4554; /* Lexware Red 500 */
+  --primary-foreground: #ffffff;
+
+  /* secondary — warm neutral */
+  --secondary: #f3f1f1; /* neutral-2 */
+  --secondary-foreground: #2c2525; /* neutral-11 */
+
+  /* muted */
+  --muted: #f3f1f1; /* neutral-2 */
+  --muted-foreground: #7a6666; /* neutral-8 */
+
+  /* accent (blue) */
+  --accent: #f3f1f1; /* neutral-2 */
+  --accent-foreground: #131010;
+
+  /* status */
+  --destructive: #d93845; /* error-red-500 */
+  --success: #1c865a; /* success-green-500 */
+  --warning: #ffdb5c; /* warning-yellow-500 */
+
+  /* chrome */
+  --border: #eae6e6; /* neutral-3 */
+  --input: #eae6e6; /* neutral-3 */
+  --ring: #ff4554; /* primary for focus rings */
+
+  /* charts */
+  --chart-1: #ff4554;
+  --chart-2: #03acf4;
+  --chart-3: #1c865a;
+  --chart-4: #ffdb5c;
+  --chart-5: #b2303b;
+
+  /* radius — Lexware uses 0 (sharp edges) */
   --radius: 0;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.577 0.245 27.325);
-  --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* sidebar */
+  --sidebar: #fcfafa;
+  --sidebar-foreground: #131010;
+  --sidebar-primary: #ff4554;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f1f1;
+  --sidebar-accent-foreground: #131010;
+  --sidebar-border: #eae6e6;
+  --sidebar-ring: #ff4554;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.637 0.237 25.331);
-  --primary-foreground: oklch(0.971 0.013 17.38);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.808 0.114 19.571);
-  --chart-2: oklch(0.637 0.237 25.331);
-  --chart-3: oklch(0.577 0.245 27.325);
-  --chart-4: oklch(0.505 0.213 27.518);
-  --chart-5: oklch(0.444 0.177 26.899);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.637 0.237 25.331);
-  --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #131010; /* neutral-12 */
+  --foreground: #fcfafa; /* neutral-1 */
+  --card: #2c2525; /* neutral-11 */
+  --card-foreground: #fcfafa;
+  --popover: #2c2525;
+  --popover-foreground: #fcfafa;
+
+  --primary: #ff6a76; /* red-400 — slightly lighter for dark bg readability */
+  --primary-foreground: #131010;
+
+  --secondary: #483c3c; /* neutral-10 */
+  --secondary-foreground: #fcfafa;
+
+  --muted: #483c3c; /* neutral-10 */
+  --muted-foreground: #a79595; /* neutral-6 */
+
+  --accent: #483c3c;
+  --accent-foreground: #fcfafa;
+
+  --destructive: #ff6a76; /* lighter error for dark bg */
+  --success: #1c865a;
+  --warning: #ffdb5c;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #ff6a76;
+
+  --chart-1: #ff6a76;
+  --chart-2: #35bdf6;
+  --chart-3: #1c865a;
+  --chart-4: #ffdb5c;
+  --chart-5: #ff4554;
+
+  --sidebar: #2c2525;
+  --sidebar-foreground: #fcfafa;
+  --sidebar-primary: #ff6a76;
+  --sidebar-primary-foreground: #131010;
+  --sidebar-accent: #483c3c;
+  --sidebar-accent-foreground: #fcfafa;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #ff6a76;
 }
 
 @theme inline {
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -95,6 +154,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -123,9 +184,19 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-sans bg-background text-foreground;
+    @apply font-sans bg-background text-foreground antialiased;
+    font-weight: 500;
+    line-height: 1.7;
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 800;
   }
 }

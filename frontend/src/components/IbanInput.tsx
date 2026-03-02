@@ -113,9 +113,9 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
             <p
               className={`text-xs ${
                 expectedLength && currentLength === expectedLength
-                  ? 'text-green-600'
+                  ? 'text-success'
                   : expectedLength && currentLength > expectedLength
-                    ? 'text-red-500'
+                    ? 'text-destructive'
                     : 'text-muted-foreground'
               }`}
               data-testid="char-counter"
@@ -145,7 +145,7 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
           <Card
             className={
               validation.result.valid
-                ? 'ring-green-500/30 bg-green-50 dark:bg-green-950/20'
+                ? 'ring-success/30 bg-success/5'
                 : 'ring-destructive/30 bg-destructive/5'
             }
           >
@@ -235,7 +235,7 @@ export function IbanList({ refreshKey }: { refreshKey?: number }) {
                 </p>
               )}
             </div>
-            <Badge variant={entry.valid ? 'default' : 'destructive'}>
+            <Badge variant={entry.valid ? 'success' : 'destructive'}>
               {entry.valid ? 'gültig' : 'ungültig'}
             </Badge>
           </div>
