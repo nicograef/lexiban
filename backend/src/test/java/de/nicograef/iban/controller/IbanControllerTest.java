@@ -123,7 +123,7 @@ class IbanControllerTest {
 
         @Test
         void getAllIbansReturnsEmptyList() throws Exception {
-                when(ibanRepository.findAll()).thenReturn(List.of());
+                when(ibanRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
 
                 mockMvc.perform(get("/api/ibans"))
                                 .andExpect(status().isOk())
@@ -134,7 +134,7 @@ class IbanControllerTest {
         @Test
         void getAllIbansReturnsSavedEntries() throws Exception {
                 Iban entity = new Iban("DE89370400440532013000", "Commerzbank", true, null);
-                when(ibanRepository.findAll()).thenReturn(List.of(entity));
+                when(ibanRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(entity));
 
                 mockMvc.perform(get("/api/ibans"))
                                 .andExpect(status().isOk())
