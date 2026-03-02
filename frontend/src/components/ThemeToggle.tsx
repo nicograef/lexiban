@@ -27,8 +27,11 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => { setTheme((t) => (t === 'light' ? 'dark' : 'light')); }}
+      onClick={() => {
+        setTheme((t) => (t === 'light' ? 'dark' : 'light'))
+      }}
       aria-label={theme === 'light' ? 'Dunkles Design' : 'Helles Design'}
+      className="absolute top-4 right-4 cursor-pointer"
     >
       {theme === 'light' ? (
         <MoonIcon className="size-5" />
