@@ -38,10 +38,11 @@ Das Backend folgt einer klassischen Schichtenarchitektur: Controller (REST-Endpu
 
 ```bash
 # 1. Datenbank starten
-cp .env.example .env
 docker compose up postgres
 
-# 2. Backend starten (neues Terminal)
+# 2. Backend starten (neues Terminal, vom Projekt-Root)
+#    .env exportieren → Spring liest POSTGRES_USER/PASSWORD daraus (Single Source of Truth)
+set -a && source .env && set +a
 cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 3. Frontend starten (neues Terminal)
@@ -52,7 +53,6 @@ cd frontend && pnpm install && pnpm dev
 ## Produktion
 
 ```bash
-cp .env.example .env
 docker compose up --build
 # App: http://localhost
 ```

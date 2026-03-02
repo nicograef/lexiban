@@ -1,7 +1,6 @@
 # ── Backend Dockerfile — Multi-Stage Build ──
 # Stage 1 (builder): Compile the Java app with Maven → produces a .jar file.
 # Stage 2 (runtime): Run the .jar with a minimal JRE image.
-# ≈ In a Node.js project: stage 1 = npm ci && npm run build, stage 2 = copy dist/ to a slim image.
 
 # --- Build Stage ---
 # eclipse-temurin is the official OpenJDK distribution (like using node:24-alpine).
