@@ -1,17 +1,31 @@
 # Lexiban — Präsentations-Skript
 
 > Skript für die Vorstellung der Coding-Challenge im Bewerbungsgespräch.
-> Zielgruppe: Technische Interviewer. Dauer: ca. 10–15 Minuten.
+> Zielgruppe: Technische Interviewer, SCRUM-Team. Dauer: ca. 10–15 Minuten.
 
 ---
 
-## 1. Einstieg & Kontext
+## 1. Aufgabe
 
-**Wer bin ich:** Nico Gräf — Senior Fullstack-Entwickler mit 10+ Jahren Erfahrung, primär TypeScript/React/Node.js/Go. Java kenne ich aus dem Studium (Android-Apps, Desktop-Projekte), aber Spring Boot und Enterprise-Java sind neu für mich — genau das hat mich an dieser Challenge gereizt.
+**Aufgabenstellung:** Eine Single-Page-App mit Frontend und Backend erstellen und betreiben, die eine IBAN-Eingabe validiert. Dazu eine kurze Präsentation als fachliche Diskussionsgrundlage vorbereiten.
 
-**Was ist das Projekt:** Eine Single-Page-App zur IBAN-Validierung und -Speicherung. React-Frontend, Spring-Boot-Backend, PostgreSQL-Datenbank — alles containerisiert mit Docker Compose.
+**Anforderungen:**
 
-**Was will ich zeigen:** Dass ich mich schnell in unbekannte Technologien einarbeiten kann, sauberen Code schreibe und architektonische Entscheidungen reflektiert treffe.
+1. Freie Benutzereingaben erlauben — inklusive Trennzeichen zwischen den Ziffern
+2. Im Backend keine Trennzeichen enthalten — Bereinigung vor der Verarbeitung
+3. Im Backend prüfen, ob die IBAN valide ist
+4. Für drei bekannte Banken nach Eingabe der IBAN den Banknamen anzeigen
+5. Speicherung der IBAN in einer Datenbank
+6. Einen anderen Weg finden — z. B. Anbindung einer externen API zur Validierung oder Namensauflösung
+
+**Vorgegebener Stack:**
+
+| Schicht       | Vorgabe                                                 |
+| ------------- | ------------------------------------------------------- |
+| Backend       | Java mit REST-API (Spring Boot basiert)                 |
+| Frontend      | SPA (React basierte WebApp)                             |
+| Kommunikation | SPA-Frontend mit REST-Backend-Kommunikation             |
+| Betrieb       | Cloud-Betrieb bei beliebigem Anbieter und Infrastruktur |
 
 ---
 
