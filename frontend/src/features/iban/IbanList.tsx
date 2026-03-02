@@ -1,11 +1,4 @@
 import { Badge } from '@/components/ui/badge'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 
 import { IbanListEntry } from './types'
 import { formatIban } from './utils'
@@ -16,17 +9,49 @@ export interface IbanListProps {
   ibans: IbanListEntry[] | null
 }
 
+function IbanListItem({ entry }: { entry: IbanListEntry }) {
+  return (
+    <li className="flex items-center justify-between rounded-md border bg-card p-3 transition-colors hover:bg-muted/50">
+      <div className="min-w-0">
+        <p className="truncate font-mono text-sm tracking-wide">
+          {formatIban(entry.iban)}
+        </p>
+        {entry.bankName && (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {entry.bankName}
+          </p>
+        )}
+        {entry.reason && (
+          <p className="mt-0.5 text-xs text-muted-foreground italic">
+            {entry.reason}
+          </p>
+        )}
+      </div>
+      <Badge
+        className="ml-3 shrink-0"
+        variant={entry.valid ? 'success' : 'destructive'}
+      >
+        {entry.valid ? 'gültig' : 'ungültig'}
+      </Badge>
+    </li>
+  )
+}
+
 export function IbanList({ ibans, loading, error }: IbanListProps) {
   if (loading) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-muted-foreground text-sm" role="status">
         Lade gespeicherte IBANs...
       </p>
     )
   }
 
   if (error) {
-    return <p className="text-destructive text-sm">{error}</p>
+    return (
+      <p className="text-destructive text-sm" role="alert">
+        {error}
+      </p>
+    )
   }
 
   if (!ibans || ibans.length === 0) {
@@ -38,34 +63,18 @@ export function IbanList({ ibans, loading, error }: IbanListProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gespeicherte IBANs</CardTitle>
-        <CardDescription>
-          {ibans.length.toString()} {ibans.length === 1 ? 'IBAN' : 'IBANs'}{' '}
-          gespeichert
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <section aria-label="Gespeicherte IBANs">
+      <h3 className="mb-3 text-sm font-semibold tracking-tight">
+        Gespeicherte IBANs
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          ({ibans.length})
+        </span>
+      </h3>
+      <ul className="max-h-100 space-y-2 overflow-y-auto pr-1" role="list">
         {ibans.map((entry) => (
-          <div
-            key={entry.iban}
-            className="flex items-center justify-between rounded-lg border p-3"
-          >
-            <div>
-              <p className="font-mono text-sm">{formatIban(entry.iban)}</p>
-              {entry.bankName && (
-                <p className="text-xs text-muted-foreground">
-                  {entry.bankName}
-                </p>
-              )}
-            </div>
-            <Badge variant={entry.valid ? 'success' : 'destructive'}>
-              {entry.valid ? 'gültig' : 'ungültig'}
-            </Badge>
-          </div>
+          <IbanListItem key={entry.iban} entry={entry} />
         ))}
-      </CardContent>
-    </Card>
+      </ul>
+    </section>
   )
 }

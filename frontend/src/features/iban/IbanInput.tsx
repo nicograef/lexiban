@@ -47,7 +47,12 @@ function CharCounter({
   const color = getCounterColor(currentLength, expectedLength)
 
   return (
-    <p className={`text-xs ${color}`} data-testid="char-counter">
+    <p
+      className={`text-xs ${color}`}
+      data-testid="char-counter"
+      id="iban-counter"
+      aria-live="polite"
+    >
       {currentLength}
       {expectedLength
         ? ` / ${expectedLength.toString()} Zeichen (${countryCode})`
@@ -123,8 +128,9 @@ export function IbanInput({ onSaved }: IbanInputProps) {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && input.trim() && !validation.loading) {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (input.trim() && !validation.loading) {
       void handleValidate()
     }
   }
@@ -141,7 +147,10 @@ export function IbanInput({ onSaved }: IbanInputProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-2" role="search">
+          <label htmlFor="iban-input" className="sr-only">
+            IBAN eingeben
+          </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Input
@@ -149,11 +158,11 @@ export function IbanInput({ onSaved }: IbanInputProps) {
                 type="text"
                 value={input}
                 onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
                 placeholder="DE89 3704 0044 0532 0130 00"
                 className="font-mono text-lg tracking-wider pr-8"
                 maxLength={42}
                 autoFocus
+                aria-describedby="iban-counter iban-error"
               />
               {input && (
                 <button
@@ -167,7 +176,7 @@ export function IbanInput({ onSaved }: IbanInputProps) {
               )}
             </div>
             <Button
-              onClick={() => void handleValidate()}
+              type="submit"
               disabled={validation.loading || !input.trim()}
               className="cursor-pointer select-none"
             >
@@ -179,12 +188,16 @@ export function IbanInput({ onSaved }: IbanInputProps) {
             expectedLength={expectedLength}
             countryCode={countryCode}
           />
-        </div>
+        </form>
 
         {validation.error && (
-          <div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm ring-1 ring-destructive/20">
+          <p
+            id="iban-error"
+            role="alert"
+            className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm ring-1 ring-destructive/20"
+          >
             {validation.error}
-          </div>
+          </p>
         )}
 
         {validation.result && <ValidationResult result={validation.result} />}

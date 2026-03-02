@@ -31,7 +31,7 @@ export function ThemeToggle() {
         setTheme((t) => (t === 'light' ? 'dark' : 'light'))
       }}
       aria-label={theme === 'light' ? 'Dunkles Design' : 'Helles Design'}
-      className="absolute top-4 right-4 cursor-pointer"
+      className="shrink-0"
     >
       {theme === 'light' ? (
         <MoonIcon className="size-5" />
