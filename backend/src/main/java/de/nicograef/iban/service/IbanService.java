@@ -2,6 +2,8 @@ package de.nicograef.iban.service;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import de.nicograef.iban.model.Iban;
@@ -32,6 +34,8 @@ import de.nicograef.iban.repository.IbanRepository;
  */
 @Service
 public class IbanService {
+
+    private static final Logger log = LoggerFactory.getLogger(IbanService.class);
 
     private final LocalIbanValidator localValidator;
     private final ExternalIbanValidator externalValidator;
@@ -68,6 +72,7 @@ public class IbanService {
         // Step 2: Cache lookup — already in the database?
         Optional<Iban> cached = ibanRepository.findById(ibanNumber.value());
         if (cached.isPresent()) {
+            log.debug("Cache hit for IBAN {}", ibanNumber.value());
             Iban entity = cached.get();
             return new ValidationResult(
                     entity.isValid(),
@@ -89,6 +94,10 @@ public class IbanService {
         // Step 5: Fallback — both validators couldn't produce a result.
         // We know length + Mod-97 passed (local would have returned invalid).
         // Return valid without bank name (graceful degradation).
+        if (result.isEmpty()) {
+            log.info("No validator produced a result for {} — falling back to valid without bank name",
+                    ibanNumber.value());
+        }
         ValidationResult finalResult = result.orElse(
                 new ValidationResult(true, ibanNumber.value(), null, null));
 

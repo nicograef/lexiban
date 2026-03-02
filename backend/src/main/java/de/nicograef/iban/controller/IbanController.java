@@ -2,6 +2,8 @@ package de.nicograef.iban.controller;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,13 +24,12 @@ import jakarta.validation.constraints.NotBlank;
  * This controller is intentionally thin — it only handles:
  * - HTTP request/response mapping (DTOs ↔ domain objects)
  * - Delegating to the service layer for all business logic
- *
- * The orchestration (lookup → validate → external fallback → save) lives in
- * IbanService.validateOrLookup(). The controller is a one-liner.
  */
 @RestController
 @RequestMapping("/api/ibans")
 public class IbanController {
+
+        private static final Logger log = LoggerFactory.getLogger(IbanController.class);
 
         private final IbanService ibanService;
         private final IbanRepository ibanRepository;
@@ -73,6 +74,7 @@ public class IbanController {
          */
         @PostMapping
         public ResponseEntity<IbanResponse> validateAndSaveIban(@Valid @RequestBody IbanRequest request) {
+                log.info("POST /api/ibans — validating IBAN: {}", request.iban());
                 ValidationResult result = ibanService.validateOrLookup(request.iban());
 
                 return ResponseEntity.ok(new IbanResponse(

@@ -2,6 +2,8 @@ package de.nicograef.iban.config;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,6 +22,10 @@ import de.nicograef.iban.model.IbanFormatException;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // SLF4J logger — TS equivalent: const log = console; but with levels
+    // (debug/info/warn/error)
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /** Handles @Valid validation failures (e.g. @NotBlank) → HTTP 400. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -63,6 +69,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> handleGenericError(Exception ex) {
+        // Without this log, 500 errors would be invisible — the client only
+        // sees "Internal server error" but nobody would know what went wrong.
+        log.error("Unhandled exception: {}", ex.getMessage(), ex);
         return Map.of("error", "Internal server error");
     }
 }

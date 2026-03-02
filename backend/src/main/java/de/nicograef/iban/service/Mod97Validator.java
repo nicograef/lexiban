@@ -34,7 +34,6 @@ public class Mod97Validator {
      *
      * Uses BigInteger because the numeric string can be 30-60+ digits long —
      * far beyond what long (max 19 digits) can hold.
-     * TS equivalent: BigInt(numericString) % 97n === 1n
      *
      * @param iban Normalized IBAN string (uppercase, no separators)
      * @return true if the check digits are valid
@@ -45,7 +44,7 @@ public class Mod97Validator {
 
         // Step 2: Convert letters to numbers (A=10, B=11, ..., Z=35)
         // Character.getNumericValue() returns 10–35 for A–Z, which is exactly
-        // what the ISO 7064 spec requires. TS equivalent: charCodeAt(0) - 55.
+        // what the ISO 7064 spec requires.
         StringBuilder numeric = new StringBuilder();
         for (char c : rearranged.toCharArray()) {
             if (Character.isLetter(c)) {

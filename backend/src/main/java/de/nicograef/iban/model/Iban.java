@@ -59,8 +59,6 @@ public class Iban {
         this.createdAt = Instant.now();
     }
 
-    // ── Getters ──
-
     public String getIban() {
         return iban;
     }

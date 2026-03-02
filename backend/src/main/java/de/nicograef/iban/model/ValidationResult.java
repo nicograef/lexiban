@@ -8,15 +8,10 @@ package de.nicograef.iban.model;
  *
  * The reason field provides a human-readable (German) explanation for why
  * the IBAN is invalid — null when the IBAN is valid.
- *
- * TS equivalent: { valid: boolean; iban: string; bankName?: string; reason?:
- * string }
- * Go equivalent: type ValidationResult struct { Valid bool; IBAN, BankName,
- * Reason string }
  */
 public record ValidationResult(
-        boolean valid,
-        String iban,
-        String bankName,
-        String reason) {
+                boolean valid,
+                String iban,
+                String bankName,
+                String reason) {
 }

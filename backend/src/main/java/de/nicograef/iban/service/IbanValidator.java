@@ -15,13 +15,6 @@ import de.nicograef.iban.model.ValidationResult;
  * Definitive failures (wrong length, bad Mod-97 check digits) MUST be
  * returned as Optional.of(invalidResult) — they are universal and don't
  * need external confirmation.
- *
- * The IbanService (orchestrator) calls validators in order:
- * LocalIbanValidator first, then ExternalIbanValidator as fallback.
- *
- * TS equivalent: (iban: IbanNumber) => ValidationResult | null
- * Go equivalent: type IbanValidator interface { Validate(iban IbanNumber)
- * (*ValidationResult, error) }
  */
 public interface IbanValidator {
 

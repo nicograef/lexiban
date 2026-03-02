@@ -1,7 +1,10 @@
 package de.nicograef.iban.model;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+
+import org.springframework.lang.NonNull;
 
 /**
  * Value Object for a normalized IBAN string.
@@ -31,7 +34,7 @@ import java.util.regex.Pattern;
  * normalization would have to happen at every call site — a bug waiting to
  * happen.
  */
-public record IbanNumber(String value) {
+public record IbanNumber(@NonNull String value) {
 
     /**
      * Structural regex for ISO 13616 IBAN format:
@@ -49,11 +52,11 @@ public record IbanNumber(String value) {
      * Public so callers (e.g. error handlers) can normalize without creating
      * an IbanNumber instance. Used internally by the compact constructor.
      */
-    public static String normalize(String raw) {
+    public static @NonNull String normalize(String raw) {
         if (raw == null || raw.isBlank()) {
             return "";
         }
-        return raw.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
+        return Objects.requireNonNull(raw.replaceAll("[^A-Za-z0-9]", "").toUpperCase());
     }
 
     /**
