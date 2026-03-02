@@ -350,36 +350,125 @@ cd frontend && pnpm test           # Frontend: 29 Tests
 
 ---
 
-## 12. Docker Compose
+## 12. Deployment — Drei Wege, ein Projekt
 
-Drei Services, ein Befehl: `docker compose up --build`
+Das Projekt unterstützt drei Deployment-Varianten. Alle koexistieren im selben Repo — keine Variante bricht eine andere.
+
+### 12.1 Lokale Entwicklung (Makefile)
+
+Drei Terminals, drei Befehle:
+
+```bash
+make db   # PostgreSQL-Container starten (Docker)
+make be   # Spring Boot mit dev-Profil (Hot Reload)
+make fe   # Vite Dev-Server (HMR, Port 5173)
+```
 
 ```mermaid
 graph LR
-    Browser["🌐 Browser"] -->|":80"| Nginx
-
-    subgraph frontend ["frontend :80"]
-        Nginx["Nginx"]
-        Static["SPA Build"]
-    end
-
-    subgraph backend ["backend :8080"]
-        Spring["Spring Boot"]
-    end
-
-    subgraph db ["db :5432"]
-        PG[("PostgreSQL")]
-    end
-
-    Nginx -->|"/ "| Static
-    Nginx -->|"/api/*"| Spring
-    Spring -->|"JDBC"| PG
-    PG -.->|"pg_isready\nhealthcheck"| Spring
+    Browser["🌐 Browser"] -->|":5173"| Vite["Vite Dev Server"]
+    Vite -->|"Proxy /api/*"| Spring["Spring Boot :8080"]
+    Spring -->|"JDBC"| PG[("PostgreSQL :5432\n(Docker)")]
 ```
 
-- **Kein separater Reverse-Proxy-Container** — Nginx im Frontend-Container übernimmt beides
-- **Healthcheck:** Postgres meldet sich via `pg_isready`, Backend wartet mit `depends_on: condition: service_healthy`
-- **Secrets:** `.env`-Datei für DB-Credentials, nicht hardcoded
+- **Spring-Profil:** `dev` — CORS offen, Postgres via Docker, Flyway migriert automatisch
+- **Frontend:** Vite proxied `/api/*` an `localhost:8080` — kein CORS-Problem
+- **DB-Credentials:** `.env`-Datei (nicht hardcoded), geladen via `Makefile`
+- **Code Quality:** `make check` → Spotless + Checkstyle + Tests (Backend) + ESLint + Tests (Frontend)
+
+### 12.2 Docker Compose — VPS mit HTTPS
+
+Zwei Compose-Dateien für unterschiedliche Szenarien:
+
+| Datei                             | Zweck                         | Befehl           |
+| --------------------------------- | ----------------------------- | ---------------- |
+| `docker-compose.yml`              | Lokaler Stack ohne TLS        | `make up`        |
+| `docker-compose.prod.yml`         | Produktions-Stack mit HTTPS   | `make prod-up`   |
+| `docker-compose.initial-cert.yml` | Erstmalige Let's-Encrypt-Cert | `make cert-init` |
+
+**Produktions-Architektur (5 Container):**
+
+```mermaid
+graph LR
+    Browser["🌐 Browser"] -->|":443 TLS"| RP["Reverse Proxy\n(Nginx)"]
+    RP -->|"/api/*"| Spring["Spring Boot :8080"]
+    RP -->|"/*"| Nginx["Frontend\n(Nginx :80)"]
+    Spring -->|"JDBC"| PG[("PostgreSQL 17")]
+    Certbot["Certbot"] -.->|"Auto-Renewal"| RP
+```
+
+- **Reverse-Proxy-Container:** Nginx terminiert TLS, routet `/api/*` → Backend, `/*` → Frontend
+- **Certbot:** Automatische Let's-Encrypt-Erneuerung alle 24h
+- **Netzwerk-Isolation:** PostgreSQL ist nur im internen `db-network` erreichbar — kein externer Zugriff
+- **Healthcheck:** Postgres `pg_isready` → Backend wartet via `depends_on: condition: service_healthy`
+- **Secrets:** `.env`-Datei mit `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+
+### 12.3 AWS Cloud-Native (CDK + GitHub Actions)
+
+Serverless-Deployment ohne Docker — jeder Service wird durch einen AWS Managed Service ersetzt:
+
+| Docker Compose          | AWS Equivalent                        |
+| ----------------------- | ------------------------------------- |
+| Nginx (SPA)             | **S3 + CloudFront**                   |
+| Spring Boot (Container) | **Lambda + API Gateway** (Serverless) |
+| PostgreSQL (Container)  | **RDS PostgreSQL** (Managed)          |
+| Nginx (Reverse Proxy)   | **CloudFront** (HTTPS built-in)       |
+| `docker-compose.yml`    | **AWS CDK** (TypeScript IaC)          |
+| Manuelles Deploy        | **GitHub Actions** (CI/CD)            |
+
+```mermaid
+graph TB
+    CF["CloudFront CDN\n(HTTPS)"] -->|"/*"| S3["S3 Bucket\n(React SPA)"]
+    CF -->|"/api/*"| APIGW["API Gateway\n(HTTP API)"]
+    APIGW --> Lambda["Lambda\n(Spring Boot +\nSnapStart)"]
+    Lambda --> Proxy["RDS Proxy"]
+    Proxy --> RDS[("RDS PostgreSQL\n(db.t4g.micro)")]
+    Lambda -.->|"Fallback"| ExtAPI["openiban.com"]
+```
+
+**CDK-Stacks (4 Stacks, TypeScript):**
+
+| Stack           | Ressourcen                                     |
+| --------------- | ---------------------------------------------- |
+| `NetworkStack`  | VPC, Public/Private Subnets, NAT Gateway       |
+| `DatabaseStack` | RDS PostgreSQL 17, RDS Proxy, Secrets Manager  |
+| `BackendStack`  | Lambda (Java 21 + SnapStart), HTTP API Gateway |
+| `FrontendStack` | S3 Bucket, CloudFront (OAC, SPA-Fallback)      |
+
+**Backend-Änderungen für AWS — nur 3 Dateien:**
+
+1. **`pom.xml`** — eine neue Dependency: `aws-serverless-java-container-springboot3`
+2. **`StreamLambdaHandler.java`** — neue Klasse, die API-Gateway-Events in Spring Boots DispatcherServlet bridged
+3. **`application-aws.properties`** — AWS-Profil mit RDS-Proxy-Verbindung und `hikari.maximum-pool-size=1`
+
+**Frontend: Null Änderungen.** Die SPA nutzt relative Pfade (`/api/ibans`), CloudFront routet `/api/*` an API Gateway — gleiche Origin, kein CORS.
+
+**CI/CD-Pipeline (GitHub Actions):**
+
+```mermaid
+graph LR
+    Push["git push main"] --> BCI["Backend CI\n(mvnw verify)"]
+    Push --> FCI["Frontend CI\n(lint + build + test)"]
+    BCI --> Deploy["CDK Deploy\n(OIDC Auth)"]
+    FCI --> Deploy
+    Deploy --> AWS["☁️ AWS\n(prod stack)"]
+```
+
+- **OIDC-Auth** — keine statischen AWS-Credentials, GitHub Actions bekommt temporäre Tokens
+- **Dev/Prod** über CDK-Context: `cdk deploy --all -c stage=dev` vs. `-c stage=prod`
+- **Teardown:** `cdk destroy --all` löscht alle AWS-Ressourcen
+
+### Vergleich der drei Setups
+
+| Aspekt        | Lokal (Makefile)  | Docker Compose (VPS)    | AWS CDK (Serverless)     |
+| ------------- | ----------------- | ----------------------- | ------------------------ |
+| Zielgruppe    | Entwicklung       | Self-hosted Production  | Cloud Production         |
+| Start-Befehl  | `make db be fe`   | `make prod-up`          | `cdk deploy --all`       |
+| HTTPS         | Nein              | Let's Encrypt + Certbot | CloudFront (automatisch) |
+| Skalierung    | Einzelner Rechner | Vertikale Skalierung    | Auto-Scaling (Lambda)    |
+| DB            | Docker PostgreSQL | Docker PostgreSQL       | RDS PostgreSQL (Managed) |
+| Kosten        | Gratis            | VPS-Kosten (~5€/Monat)  | Pay-per-Request (~1–2€)  |
+| Infrastruktur | Docker Desktop    | Linux VPS + Docker      | AWS Account + CDK        |
 
 ---
 
@@ -408,11 +497,13 @@ graph LR
 
 _(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
 
-- **HTTPS** mit Let's Encrypt + Certbot
-- **CI/CD** mit GitHub Actions (Tests + Docker-Build)
+- ~~HTTPS mit Let's Encrypt + Certbot~~ → ✅ Umgesetzt (Docker Compose Prod + AWS CloudFront)
+- ~~CI/CD mit GitHub Actions~~ → ✅ Umgesetzt (`.github/workflows/deploy.yml`)
+- ~~AWS Cloud Deployment~~ → ✅ Umgesetzt (CDK + Lambda + S3 + RDS)
 - **Dark Mode** (CSS-Variablen sind vorbereitet)
 - **Authentifizierung** (JWT + Spring Security)
 - **CSV-Export** der gespeicherten IBANs
+- **Custom Domain** (Route 53 + ACM Certificate für AWS-Setup)
 
 → Detailliert dokumentiert in [future.md](future.md)
 
@@ -420,10 +511,12 @@ _(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
 
 ## 15. Abschluss
 
-- **Projekt:** Lexiban — React + Spring Boot + PostgreSQL + Docker
+- **Projekt:** Lexiban — React + Spring Boot + PostgreSQL
 - **Eigene Modulo-97-Implementierung** nach ISO 13616
 - **54 Backend-Tests + 29 Frontend-Tests**, alle grün
 - **DDD-Elemente**: IbanNumber Value Object, Mod97Validator, Service-Orchestrierung
+- **3 Deployment-Varianten**: Lokale Entwicklung, Docker Compose (VPS + HTTPS), AWS Serverless (CDK)
+- **CI/CD**: GitHub Actions mit OIDC-Auth → automatisches AWS-Deployment bei Push
 - **Produktionsnahe Architektur** mit Flyway, Docker Compose, Nginx-Proxy, natürliche PKs
 - **Saubere Doku:** README, Architecture Decisions, Fachliches Wissen, Lernguide
 - **Reflection:** Alle Entscheidungen in decisions.md begründet — auch was man in Produktion anders machen würde
