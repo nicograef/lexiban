@@ -10,14 +10,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for LocalIbanValidator — pure logic, no Spring context needed.
- *
- * <p>Tests the three possible outcomes: 1. Optional.of(invalid) — definitive failure (wrong length
- * or bad Mod-97) 2. Optional.of(valid + bankName) — known German bank 3. Optional.empty() — checks
- * passed but bank unknown (needs external)
- *
- * <p>Uses a real Mod97Validator (pure algorithm, no mocks). ≈ In Vitest: testing a pure function in
- * complete isolation.
+ * Unit tests for LocalIbanValidator — three possible outcomes: definitive
+ * invalid, valid + bankName,
+ * or empty (needs external). Uses a real Mod97Validator (pure algorithm, no
+ * mocks).
  */
 class LocalIbanValidatorTest {
 

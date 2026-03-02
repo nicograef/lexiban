@@ -7,13 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for the IbanNumber value object.
- *
- * <p>Tests that IbanNumber: 1. Self-normalizes input (removes whitespace, uppercase). 2. Rejects
- * structurally invalid input (too short, wrong format). 3. Exposes correct derived properties
- * (countryCode, bankIdentifier, etc.).
- *
- * <p>≈ In Vitest: testing a class constructor + readonly properties.
+ * Unit tests for the IbanNumber value object — normalization, structural
+ * validation, derived properties.
  */
 class IbanNumberTest {
 

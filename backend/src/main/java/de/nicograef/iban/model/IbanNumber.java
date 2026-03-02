@@ -6,42 +6,31 @@ import java.util.regex.Pattern;
 import org.springframework.lang.NonNull;
 
 /**
- * Value Object for a normalized IBAN string.
+ * DDD Value Object for a normalized, structurally valid IBAN string.
  *
- * <p>Responsibilities: 1. Normalize raw input (strip non-alphanumeric chars, uppercase). 2.
- * Validate structural format (2 letters + 2 digits + 11–30 alphanumeric). 3. Provide human-readable
- * error messages for invalid input. 4. Expose derived properties (countryCode, checkDigits, bban,
- * etc.).
+ * <p>
+ * Normalizes raw input (strip non-alphanumeric, uppercase), validates
+ * structural format, and
+ * exposes derived properties (countryCode, checkDigits, bban, bankIdentifier).
  *
- * <p>A valid IbanNumber instance is guaranteed to be normalized and structurally valid. The
- * constructor throws IbanFormatException (a subclass of IllegalArgumentException) with a
- * descriptive German-language message if the input is invalid — callers can use e.getMessage()
- * directly as an error reason. The exception also carries the normalized IBAN string so error
- * handlers can include it in the HTTP response.
- *
- * <p>This is a DDD Value Object — defined by its value, immutable, with behavior. TS equivalent: a
- * class that validates in the constructor and exposes readonly properties. Go equivalent: a
- * validated string type with methods.
- *
- * <p>Why this matters: When the IBAN is the primary key in the database, every INSERT and SELECT
- * must use the exact same normalized form. Without IbanNumber, normalization would have to happen
- * at every call site — a bug waiting to happen.
+ * <p>
+ * Throws {@link IbanFormatException} with a German-language message if input is
+ * structurally
+ * invalid. A valid instance is guaranteed to be normalized — essential since
+ * the IBAN is the
+ * database primary key.
  */
 public record IbanNumber(@NonNull String value) {
 
     /**
-     * Structural regex for ISO 13616 IBAN format: - Pos 1–2: Two uppercase letters (country code) -
-     * Pos 3–4: Two digits (check digits) - Pos 5–34: 11–30 alphanumeric characters (BBAN)
+     * ISO 13616 structural pattern: 2 letters + 2 digits + 11–30 alphanumeric
+     * (BBAN).
      */
-    private static final Pattern IBAN_STRUCTURE =
-            Pattern.compile("^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$");
+    private static final Pattern IBAN_STRUCTURE = Pattern.compile("^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$");
 
     /**
-     * Normalizes a raw IBAN string: removes all non-alphanumeric characters and converts to
-     * uppercase. Returns an empty string for null input.
-     *
-     * <p>Public so callers (e.g. error handlers) can normalize without creating an IbanNumber
-     * instance. Used internally by the compact constructor.
+     * Strip non-alphanumeric characters and uppercase. Public for use in error
+     * handlers.
      */
     public static @NonNull String normalize(String raw) {
         if (raw == null || raw.isBlank()) {
@@ -50,10 +39,7 @@ public record IbanNumber(@NonNull String value) {
         return Objects.requireNonNull(raw.replaceAll("[^A-Za-z0-9]", "").toUpperCase());
     }
 
-    /**
-     * Compact constructor: normalizes and validates on creation. If you hold an IbanNumber, you
-     * know it's normalized and structurally valid.
-     */
+    /** Compact constructor — normalizes and validates on creation. */
     public IbanNumber {
         value = normalize(value);
 
@@ -67,10 +53,7 @@ public record IbanNumber(@NonNull String value) {
     }
 
     /**
-     * Provides a specific German-language reason why the structural check failed. Inspects the
-     * normalized IBAN step by step to return the most helpful error.
-     *
-     * <p>TS analogy: a private helper that builds a user-facing error string.
+     * Returns a specific German-language reason for a structural format failure.
      */
     private static String describeStructuralError(String iban) {
         if (iban.isEmpty()) {
@@ -107,18 +90,13 @@ public record IbanNumber(@NonNull String value) {
     }
 
     /**
-     * BBAN (Basic Bank Account Number) — everything after the first 4 characters. Country-specific
-     * structure. For DE: 8-digit BLZ + 10-digit account number.
+     * BBAN (Basic Bank Account Number) — everything after the first 4 characters.
      */
     public String bban() {
         return value.substring(4);
     }
 
-    /**
-     * Bank identifier (BLZ for German IBANs, positions 5-12). Returns empty Optional for non-German
-     * IBANs or IBANs too short. Other countries have different bank identifier schemes (Sort Code
-     * in GB, etc.)
-     */
+    /** BLZ for German IBANs (positions 5–12). Empty for non-German IBANs. */
     public Optional<String> bankIdentifier() {
         if ("DE".equals(countryCode()) && value.length() >= 12) {
             return Optional.of(value.substring(4, 12));
@@ -126,10 +104,7 @@ public record IbanNumber(@NonNull String value) {
         return Optional.empty();
     }
 
-    /**
-     * Formatted display string with 4-character groups (DIN 5008). "DE89370400440532013000" → "DE89
-     * 3704 0044 0532 0130 00"
-     */
+    /** Formatted with 4-character groups (DIN 5008). */
     public String formatted() {
         return value.replaceAll("(.{4})", "$1 ").trim();
     }

@@ -22,26 +22,23 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Unit tests for IbanService — the orchestrator.
- *
- * <p>Both validators are mocked to test the orchestration logic in isolation: - Does it call local
- * first? - Does it fall back to external only when local returns empty? - Does it produce a
- * fallback result when both return empty? - Does it return cached results without calling
- * validators?
- *
- * <p>≈ In Vitest: testing an orchestrator function with vi.mock() for each dependency, verifying
- * call order and fallback behavior.
+ * Unit tests for IbanService — the orchestrator. Both validators are mocked to
+ * test orchestration
+ * logic in isolation (call order, fallback behavior, caching).
  */
 @ExtendWith(MockitoExtension.class)
 class IbanServiceTest {
 
     private IbanService service;
 
-    @Mock private LocalIbanValidator localValidator;
+    @Mock
+    private LocalIbanValidator localValidator;
 
-    @Mock private OpenIbanValidator openIbanValidator;
+    @Mock
+    private OpenIbanValidator openIbanValidator;
 
-    @Mock private IbanRepository ibanRepository;
+    @Mock
+    private IbanRepository ibanRepository;
 
     @BeforeEach
     void setUp() {
@@ -63,10 +60,9 @@ class IbanServiceTest {
 
     @Test
     void tooLongInputThrowsFormatException() {
-        var ex =
-                assertThrows(
-                        IbanFormatException.class,
-                        () -> service.validateOrLookup("DE89370400440532013000EXTRA1234567890"));
+        var ex = assertThrows(
+                IbanFormatException.class,
+                () -> service.validateOrLookup("DE89370400440532013000EXTRA1234567890"));
         assertTrue(ex.getMessage().contains("zu lang"));
     }
 

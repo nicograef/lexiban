@@ -11,20 +11,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Global error handler for all REST controllers. Catches exceptions and returns consistent JSON
- * error responses. See lernfragen.md → "@RestControllerAdvice" for the pattern.
- *
- * <p>TS analogy: Express error-handling middleware that checks the error type and sets the
- * appropriate HTTP status code + JSON body.
+ * Global error handler for all REST controllers — consistent JSON error
+ * responses.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // SLF4J logger — TS equivalent: const log = console; but with levels
-    // (debug/info/warn/error)
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** Handles @Valid validation failures (e.g. @NotBlank) → HTTP 400. */
+    /** @Valid failures (e.g. @NotBlank) → 400. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationErrors(MethodArgumentNotValidException ex) {
@@ -39,17 +34,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles structurally malformed IBAN input → HTTP 400.
-     *
-     * <p>This is thrown by IbanNumber's constructor when the raw input doesn't match the ISO 13616
-     * structural pattern (too short, too long, wrong character positions). The request itself is
-     * invalid — it's not a legitimate validation query.
-     *
-     * <p>Semantic errors (wrong Mod-97 check digit, wrong country length) are NOT format errors and
-     * return 200 with valid=false instead.
-     *
-     * <p>Response shape matches IbanController.IbanResponse so the frontend can handle both 200 and
-     * 400 responses with the same TS interface.
+     * Structurally malformed IBAN → 400. Response shape matches IbanResponse for
+     * frontend compatibility.
      */
     @ExceptionHandler(IbanFormatException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -60,15 +46,10 @@ public class GlobalExceptionHandler {
                 "reason", ex.getMessage());
     }
 
-    /**
-     * Catch-all for unhandled exceptions. Returns HTTP 500 — never exposes internal details to the
-     * client.
-     */
+    /** Catch-all → 500. Never exposes internal details. */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> handleGenericError(Exception ex) {
-        // Without this log, 500 errors would be invisible — the client only
-        // sees "Internal server error" but nobody would know what went wrong.
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
         return Map.of("error", "Internal server error");
     }

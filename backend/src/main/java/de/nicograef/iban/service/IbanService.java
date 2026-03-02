@@ -10,22 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Orchestrator for IBAN validation — coordinates parsing, caching, and the validator chain (local →
- * external → fallback).
- *
- * <p>This service contains NO validation logic itself. It only: 1. Parses raw input → IbanNumber
- * (structural check). 2. Checks the DB cache for an existing result. 3. Delegates to validators in
- * order (Strategy Pattern). 4. Persists the result.
- *
- * <p>The validators implement the IbanValidator interface: - LocalIbanValidator: length + Mod-97 +
- * local BLZ map - OpenIbanValidator: openiban.com API fallback
- *
- * <p>If both validators return Optional.empty() (unknown bank + API unreachable), the service falls
- * back to a valid-without-bank-name result — because the local validator already confirmed length +
- * Mod-97.
- *
- * <p>TS analogy: an Express service that coordinates calls to strategy functions, manages the
- * database cache, and never contains business logic itself.
+ * Orchestrator for IBAN validation — coordinates parsing, DB caching, and the
+ * validator chain
+ * (local → external → fallback). Contains no validation logic itself.
  */
 @Service
 public class IbanService {
@@ -36,10 +23,6 @@ public class IbanService {
     private final OpenIbanValidator openIbanValidator;
     private final IbanRepository ibanRepository;
 
-    /**
-     * Constructor injection — the orchestrator depends on two validators and the repository. No
-     * direct dependency on Mod97Validator or external API.
-     */
     public IbanService(
             LocalIbanValidator localValidator,
             OpenIbanValidator openIbanValidator,
@@ -50,20 +33,16 @@ public class IbanService {
     }
 
     /**
-     * Validate or look up an IBAN from raw string input.
+     * Validate or look up an IBAN. Pipeline: Parse → Cache → Local → External →
+     * Fallback → Persist.
      *
-     * <p>Pipeline: Parse → Cache → Local → External → Fallback → Persist
-     *
-     * @param rawIban Raw IBAN string (may contain spaces, hyphens, lowercase)
-     * @return Complete validation result (from cache or freshly computed)
-     * @throws de.nicograef.iban.model.IbanFormatException if structurally not an IBAN (→ HTTP 400)
+     * @throws de.nicograef.iban.model.IbanFormatException if structurally not an
+     *                                                     IBAN (→ HTTP 400)
      */
     public ValidationResult validateOrLookup(String rawIban) {
-        // Step 1: Parse + normalize → IbanNumber (structural validation).
-        // IbanFormatException bubbles up → GlobalExceptionHandler → HTTP 400.
         IbanNumber ibanNumber = new IbanNumber(rawIban);
 
-        // Step 2: Cache lookup — already in the database?
+        // Cache lookup
         Optional<Iban> cached = ibanRepository.findById(ibanNumber.value());
         if (cached.isPresent()) {
             log.debug("Cache hit for IBAN {}", ibanNumber.value());
@@ -72,28 +51,24 @@ public class IbanService {
                     entity.isValid(), entity.getIban(), entity.getBankName(), entity.getReason());
         }
 
-        // Step 3: Local validation (length + Mod-97 + BLZ lookup).
-        // Returns definitive invalid, definitive valid+bankName, or empty.
+        // Local validation (length + Mod-97 + BLZ)
         Optional<ValidationResult> result = localValidator.validate(ibanNumber);
 
-        // Step 4: OpenIBAN fallback — only called if local returned empty
-        // (= IBAN passed checks but bank is unknown to local validator).
+        // External fallback (only if local returned empty)
         if (result.isEmpty()) {
             result = openIbanValidator.validate(ibanNumber);
         }
 
-        // Step 5: Fallback — both validators couldn't produce a result.
-        // We know length + Mod-97 passed (local would have returned invalid).
-        // Return valid without bank name (graceful degradation).
+        // Fallback: both validators empty → valid without bank name (length + Mod-97
+        // passed)
         if (result.isEmpty()) {
             log.info(
                     "No validator produced a result for {} — falling back to valid without bank name",
                     ibanNumber.value());
         }
-        ValidationResult finalResult =
-                result.orElse(new ValidationResult(true, ibanNumber.value(), null, null));
+        ValidationResult finalResult = result.orElse(new ValidationResult(true, ibanNumber.value(), null, null));
 
-        // Step 6: Persist result to database (one row per IBAN, natural PK).
+        // Persist
         ibanRepository.save(
                 new Iban(
                         finalResult.iban(),

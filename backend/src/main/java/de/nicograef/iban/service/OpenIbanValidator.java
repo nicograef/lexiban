@@ -9,14 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 /**
- * Fallback IBAN validator — calls the openiban.com REST API when LocalIbanValidator cannot produce
- * a result (unknown BLZ or non-German IBAN).
- *
- * <p>Returns {@code Optional.empty()} if the API is unreachable, allowing the orchestrator to fall
- * back to a valid-without-bank-name result.
+ * Fallback IBAN validator — calls the openiban.com REST API when
+ * LocalIbanValidator cannot produce a
+ * result. Returns {@code Optional.empty()} if the API is unreachable.
  *
  * @see <a href="https://openiban.com/">openiban.com</a>
- * @see <a href="https://github.com/fourcube/goiban-service">goiban-service (Go source)</a>
  */
 @Service
 public class OpenIbanValidator implements IbanValidator {
@@ -33,12 +30,11 @@ public class OpenIbanValidator implements IbanValidator {
     @Override
     public Optional<ValidationResult> validate(IbanNumber iban) {
         try {
-            var response =
-                    restClient
-                            .get()
-                            .uri("{iban}?getBIC=true&validateBankCode=true", iban.value())
-                            .retrieve()
-                            .body(OpenIbanResponse.class);
+            var response = restClient
+                    .get()
+                    .uri("{iban}?getBIC=true&validateBankCode=true", iban.value())
+                    .retrieve()
+                    .body(OpenIbanResponse.class);
 
             if (response == null) {
                 return Optional.empty();
@@ -55,8 +51,10 @@ public class OpenIbanValidator implements IbanValidator {
         }
     }
 
-    /** Subset of the openiban.com JSON response — unknown fields are ignored by Jackson. */
-    record OpenIbanResponse(boolean valid, String[] messages, BankData bankData) {}
+    /** Relevant subset of the openiban.com JSON response. */
+    record OpenIbanResponse(boolean valid, String[] messages, BankData bankData) {
+    }
 
-    record BankData(String name) {}
+    record BankData(String name) {
+    }
 }
