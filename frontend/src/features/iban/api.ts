@@ -1,26 +1,18 @@
-import { cleanIban } from '@/lib/utils'
+import { z } from 'zod'
+
+import { cleanIban } from '@/features/iban/utils'
+
+import type { IbanListEntry } from './types'
+import {
+  IbanListEntrySchema,
+  type IbanValidationResponse,
+  IbanValidationResponseSchema,
+} from './types'
 
 // Base path for API calls. In dev, Vite/nginx proxies /api/* to the backend.
 // In production, the nginx reverse proxy routes /api/* to backend:8080.
 // This means no absolute URLs needed — just relative paths.
 const API_BASE = '/api/ibans'
-
-// Response types matching the Java Records (DTOs) defined in IbanController.java.
-// IbanResponse        ↔ IbanController.IbanResponse record
-// IbanListEntry       ↔ IbanController.IbanListEntry record
-export interface IbanValidationResponse {
-  valid: boolean
-  iban: string
-  bankName: string | null
-  reason: string | null
-}
-
-export interface IbanListEntry {
-  iban: string
-  bankName: string | null
-  valid: boolean
-  reason: string | null
-}
 
 /**
  * POST /api/ibans — Validate and save IBAN.
@@ -45,7 +37,8 @@ export async function validateIban(
   // Both 200 (semantic result) and 400 (structural format error) return
   // the same JSON shape { valid, iban, reason } — parse and return both.
   if (response.ok || response.status === 400) {
-    return (await response.json()) as IbanValidationResponse
+    const json: unknown = await response.json()
+    return IbanValidationResponseSchema.parse(json)
   }
 
   throw new Error(`Validation failed: ${response.status.toString()}`)
@@ -60,5 +53,6 @@ export async function getAllIbans(): Promise<IbanListEntry[]> {
   if (!response.ok) {
     throw new Error(`Fetch failed: ${response.status.toString()}`)
   }
-  return (await response.json()) as IbanListEntry[]
+  const json: unknown = await response.json()
+  return z.array(IbanListEntrySchema).parse(json)
 }

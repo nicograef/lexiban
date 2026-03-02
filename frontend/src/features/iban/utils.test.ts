@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  cleanIban,
-  COUNTRY_LENGTHS,
-  formatIban,
-  getExpectedLength,
-} from '@/lib/utils'
+import { COUNTRY_LENGTHS, getExpectedLength } from './constants'
+import { cleanIban, formatIban } from './utils'
 
 describe('formatIban', () => {
   it('groups a clean IBAN into 4-char blocks', () => {

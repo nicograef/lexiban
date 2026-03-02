@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
-import { IbanInput } from '@/components/IbanInput'
+import { IbanInput } from './IbanInput'
 
 describe('IbanInput', () => {
   it('renders the input field', () => {
@@ -14,7 +14,7 @@ describe('IbanInput', () => {
 
   it('renders validate button', () => {
     render(<IbanInput />)
-    expect(screen.getByText('Prüfen')).toBeInTheDocument()
+    expect(screen.getByText('IBAN Prüfen')).toBeInTheDocument()
   })
 
   it('has autoFocus on the input', () => {
@@ -68,7 +68,7 @@ describe('IbanInput', () => {
 
   it('disables button when input is empty', () => {
     render(<IbanInput />)
-    expect(screen.getByText('Prüfen')).toBeDisabled()
+    expect(screen.getByText('IBAN Prüfen')).toBeDisabled()
   })
 
   it('enables button when input has text', async () => {
@@ -78,6 +78,6 @@ describe('IbanInput', () => {
       screen.getByPlaceholderText('DE89 3704 0044 0532 0130 00'),
       'DE89',
     )
-    expect(screen.getByText('Prüfen')).toBeEnabled()
+    expect(screen.getByText('IBAN Prüfen')).toBeEnabled()
   })
 })

@@ -10,8 +10,11 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { cleanIban, formatIban, getExpectedLength } from '@/lib/utils'
-import { type IbanValidationResponse, validateIban } from '@/services/api'
+
+import { validateIban } from './api'
+import { getExpectedLength } from './constants'
+import type { IbanValidationResponse } from './types'
+import { cleanIban, formatIban } from './utils'
 
 interface ValidationState {
   loading: boolean

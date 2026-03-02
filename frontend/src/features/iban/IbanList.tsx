@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useState } from 'react'
-
 import { Badge } from '@/components/ui/badge'
 import {
   Card,
@@ -8,63 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { formatIban } from '@/lib/utils'
-import { getAllIbans, type IbanListEntry } from '@/services/api'
 
-const mockIbans: IbanListEntry[] = [
-  {
-    iban: 'DE89370400440532013000',
-    bankName: 'Commerzbank',
-    valid: true,
-    reason: null,
-  },
-  {
-    iban: 'GB29NWBK60161331926819',
-    bankName: 'NatWest',
-    valid: true,
-    reason: null,
-  },
-  {
-    iban: 'DE00123456780000000001',
-    bankName: null,
-    valid: false,
-    reason: 'Prüfsumme ungültig (Modulo-97-Check fehlgeschlagen)',
-  },
-  {
-    iban: 'XX12345678',
-    bankName: null,
-    valid: false,
-    reason: 'Unbekannter Ländercode: XX',
-  },
-  {
-    iban: 'AT611904300234573201',
-    bankName: 'Erste Bank',
-    valid: true,
-    reason: null,
-  },
-]
+import { useIbanList } from './hooks'
+import { formatIban } from './utils'
 
 export function IbanList({ refreshKey }: { refreshKey?: number }) {
-  const [ibans, setIbans] = useState<IbanListEntry[]>(mockIbans)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchIbans = useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = await getAllIbans()
-      setIbans(data)
-      setError(null)
-    } catch {
-      setError('IBANs konnten nicht geladen werden')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void fetchIbans()
-  }, [fetchIbans, refreshKey])
+  const { data: ibans, loading, error } = useIbanList(refreshKey)
 
   if (loading) {
     return (
@@ -78,7 +25,7 @@ export function IbanList({ refreshKey }: { refreshKey?: number }) {
     return <p className="text-destructive text-sm">{error}</p>
   }
 
-  if (ibans.length === 0) {
+  if (!ibans || ibans.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
         Noch keine IBANs gespeichert.

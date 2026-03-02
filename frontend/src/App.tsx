@@ -2,9 +2,9 @@ import './index.css'
 
 import { useState } from 'react'
 
-import { IbanInput } from '@/components/IbanInput'
-import { IbanList } from '@/components/IbanList'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { IbanInput } from '@/features/iban/IbanInput'
+import { IbanList } from '@/features/iban/IbanList'
 
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
