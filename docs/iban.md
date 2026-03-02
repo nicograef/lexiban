@@ -296,15 +296,15 @@ Liefert:
 
 Dieses Wissensdokument bildet die fachliche Grundlage für Lexiban:
 
-| Fachliches Konzept                    | Umsetzung im Projekt                                             |
-| ------------------------------------- | ---------------------------------------------------------------- |
-| IBAN-Aufbau (Abschnitt 3–4)           | Parsing der Eingabe, Extraktion von BLZ/Kontonummer              |
-| Modulo-97-Algorithmus (Abschnitt 6)   | `IbanValidationService.java` — eigene Validierungslogik          |
-| Stückweise Berechnung (Abschnitt 6.3) | Java `BigInteger` für die Modulo-Berechnung                      |
-| Schreibweise (Abschnitt 8)            | Frontend-Formatierung in 4er-Gruppen, Bereinigung vor API-Aufruf |
-| BLZ-Extraktion (Abschnitt 4)          | Stellen 5–12 extrahieren, gegen bekannte Banken matchen          |
-| Externe API (Abschnitt 11)            | Fallback-Validierung über openiban.com                           |
-| Fehlertoleranz (Abschnitt 7)          | Verständnis, warum Modulo 97 ausreicht                           |
+| Fachliches Konzept                    | Umsetzung im Projekt                                                         |
+| ------------------------------------- | ---------------------------------------------------------------------------- |
+| IBAN-Aufbau (Abschnitt 3–4)           | Parsing der Eingabe, Extraktion von BLZ/Kontonummer                          |
+| Modulo-97-Algorithmus (Abschnitt 6)   | `Mod97Validator.java` + `LocalIbanValidator.java` — eigene Validierungslogik |
+| Stückweise Berechnung (Abschnitt 6.3) | Java `BigInteger` für die Modulo-Berechnung                                  |
+| Schreibweise (Abschnitt 8)            | Frontend-Formatierung in 4er-Gruppen, Bereinigung vor API-Aufruf             |
+| BLZ-Extraktion (Abschnitt 4)          | Stellen 5–12 extrahieren, gegen bekannte Banken matchen                      |
+| Externe API (Abschnitt 11)            | Fallback-Validierung über openiban.com                                       |
+| Fehlertoleranz (Abschnitt 7)          | Verständnis, warum Modulo 97 ausreicht                                       |
 
 ---
 

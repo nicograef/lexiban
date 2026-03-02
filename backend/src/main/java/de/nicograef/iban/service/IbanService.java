@@ -63,6 +63,7 @@ public class IbanService {
                     "No validator produced a result for {} — falling back to valid without bank name",
                     ibanNumber.value());
         }
+
         ValidationResult finalResult =
                 result.orElse(new ValidationResult(true, ibanNumber.value(), null, null));
 

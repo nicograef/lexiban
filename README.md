@@ -16,7 +16,7 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
 | Komponente        | Technologie                     |
 | ----------------- | ------------------------------- |
 | Backend           | Java 21, Spring Boot 3.x, Maven |
-| Frontend          | React 18+ (Vite, TypeScript)    |
+| Frontend          | React 19 (Vite, TypeScript)     |
 | Datenbank         | PostgreSQL 17                   |
 | API-Kommunikation | REST (JSON)                     |
 | Containerisierung | Docker Compose                  |
@@ -81,11 +81,10 @@ cd backend && ./mvnw checkstyle:check # Nur Linting
 
 ## API-Endpunkte
 
-| Methode | Pfad                | Beschreibung                                      |
-| ------- | ------------------- | ------------------------------------------------- |
-| POST    | `/api/ibans`        | IBAN validieren und speichern (oder Cache-Lookup) |
-| GET     | `/api/ibans`        | Alle gespeicherten IBANs abrufen                  |
-| DELETE  | `/api/ibans/{iban}` | Gespeicherte IBAN löschen (Cache-Invalidierung)   |
+| Methode | Pfad         | Beschreibung                                      |
+| ------- | ------------ | ------------------------------------------------- |
+| POST    | `/api/ibans` | IBAN validieren und speichern (oder Cache-Lookup) |
+| GET     | `/api/ibans` | Alle gespeicherten IBANs abrufen                  |
 
 ### Beispiel: POST `/api/ibans`
 
