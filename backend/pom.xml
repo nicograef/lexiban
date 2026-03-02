@@ -55,6 +55,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- AWS Lambda adapter — runs Spring Boot inside Lambda (API Gateway v2) -->
+        <dependency>
+            <groupId>com.amazonaws.serverless</groupId>
+            <artifactId>aws-serverless-java-container-springboot3</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+
         <!-- Test (JUnit 5, Mockito, MockMvc, AssertJ) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
