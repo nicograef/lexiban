@@ -31,19 +31,15 @@
 
 ## 2. Fachlichkeit: Was ist eine IBAN?
 
-_(Kurzer fachlicher Überblick, damit die Interviewer den Kontext haben — Detailalgorithmus folgt in Abschnitt 7.)_
+Eine **internationale Kontonummer** (max. 34 Zeichen, alphanumerisch), die Bankverbindungen weltweit eindeutig identifiziert. Seit 2014 Pflicht in der EU (SEPA).
 
-Eine **internationale Kontonummer** (max. 34 Zeichen, alphanumerisch), die Bankverbindungen weltweit eindeutig identifiziert. Seit 2014 Pflicht in der EU (SEPA). 89 Länder nutzen das System.
-
-**Aufbau — immer gleich:**
+**Aufbau:**
 
 ```
 [Ländercode 2 Buchstaben][Prüfziffern 2 Ziffern][BBAN länderspezifisch]
 ```
 
-### Deutsche IBAN — das relevanteste Format im Projekt
-
-Immer **exakt 22 Stellen**:
+### Deutsche IBAN — exakt 22 Stellen
 
 ```
 D E 6 8 2 1 0 5 0 1 7 0 0 0 1 2 3 4 5 6 7 8
@@ -53,10 +49,10 @@ D E 6 8 2 1 0 5 0 1 7 0 0 0 1 2 3 4 5 6 7 8
  Ländercode ("DE")
 ```
 
-- **BLZ** (Bankleitzahl, Pos. 5–12): identifiziert die Bank. Im Code ein simpler Substring.
+- **BLZ** (Bankleitzahl, Pos. 5–12): identifiziert die Bank eindeutig.
 - **Kontonummer** (Pos. 13–22): mit führenden Nullen auf 10 Stellen aufgefüllt.
 
-### Validierungsprinzip (Modulo 97)
+### Validierung: Modulo-97-Algorithmus (ISO 13616)
 
 ```mermaid
 flowchart LR
@@ -74,36 +70,21 @@ flowchart LR
 | 1       | Länge prüfen (DE = 22)                      | `DE68210501700012345678` → 22 ✓ |
 | 2       | Erste 4 Zeichen ans **Ende** schieben       | `210501700012345678DE68`        |
 | 3       | Buchstaben → Zahlen (`A=10, B=11, …, Z=35`) | `210501700012345678131468`      |
-| 4       | Diese riesige Zahl **mod 97** rechnen       | `= 1` → gültig ✓                |
+| 4       | Diese Zahl **mod 97** rechnen               | `= 1` → gültig ✓                |
 
-`BigInteger` in Java nötig, weil die Zahl 60+ Stellen haben kann (≈ JavaScript `BigInt`).
+Im Code: `BigInteger`, weil die Zahl 30+ Stellen haben kann.
 
-### Fehlererkennungsfähigkeit
-
-- **100 %** aller einzelnen Tippfehler erkannt
-- **100 %** aller Zahlendreher zweier benachbarter Ziffern erkannt
-- Auslassung/Verdopplung durch feste Länge erkannt
-
-→ Mathematisch beweisbar, dass Modulo 97 ausreicht.
-
-### Schreibweise — Frontend-relevant
-
-| Kontext                    | Format                      | Beispiel                      |
-| -------------------------- | --------------------------- | ----------------------------- |
-| **Elektronisch** (API, DB) | Ohne Trennzeichen           | `DE68210501700012345678`      |
-| **Anzeige** (DIN 5008)     | 4er-Gruppen mit Leerzeichen | `DE68 2105 0170 0012 3456 78` |
-
-Das Frontend entfernt Leerzeichen, Bindestriche und Punkte **vor** dem API-Aufruf. Die Anzeige erfolgt in 4er-Gruppen.
+Modulo 97 erkennt **100 %** aller einzelnen Tippfehler und Zahlendreher — mathematisch beweisbar.
 
 ---
 
 ## 3. Anforderungen
 
-Sechs Kern-Features, die alle umgesetzt sind:
+Alle sechs Anforderungen umgesetzt:
 
 1. **Freie IBAN-Eingabe** — Leerzeichen und Trennzeichen erlaubt, automatische 4er-Gruppierung
 2. **Eigene Modulo-97-Validierung** — keine Library, eigene Implementierung nach ISO 13616
-3. **Externe API als Fallback** — openiban.com für Bankauflösung, wenn die lokale Logik keine Bank kennt
+3. **Externe API als Fallback** — openiban.com für Bankauflösung bei unbekannter BLZ
 4. **Banknamen-Auflösung** — drei vordefinierte Banken (Deutsche Bank, Commerzbank, Berliner Sparkasse)
 5. **Persistenz** — validierte IBANs in PostgreSQL speichern
 6. **IBAN-Liste** — gespeicherte IBANs im Frontend anzeigen
@@ -137,13 +118,13 @@ graph TB
 
 | Schicht    | Technologie                   | Warum diese Wahl?                                       |
 | ---------- | ----------------------------- | ------------------------------------------------------- |
-| Frontend   | React 18, TypeScript, Vite    | Mein Haupttool — TypeScript strict, shadcn/ui, Tailwind |
+| Frontend   | React 19, TypeScript, Vite    | Mein Haupttool — TypeScript strict, shadcn/ui, Tailwind |
 | Backend    | Java 21, Spring Boot 3, Maven | Anforderung der Challenge — frisch erlernt              |
-| Datenbank  | PostgreSQL 17                 | Produktionsnah, Flyway-Migrations, nicht H2 (bewusst)   |
+| Datenbank  | PostgreSQL 17                 | Produktionsnah, Flyway-Migrations                       |
 | Deployment | Docker Compose (3 Services)   | Alles mit einem Befehl startbar                         |
 | Proxy      | Nginx (im Frontend-Container) | Dient SPA-Dateien aus + proxied `/api` zum Backend      |
 
-**Bewusste Entscheidung: PostgreSQL statt H2.** H2 wäre einfacher gewesen (kein Docker-Container nötig), aber PostgreSQL zeigt realistische Produktions-Patterns: Flyway-Migrations, Environment-Variablen für Credentials, healthcheck-basiertes `depends_on`.
+**Bewusste Entscheidung: PostgreSQL statt H2.** H2 wäre einfacher gewesen, aber PostgreSQL zeigt realistische Produktions-Patterns: Flyway-Migrations, Environment-Variablen für Credentials, healthcheck-basiertes `depends_on`.
 
 ---
 
@@ -152,283 +133,227 @@ graph TB
 ### Happy Path
 
 1. App öffnen → IBAN-Eingabefeld sichtbar
-2. `DE89 3704 0044 0532 0130 00` eingeben → automatische Formatierung
-3. **"Prüfen"** klicken → Ergebnis: gültig, Commerzbank, BLZ 37040044
-4. IBAN wird validiert, gespeichert und erscheint in der Liste unten
-5. **Gleiche IBAN erneut senden** → sofortiger Cache-Lookup, keine erneute Validierung
+2. Eine gültige deutsche IBAN eingeben → automatische 4er-Formatierung
+3. **"Prüfen"** klicken → Ergebnis: gültig, Bankname und BLZ werden angezeigt
+4. IBAN wird gespeichert und erscheint in der Liste unten
+5. **Gleiche IBAN erneut senden** → Cache-Hit, sofortige Antwort aus der Datenbank
 
-### Edge Cases zeigen
+### Edge Cases
 
-- **Ungültige IBAN** (`DE00...`) → "ungültig", rotes Ergebnis mit Fehlermeldung
-- **Leere Eingabe** → HTTP 400 durch `@NotBlank`-Validation, Fehlermeldung im Frontend
-- **Unbekannte Bank** → Fallback auf openiban.com für Bankauflösung
-- **Leerzeichen/Bindestriche** → werden automatisch entfernt, Validierung funktioniert weiterhin
-- **Wiederholte Anfrage** → Cache-Hit, sofortige Antwort aus der Datenbank
+- **Ungültige IBAN** → rotes Ergebnis mit Fehlermeldung
+- **Leere Eingabe** → HTTP 400 durch `@NotBlank`-Validation
+- **Unbekannte Bank** (BLZ nicht in lokaler Map) → Fallback auf openiban.com
+- **Leerzeichen/Bindestriche** → werden automatisch entfernt
+- **Wiederholte Anfrage** → Cache-Hit, keine erneute Validierung
 
 ---
 
-## 6. Backend-Architektur (Code-Walkthrough)
+## 6. Backend-Architektur
 
-### Die drei Schichten
+### Überblick
 
 ```mermaid
 graph LR
     subgraph Controller ["HTTP-Schicht"]
-        IC["IbanController\n≈ Express Router"]
+        IC["IbanController"]
     end
-    subgraph Service ["Business-Logik"]
-        IVS["IbanValidationService\n≈ Domain Service"]
-        M97["Mod97Validator\n≈ Pure Function"]
-        EAS["ExternalIbanApiService\n≈ fetch/axios"]
+    subgraph Service ["Orchestrierung"]
+        IS["IbanService"]
     end
-    subgraph ValueObjects ["Domain Model"]
-        VO["IbanNumber\n≈ Value Object"]
+    subgraph Validators ["Validierung"]
+        LV["LocalIbanValidator"]
+        OV["OpenIbanValidator"]
+        M97["Mod97Validator"]
+    end
+    subgraph Domain ["Domain Model"]
+        VO["IbanNumber\n(Value Object)"]
     end
     subgraph Repository ["Datenzugriff"]
-        IR["IbanRepository\n≈ Prisma Client"]
+        IR["IbanRepository"]
     end
     subgraph External ["Extern"]
         API["openiban.com"]
     end
 
-    IC --> IVS
-    IVS --> M97
-    IVS --> EAS
-    IVS --> IR
-    IVS --> VO
-    EAS -.->|"REST"| API
+    IC --> IS
+    IS --> LV
+    IS --> OV
+    IS --> IR
+    IS --> VO
+    LV --> M97
+    OV -.->|"REST"| API
     IR -->|"JPA"| DB[("PostgreSQL")]
 ```
 
-### Controller (IbanController.java) — dünn
+### Controller — dünn
 
-- `@RestController` mit drei Endpunkten: `POST /`, `GET /`, `DELETE /{iban}`
-- DTOs als **Java Records** (≈ TypeScript `type`) — `IbanRequest`, `IbanResponse`, `IbanListEntry`
-- `@Valid` + `@NotBlank` übernehmen die Input-Validation (≈ zod)
-- **Kein** Orchestrierungs- oder Fallback-Logik — nur HTTP ↔ Service Mapping
-- **Constructor Injection** — kein `@Autowired` auf Feldern
+- `@RestController` mit zwei Endpunkten: `POST /api/ibans`, `GET /api/ibans`
+- DTOs als **Java Records** (innere Klassen): `IbanRequest`, `IbanResponse`, `IbanListEntry`
+- `@Valid` + `@NotBlank` für Input-Validation
+- Kein Business-Logik — nur HTTP ↔ Service Mapping
+- Constructor Injection
 
 ### Value Object: IbanNumber (DDD)
 
-- Self-normalizing Java Record: entfernt Leerzeichen, uppercase, strukturelle Validierung
+- Self-normalizing Java Record: entfernt Sonderzeichen, Uppercase, strukturelle Validierung per Regex
 - Garantiert: wer ein `IbanNumber` hat, weiß dass es normalisiert ist
 - Methoden: `countryCode()`, `bankIdentifier()`, `bban()`, `formatted()`
-- Verhindert Bugs bei String-PK: jeder DB-Zugriff nutzt den gleichen normalisierten String
+- Wirft `IbanFormatException` bei ungültigem Format
 
-### Service (IbanValidationService.java) — orchestriert
+### Validator-Architektur (Strategy Pattern)
 
-- `validateOrLookup(IbanNumber)`: kompletter Use Case (Cache-Lookup → Validate → External Fallback → Save)
-- Nutzt `Mod97Validator` per DI für die Prüfziffern-Validierung
-- BLZ-Lookup via `Map.of()` für drei bekannte Banken
+Ein `IbanValidator`-Interface mit zwei Implementierungen:
 
-### Mod97Validator — extrahierter Algorithmus
+1. **`LocalIbanValidator`** — Prüft Länderlänge + Mod-97 + BLZ-Lookup für drei bekannte Banken
+2. **`OpenIbanValidator`** — Fragt openiban.com per `RestClient`, wenn die lokale Logik keine Bank kennt
 
-- Eigenständige `@Service`-Klasse für den ISO-7064-Algorithmus
-- Isoliert testbar ohne Spring-Kontext oder andere Dependencies
+Beide geben `Optional<ValidationResult>` zurück — `empty()` heißt "ich kann nicht weiterhelfen, nächster Validator".
 
-### Repository (IbanRepository.java)
+### Service (IbanService) — orchestriert
 
-- **Eine einzige Zeile**: `extends JpaRepository<Iban, String>` — String-PK statt Long
-- Spring generiert zur Laufzeit die komplette CRUD-Implementierung
-- ≈ Prisma Client, der automatisch `findAll()`, `save()`, `deleteById()` bereitstellt
+`validateOrLookup(String rawIban)`: Cache-Lookup → LocalIbanValidator → OpenIbanValidator → Fallback → Speichern
 
----
+### Mod97Validator
 
-## 7. Modulo-97 — Die Validierungslogik
+Eigenständige `@Service`-Klasse für den ISO-7064-Algorithmus. Isoliert testbar, ohne Spring-Kontext.
 
-Der Algorithmus nach ISO 13616 (Folie oder Code zeigen):
-
-```
-Eingabe:    DE89 3704 0044 0532 0130 00
-Schritt 1:  Bereinigen → DE89370400440532013000
-Schritt 2:  Länge prüfen → 22 Zeichen ✓ (DE = 22)
-Schritt 3:  Erste 4 Zeichen ans Ende → 370400440532013000DE89
-Schritt 4:  Buchstaben → Zahlen (D=13, E=14) → 37040044053201300013 1489
-Schritt 5:  mod 97 → Ergebnis = 1 → gültig ✓
-```
-
-**Im Code:** `BigInteger` (≈ JavaScript `BigInt`) für die Division, weil die Zahl 30+ Stellen hat und in keinen nativen Integer passt.
-
-**BLZ-Extraktion:** Bei deutschen IBANs sind Stellen 5–12 die Bankleitzahl. Aus `DE89370400440532013000` wird BLZ `37040044` → Lookup: "Commerzbank".
-
----
-
-## 8. Externe API — Graceful Degradation
-
-Wenn die lokale BLZ-Tabelle die Bank nicht kennt, fragt `ExternalIbanApiService` die openiban.com-API:
+### Request-Ablauf
 
 ```mermaid
 sequenceDiagram
     participant FE as Frontend
     participant Ctrl as IbanController
-    participant Svc as ValidationService
+    participant Svc as IbanService
     participant DB as PostgreSQL
-    participant Ext as ExternalIbanApiService
+    participant LV as LocalIbanValidator
+    participant OV as OpenIbanValidator
     participant API as openiban.com
 
     FE->>Ctrl: POST /api/ibans
-    Ctrl->>Svc: validateOrLookup(IbanNumber)
+    Ctrl->>Svc: validateOrLookup(rawIban)
     Svc->>DB: findById(iban)
 
-    alt Cache-Hit (IBAN bereits bekannt)
+    alt Cache-Hit
         DB-->>Svc: Cached result
-        Svc-->>Ctrl: ValidationResult
-        Ctrl-->>FE: ✅ Sofortige Antwort
     else Cache-Miss
         DB-->>Svc: empty
-        Svc->>Svc: validate(IbanNumber) + Mod97
-        alt BLZ in lokaler Map
-            Svc->>DB: save(entity)
-            Svc-->>Ctrl: ValidationResult
-            Ctrl-->>FE: ✅ valid, bankName
-        else BLZ unbekannt
-            Svc->>Ext: validate(iban)
-            Ext->>API: GET /validate/{iban}
-            alt API erreichbar
-                API-->>Ext: bankName, BIC
-                Ext-->>Svc: ExternalResult
-                Svc->>DB: save(entity)
-                Svc-->>Ctrl: ValidationResult
-                Ctrl-->>FE: ✅ valid, bankName (extern)
-            else API down / Fehler
-                Ext-->>Svc: null
-                Svc->>DB: save(entity)
-                Svc-->>Ctrl: ValidationResult
-                Ctrl-->>FE: ✅ valid, kein bankName
-            end
+        Svc->>LV: validate(IbanNumber)
+        alt Bank lokal bekannt
+            LV-->>Svc: ValidationResult
+        else Bank unbekannt
+            LV-->>Svc: empty
+            Svc->>OV: validate(IbanNumber)
+            OV->>API: GET /validate/{iban}
+            OV-->>Svc: ValidationResult | empty
         end
+        Svc->>DB: save(entity)
     end
+
+    Svc-->>Ctrl: ValidationResult
+    Ctrl-->>FE: JSON Response
 ```
+
+### Externe API — Graceful Degradation
 
 ```
 GET https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true
 ```
 
-- **RestClient** (Spring 6.1) als HTTP-Client (≈ fetch/axios)
-- Ganzer Call in `try/catch` — wenn openiban.com down ist, wird `null` zurückgegeben
-- **Graceful Degradation**: Die App funktioniert immer, nur ohne Banknamen-Auflösung
-- Die Fallback-Logik liegt jetzt im **Service** (nicht mehr im Controller)
+- `RestClient` (Spring 6.1) als HTTP-Client
+- Gesamter Call in `try/catch` — bei Fehler wird `Optional.empty()` zurückgegeben
+- Die App funktioniert immer — schlimmstenfalls ohne Banknamen
+
+### Error Handling
+
+Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice`:
+
+- `MethodArgumentNotValidException` → HTTP 400 mit strukturierter Fehlermeldung
+- `IbanFormatException` → HTTP 400 mit Validierungsdetails
+- Unbehandelte Exceptions → HTTP 500 mit generischer Meldung
 
 ---
 
-## 9. Error Handling
-
-Zentraler `GlobalExceptionHandler` mit `@RestControllerAdvice` — ≈ Express Error-Handling Middleware:
-
-- `@NotBlank`-Validation schlägt fehl → HTTP 400 mit strukturierter Fehlermeldung
-- Unbehandelte Exceptions → HTTP 500 mit generischer Meldung (kein Stack-Trace zum Client)
-- Jede Response ist konsistentes JSON — keine HTML-Error-Pages
-
----
-
-## 10. Datenbankschicht
+## 7. Datenbankschicht
 
 ### Entity (Iban.java)
 
-6 Felder: `iban` (natürlicher Primary Key), `bankName`, `bankIdentifier`, `valid`, `reason`, `createdAt`.
+5 Felder: `iban` (natürlicher Primary Key), `bankName`, `valid`, `reason`, `createdAt`.
 
-**IBAN als Primary Key:** Jede IBAN existiert genau einmal in der DB. Wiederholte Anfragen liefern das gespeicherte Ergebnis (Cache-Lookup). Kein `Persistable<String>` nötig — der Service prüft per `findById()` vor dem Speichern; Einfachheit vor Performance.
+**IBAN als Primary Key:** Jede IBAN existiert genau einmal. Wiederholte Anfragen liefern das gespeicherte Ergebnis (Cache-Lookup).
 
-**Warum kein Record?** JPA/Hibernate braucht Mutabilität + leeren Konstruktor (Reflection), Records sind immutable. DTOs sind Records, Entities sind Klassen.
+**Warum kein Record?** JPA braucht Mutabilität + leeren Konstruktor. DTOs sind Records, Entities sind Klassen.
+
+### Repository
+
+`IbanRepository extends JpaRepository<Iban, String>` — automatische CRUD-Implementierung plus Custom Query `findAllByOrderByCreatedAtDesc()`.
 
 ### Flyway Migration
 
-- Eine SQL-Datei: `V1__initial_schema.sql` — erstellt die `ibans`-Tabelle
-- **Schema-Quelle:** SQL-Datei (nicht Hibernate). `ddl-auto=validate` prüft nur, ändert nie die DB
-- ≈ Prisma Migrate — versionierte, reproduzierbare Schema-Änderungen
+Eine SQL-Datei: `V1__initial_schema.sql`. Schema-Quelle ist SQL (nicht Hibernate). `ddl-auto=validate` prüft nur, ändert nie die DB.
 
 ---
 
-## 11. Testing
+## 8. Testing
 
-**54 Backend-Tests** (JUnit 5), alle grün:
+**59 Backend-Tests** (JUnit 5), alle grün:
 
-| Art             | Datei                       | Tests | Was wird getestet?                                                                                   |
-| --------------- | --------------------------- | ----- | ---------------------------------------------------------------------------------------------------- |
-| **Unit**        | `IbanValidationServiceTest` | 23    | Mod-97-Algorithmus, BLZ-Lookup, Edge Cases (Leerzeichen, Bindestriche, Lowercase, ungültige Zeichen) |
-| **Unit**        | `Mod97ValidatorTest`        | 8     | Isolierte Tests für den Modulo-97-Prüfziffern-Algorithmus                                            |
-| **Unit**        | `IbanNumberTest`            | 16    | Value Object: Normalisierung, countryCode(), bankIdentifier(), formatted(), Fehlerfälle              |
-| **Integration** | `IbanControllerTest`        | 7     | HTTP-Routing, Cache-Hit/Miss, DELETE, JSON-Serialisierung, Validation (`@NotBlank` → 400)            |
+| Art             | Klasse                   | Tests | Was wird getestet?                                           |
+| --------------- | ------------------------ | ----- | ------------------------------------------------------------ |
+| **Unit**        | `IbanServiceTest`        | 12    | Orchestrierung, Cache-Lookup, Validator-Delegation, Persist  |
+| **Unit**        | `LocalIbanValidatorTest` | 12    | Länderlänge, Mod-97, BLZ-Lookup, Edge Cases                  |
+| **Unit**        | `OpenIbanValidatorTest`  | 5     | API-Aufruf, Fehlerbehandlung, Graceful Degradation           |
+| **Unit**        | `Mod97ValidatorTest`     | 8     | Isolierter Modulo-97-Algorithmus                             |
+| **Unit**        | `IbanNumberTest`         | 16    | Normalisierung, countryCode(), bankIdentifier(), formatted() |
+| **Integration** | `IbanControllerTest`     | 6     | HTTP-Routing, JSON-Serialisierung, Validation (400)          |
 
-**29 Frontend-Tests** (Vitest + React Testing Library):
+**34 Frontend-Tests** (Vitest + React Testing Library):
 
-- IbanInput-Komponente: Rendering, Formatierung, Clear-Button, Keyboard-Events
-- Utils: formatIban, cleanIban, getExpectedLength, COUNTRY_LENGTHS
-
-**Testen lässt sich so:**
+| Datei                | Tests | Was wird getestet?                                        |
+| -------------------- | ----- | --------------------------------------------------------- |
+| `utils.test.ts`      | 19    | formatIban, cleanIban, getExpectedLength, COUNTRY_LENGTHS |
+| `IbanInput.test.tsx` | 10    | Rendering, Formatierung, Clear-Button, Eingabe-Events     |
+| `useFetch.test.ts`   | 5     | Loading-State, Success, Error, Reload                     |
 
 ```bash
-cd backend && mvn verify -B       # Backend: 54 Tests
-cd frontend && pnpm test           # Frontend: 29 Tests
+cd backend && mvn verify -B       # Backend: 59 Tests
+cd frontend && pnpm test           # Frontend: 34 Tests
 ```
 
 ---
 
-## 12. Deployment — Drei Wege, ein Projekt
+## 9. Deployment — Drei Wege
 
-Das Projekt unterstützt drei Deployment-Varianten. Alle koexistieren im selben Repo — keine Variante bricht eine andere.
-
-### 12.1 Lokale Entwicklung (Makefile)
-
-Drei Terminals, drei Befehle:
+### 9.1 Lokale Entwicklung (Makefile)
 
 ```bash
-make db   # PostgreSQL-Container starten (Docker)
-make be   # Spring Boot mit dev-Profil (Hot Reload)
+make db   # PostgreSQL-Container starten
+make be   # Spring Boot mit dev-Profil
 make fe   # Vite Dev-Server (HMR, Port 5173)
 ```
 
-```mermaid
-graph LR
-    Browser["🌐 Browser"] -->|":5173"| Vite["Vite Dev Server"]
-    Vite -->|"Proxy /api/*"| Spring["Spring Boot :8080"]
-    Spring -->|"JDBC"| PG[("PostgreSQL :5432\n(Docker)")]
-```
+- Vite proxied `/api/*` an `localhost:8080`
+- `.env`-Datei für DB-Credentials
+- `make check` → Spotless + Checkstyle + Tests (Backend) + ESLint + Tests (Frontend)
 
-- **Spring-Profil:** `dev` — CORS offen, Postgres via Docker, Flyway migriert automatisch
-- **Frontend:** Vite proxied `/api/*` an `localhost:8080` — kein CORS-Problem
-- **DB-Credentials:** `.env`-Datei (nicht hardcoded), geladen via `Makefile`
-- **Code Quality:** `make check` → Spotless + Checkstyle + Tests (Backend) + ESLint + Tests (Frontend)
+### 9.2 Docker Compose — VPS mit HTTPS
 
-### 12.2 Docker Compose — VPS mit HTTPS
-
-Zwei Compose-Dateien für unterschiedliche Szenarien:
-
-| Datei                             | Zweck                         | Befehl           |
-| --------------------------------- | ----------------------------- | ---------------- |
-| `docker-compose.yml`              | Lokaler Stack ohne TLS        | `make up`        |
-| `docker-compose.prod.yml`         | Produktions-Stack mit HTTPS   | `make prod-up`   |
-| `docker-compose.initial-cert.yml` | Erstmalige Let's-Encrypt-Cert | `make cert-init` |
-
-**Produktions-Architektur (5 Container):**
+**5 Container:** Frontend (Nginx), Backend (Spring Boot), PostgreSQL, Reverse-Proxy (TLS-Terminierung), Certbot.
 
 ```mermaid
 graph LR
     Browser["🌐 Browser"] -->|":443 TLS"| RP["Reverse Proxy\n(Nginx)"]
-    RP -->|"/api/*"| Spring["Spring Boot :8080"]
-    RP -->|"/*"| Nginx["Frontend\n(Nginx :80)"]
+    RP -->|"/api/*"| Spring["Spring Boot"]
+    RP -->|"/*"| Nginx["Frontend\n(Nginx)"]
     Spring -->|"JDBC"| PG[("PostgreSQL 17")]
     Certbot["Certbot"] -.->|"Auto-Renewal"| RP
 ```
 
-- **Reverse-Proxy-Container:** Nginx terminiert TLS, routet `/api/*` → Backend, `/*` → Frontend
-- **Certbot:** Automatische Let's-Encrypt-Erneuerung alle 24h
-- **Netzwerk-Isolation:** PostgreSQL ist nur im internen `db-network` erreichbar — kein externer Zugriff
-- **Healthcheck:** Postgres `pg_isready` → Backend wartet via `depends_on: condition: service_healthy`
-- **Secrets:** `.env`-Datei mit `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+- Netzwerk-Isolation: PostgreSQL nur im internen `db-network`
+- Healthcheck: `pg_isready` → Backend wartet via `depends_on: condition: service_healthy`
 
-### 12.3 AWS Cloud-Native (CDK + GitHub Actions)
+### 9.3 AWS Cloud-Native (CDK + GitHub Actions)
 
-Serverless-Deployment ohne Docker — jeder Service wird durch einen AWS Managed Service ersetzt:
-
-| Docker Compose          | AWS Equivalent                        |
-| ----------------------- | ------------------------------------- |
-| Nginx (SPA)             | **S3 + CloudFront**                   |
-| Spring Boot (Container) | **Lambda + API Gateway** (Serverless) |
-| PostgreSQL (Container)  | **RDS PostgreSQL** (Managed)          |
-| Nginx (Reverse Proxy)   | **CloudFront** (HTTPS built-in)       |
-| `docker-compose.yml`    | **AWS CDK** (TypeScript IaC)          |
-| Manuelles Deploy        | **GitHub Actions** (CI/CD)            |
+Serverless-Deployment: S3 + CloudFront (Frontend), Lambda + API Gateway (Backend), RDS PostgreSQL (Datenbank).
 
 ```mermaid
 graph TB
@@ -440,99 +365,26 @@ graph TB
     Lambda -.->|"Fallback"| ExtAPI["openiban.com"]
 ```
 
-**CDK-Stacks (4 Stacks, TypeScript):**
-
-| Stack           | Ressourcen                                     |
-| --------------- | ---------------------------------------------- |
-| `NetworkStack`  | VPC, Public/Private Subnets, NAT Gateway       |
-| `DatabaseStack` | RDS PostgreSQL 17, RDS Proxy, Secrets Manager  |
-| `BackendStack`  | Lambda (Java 21 + SnapStart), HTTP API Gateway |
-| `FrontendStack` | S3 Bucket, CloudFront (OAC, SPA-Fallback)      |
+**4 CDK-Stacks (TypeScript):** NetworkStack, DatabaseStack, BackendStack, FrontendStack.
 
 **Backend-Änderungen für AWS — nur 3 Dateien:**
 
-1. **`pom.xml`** — eine neue Dependency: `aws-serverless-java-container-springboot3`
-2. **`StreamLambdaHandler.java`** — neue Klasse, die API-Gateway-Events in Spring Boots DispatcherServlet bridged
-3. **`application-aws.properties`** — AWS-Profil mit RDS-Proxy-Verbindung und `hikari.maximum-pool-size=1`
+1. `pom.xml` — Dependency: `aws-serverless-java-container-springboot3`
+2. `StreamLambdaHandler.java` — Bridged API-Gateway-Events in Spring Boot
+3. `application-aws.properties` — RDS-Proxy-Verbindung, `maximum-pool-size=1`
 
-**Frontend: Null Änderungen.** Die SPA nutzt relative Pfade (`/api/ibans`), CloudFront routet `/api/*` an API Gateway — gleiche Origin, kein CORS.
+**Frontend: Null Änderungen.** Relative Pfade (`/api/ibans`), CloudFront routet `/api/*` an API Gateway.
 
-**CI/CD-Pipeline (GitHub Actions):**
+**CI/CD:** GitHub Actions mit OIDC-Auth — keine statischen AWS-Credentials.
 
-```mermaid
-graph LR
-    Push["git push main"] --> BCI["Backend CI\n(mvnw verify)"]
-    Push --> FCI["Frontend CI\n(lint + build + test)"]
-    BCI --> Deploy["CDK Deploy\n(OIDC Auth)"]
-    FCI --> Deploy
-    Deploy --> AWS["☁️ AWS\n(prod stack)"]
-```
+### Vergleich
 
-- **OIDC-Auth** — keine statischen AWS-Credentials, GitHub Actions bekommt temporäre Tokens
-- **Dev/Prod** über CDK-Context: `cdk deploy --all -c stage=dev` vs. `-c stage=prod`
-- **Teardown:** `cdk destroy --all` löscht alle AWS-Ressourcen
-
-### Vergleich der drei Setups
-
-| Aspekt        | Lokal (Makefile)  | Docker Compose (VPS)    | AWS CDK (Serverless)     |
-| ------------- | ----------------- | ----------------------- | ------------------------ |
-| Zielgruppe    | Entwicklung       | Self-hosted Production  | Cloud Production         |
-| Start-Befehl  | `make db be fe`   | `make prod-up`          | `cdk deploy --all`       |
-| HTTPS         | Nein              | Let's Encrypt + Certbot | CloudFront (automatisch) |
-| Skalierung    | Einzelner Rechner | Vertikale Skalierung    | Auto-Scaling (Lambda)    |
-| DB            | Docker PostgreSQL | Docker PostgreSQL       | RDS PostgreSQL (Managed) |
-| Kosten        | Gratis            | VPS-Kosten (~5€/Monat)  | Pay-per-Request (~1–2€)  |
-| Infrastruktur | Docker Desktop    | Linux VPS + Docker      | AWS Account + CDK        |
+| Aspekt     | Lokal (Makefile)  | Docker Compose (VPS)   | AWS CDK (Serverless)     |
+| ---------- | ----------------- | ---------------------- | ------------------------ |
+| Zielgruppe | Entwicklung       | Self-hosted Production | Cloud Production         |
+| Start      | `make db be fe`   | `make prod-up`         | `cdk deploy --all`       |
+| HTTPS      | Nein              | Let's Encrypt          | CloudFront               |
+| Skalierung | Einzelner Rechner | Vertikale Skalierung   | Auto-Scaling (Lambda)    |
+| Kosten     | Gratis            | ~5 €/Monat             | Pay-per-Request (~1–2 €) |
 
 ---
-
-## 13. Was ich gelernt habe
-
-| Spring Boot / Java                          | Mein Vergleich (TS/Node/Go)                 |
-| ------------------------------------------- | ------------------------------------------- |
-| `@RestController` + `@RequestMapping`       | Express Router                              |
-| Constructor Injection (IoC)                 | Manuelles Wiring in Go / Angulars DI        |
-| `@Service`, `@Repository` — Schichten       | Domain-Layer-Pattern, das ich aus DDD kenne |
-| `JpaRepository` (0 Zeilen eigener Code)     | Prisma Client                               |
-| Flyway Migrations                           | Prisma Migrate / golang-migrate             |
-| `@Valid` + `@NotBlank`                      | zod-Validation                              |
-| `@RestControllerAdvice`                     | Express Error-Handling Middleware           |
-| `BigInteger` für Mod 97                     | JavaScript `BigInt`                         |
-| Maven `pom.xml` + Starter Dependencies      | `package.json` + npm-Scripts                |
-| `@WebMvcTest` + `MockMvc`                   | Vitest + Supertest                          |
-| Java Records als Value Objects (DDD)        | TypeScript branded types / Go value structs |
-| Natürliche PKs (String-PK ohne Persistable) | Custom IDs in ORMs (z.B. Prisma `@id`)      |
-
-**Mein Key Takeaway:** Spring Boot ist überraschend produktiv, sobald man die Annotation-Magie versteht. Die Convention-over-Configuration-Philosophie erinnert mich an Angular (DI, Decoratoren, strikte Struktur). Die Projektstruktur Controller → Service → Repository ist letztlich das gleiche Layered-Architecture-Pattern, das ich aus Node.js/Go-Projekten kenne.
-
----
-
-## 14. Was ich als nächstes bauen würde
-
-_(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
-
-- ~~HTTPS mit Let's Encrypt + Certbot~~ → ✅ Umgesetzt (Docker Compose Prod + AWS CloudFront)
-- ~~CI/CD mit GitHub Actions~~ → ✅ Umgesetzt (`.github/workflows/deploy.yml`)
-- ~~AWS Cloud Deployment~~ → ✅ Umgesetzt (CDK + Lambda + S3 + RDS)
-- **Dark Mode** (CSS-Variablen sind vorbereitet)
-- **Authentifizierung** (JWT + Spring Security)
-- **CSV-Export** der gespeicherten IBANs
-- **Custom Domain** (Route 53 + ACM Certificate für AWS-Setup)
-
-→ Detailliert dokumentiert in [future.md](future.md)
-
----
-
-## 15. Abschluss
-
-- **Projekt:** Lexiban — React + Spring Boot + PostgreSQL
-- **Eigene Modulo-97-Implementierung** nach ISO 13616
-- **54 Backend-Tests + 29 Frontend-Tests**, alle grün
-- **DDD-Elemente**: IbanNumber Value Object, Mod97Validator, Service-Orchestrierung
-- **3 Deployment-Varianten**: Lokale Entwicklung, Docker Compose (VPS + HTTPS), AWS Serverless (CDK)
-- **CI/CD**: GitHub Actions mit OIDC-Auth → automatisches AWS-Deployment bei Push
-- **Produktionsnahe Architektur** mit Flyway, Docker Compose, Nginx-Proxy, natürliche PKs
-- **Saubere Doku:** README, Architecture Decisions, Fachliches Wissen, Lernguide
-- **Reflection:** Alle Entscheidungen in decisions.md begründet — auch was man in Produktion anders machen würde
-
-> **Fragen?**
