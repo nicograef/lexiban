@@ -7,12 +7,16 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-import { useIbanList } from './hooks'
+import { IbanListEntry } from './types'
 import { formatIban } from './utils'
 
-export function IbanList({ refreshKey }: { refreshKey?: number }) {
-  const { data: ibans, loading, error } = useIbanList(refreshKey)
+export interface IbanListProps {
+  loading: boolean
+  error: string | null
+  ibans: IbanListEntry[] | null
+}
 
+export function IbanList({ ibans, loading, error }: IbanListProps) {
   if (loading) {
     return (
       <p className="text-muted-foreground text-sm">

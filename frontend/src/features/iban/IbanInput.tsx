@@ -16,30 +16,95 @@ import { getExpectedLength } from './constants'
 import type { IbanValidationResponse } from './types'
 import { cleanIban, formatIban } from './utils'
 
+interface IbanInputProps {
+  onSaved?: () => void
+}
+
 interface ValidationState {
   loading: boolean
   result: IbanValidationResponse | null
   error: string | null
 }
 
-export function IbanInput({ onSaved }: { onSaved?: () => void }) {
+const INITIAL_VALIDATION: ValidationState = {
+  loading: false,
+  result: null,
+  error: null,
+}
+
+/** Displays the current / expected character count with colour feedback. */
+function CharCounter({
+  currentLength,
+  expectedLength,
+  countryCode,
+}: {
+  currentLength: number
+  expectedLength: number | null
+  countryCode: string
+}) {
+  if (currentLength === 0) return null
+
+  const color = getCounterColor(currentLength, expectedLength)
+
+  return (
+    <p className={`text-xs ${color}`} data-testid="char-counter">
+      {currentLength}
+      {expectedLength
+        ? ` / ${expectedLength.toString()} Zeichen (${countryCode})`
+        : ' Zeichen'}
+    </p>
+  )
+}
+
+/** Shows the validation result card (success or failure). */
+function ValidationResult({ result }: { result: IbanValidationResponse }) {
+  const isValid = result.valid
+
+  return (
+    <Card
+      className={
+        isValid
+          ? 'ring-success/30 bg-success/5'
+          : 'ring-destructive/30 bg-destructive/5'
+      }
+    >
+      <CardContent className="space-y-1">
+        <p className="font-medium">
+          {isValid ? '✓ IBAN gültig' : '✗ IBAN ungültig'}
+        </p>
+        {!isValid && result.reason && (
+          <p className="text-sm text-destructive">{result.reason}</p>
+        )}
+        {result.bankName && <p className="text-sm">Bank: {result.bankName}</p>}
+      </CardContent>
+    </Card>
+  )
+}
+
+function getCounterColor(current: number, expected: number | null): string {
+  if (expected && current === expected) return 'text-success'
+  if (expected && current > expected) return 'text-destructive'
+  return 'text-muted-foreground'
+}
+
+export function IbanInput({ onSaved }: IbanInputProps) {
   const [input, setInput] = useState('')
-  const [validation, setValidation] = useState<ValidationState>({
-    loading: false,
-    result: null,
-    error: null,
-  })
+  const [validation, setValidation] =
+    useState<ValidationState>(INITIAL_VALIDATION)
+
+  const cleaned = cleanIban(input)
+  const countryCode = cleaned.length >= 2 ? cleaned.substring(0, 2) : ''
+  const expectedLength = countryCode ? getExpectedLength(countryCode) : null
+  const currentLength = cleaned.length
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatIban(e.target.value)
-    setInput(formatted)
-    // Clear previous result when input changes
-    setValidation({ loading: false, result: null, error: null })
+    setInput(formatIban(e.target.value))
+    setValidation(INITIAL_VALIDATION)
   }
 
   const handleClear = () => {
     setInput('')
-    setValidation({ loading: false, result: null, error: null })
+    setValidation(INITIAL_VALIDATION)
   }
 
   const handleValidate = async () => {
@@ -63,12 +128,6 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
       void handleValidate()
     }
   }
-
-  // Character counter: show current length vs. expected length for the detected country
-  const cleaned = cleanIban(input)
-  const countryCode = cleaned.length >= 2 ? cleaned.substring(0, 2) : ''
-  const expectedLength = countryCode ? getExpectedLength(countryCode) : null
-  const currentLength = cleaned.length
 
   return (
     <Card>
@@ -115,23 +174,11 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
               {validation.loading ? 'Prüfe...' : 'IBAN Prüfen'}
             </Button>
           </div>
-          {currentLength > 0 && (
-            <p
-              className={`text-xs ${
-                expectedLength && currentLength === expectedLength
-                  ? 'text-success'
-                  : expectedLength && currentLength > expectedLength
-                    ? 'text-destructive'
-                    : 'text-muted-foreground'
-              }`}
-              data-testid="char-counter"
-            >
-              {currentLength}
-              {expectedLength
-                ? ` / ${expectedLength.toString()} Zeichen (${countryCode})`
-                : ' Zeichen'}
-            </p>
-          )}
+          <CharCounter
+            currentLength={currentLength}
+            expectedLength={expectedLength}
+            countryCode={countryCode}
+          />
         </div>
 
         {validation.error && (
@@ -140,30 +187,7 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
           </div>
         )}
 
-        {validation.result && (
-          <Card
-            className={
-              validation.result.valid
-                ? 'ring-success/30 bg-success/5'
-                : 'ring-destructive/30 bg-destructive/5'
-            }
-          >
-            <CardContent className="space-y-1">
-              <p className="font-medium">
-                {validation.result.valid ? '✓ IBAN gültig' : '✗ IBAN ungültig'}
-              </p>
-              {!validation.result.valid && validation.result.reason && (
-                <p className="text-sm text-destructive">
-                  {validation.result.reason}
-                </p>
-              )}
-              <p className="text-sm font-mono">{validation.result.iban}</p>
-              {validation.result.bankName && (
-                <p className="text-sm">Bank: {validation.result.bankName}</p>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {validation.result && <ValidationResult result={validation.result} />}
       </CardContent>
     </Card>
   )

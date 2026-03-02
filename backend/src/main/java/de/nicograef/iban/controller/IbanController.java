@@ -61,7 +61,7 @@ public class IbanController {
         /** GET /api/ibans — list all saved IBANs. */
         @GetMapping
         public ResponseEntity<List<IbanListEntry>> getAllIbans() {
-                List<IbanListEntry> entries = ibanRepository.findAll().stream()
+                List<IbanListEntry> entries = ibanRepository.findAllByOrderByCreatedAtDesc().stream()
                                 .map(
                                                 iban -> new IbanListEntry(
                                                                 iban.getIban(),
