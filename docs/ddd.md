@@ -1,7 +1,7 @@
 # Anemic Domain Model, OOP und DDD — Architektur-Analyse
 
 > Warum trennt Spring Boot Daten und Verhalten in separate Klassen — und widerspricht das nicht dem OOP-Paradigma?
-> Analyse am konkreten Beispiel dieses IBAN-Validator-Projekts mit Vorher/Nachher-Vergleich.
+> Analyse am konkreten Beispiel dieses Lexiban-Projekts mit Vorher/Nachher-Vergleich.
 
 ---
 

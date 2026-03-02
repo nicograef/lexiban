@@ -8,11 +8,7 @@ export function IbanPage() {
   return (
     <>
       <figure>
-        <img
-          src="/lexiban.svg"
-          alt="Lexiban – IBAN Validator"
-          className="max-w-1/2 h-auto"
-        />
+        <img src="/lexiban.svg" alt="Lexiban" className="max-w-1/2 h-auto" />
       </figure>
       <IbanInput
         onSaved={() => {

@@ -14,13 +14,13 @@
 #   3. .env file with POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 #   4. Domain set in reverse-proxy/nginx.conf (replace YOURDOMAIN.COM)
 
-name: iban
+name: lexiban
 
 services:
   # ── PostgreSQL Database ──
   postgres:
     image: postgres:17
-    container_name: iban-postgres
+    container_name: lexiban-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -41,7 +41,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: iban-backend
+    container_name: lexiban-backend
     restart: unless-stopped
     environment:
       DB_HOST: postgres
@@ -61,7 +61,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: iban-frontend
+    container_name: lexiban-frontend
     restart: unless-stopped
     networks:
       - app-network
@@ -73,7 +73,7 @@ services:
   # ── Reverse Proxy (nginx: TLS termination + routing) ──
   reverse-proxy:
     image: nginx:1.27-alpine
-    container_name: iban-reverse-proxy
+    container_name: lexiban-reverse-proxy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -93,7 +93,7 @@ services:
   # ── Certbot (Let's Encrypt auto-renewal) ──
   certbot:
     image: certbot/certbot:v2.11.0
-    container_name: iban-certbot
+    container_name: lexiban-certbot
     restart: unless-stopped
     volumes:
       - certbot-challenges:/var/www/certbot

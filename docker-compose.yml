@@ -9,13 +9,13 @@
 # The frontend's nginx serves the SPA AND proxies /api/* to the backend.
 # This eliminates the need for a separate reverse-proxy container in local dev.
 
-name: iban
+name: lexiban
 
 services:
   # ── PostgreSQL Database ──
   postgres:
     image: postgres:17
-    container_name: iban-postgres
+    container_name: lexiban-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -36,7 +36,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: iban-backend
+    container_name: lexiban-backend
     restart: unless-stopped
     environment:
       DB_HOST: postgres
@@ -54,7 +54,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: iban-frontend
+    container_name: lexiban-frontend
     restart: unless-stopped
     ports:
       - "80:80"

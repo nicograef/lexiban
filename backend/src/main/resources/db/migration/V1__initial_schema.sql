@@ -1,4 +1,4 @@
--- ── Flyway migration V1: Initial schema for IBAN validator ──
+-- ── Flyway migration V1: Initial schema for Lexiban ──
 --
 -- Flyway is a database migration tool (≈ Prisma Migrate or golang-migrate).
 -- It runs SQL files in version order (V1__, V2__, ...) on application startup.

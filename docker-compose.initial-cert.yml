@@ -9,12 +9,12 @@
 #   4. make cert-down
 #   5. make prod-up   ← start the full production stack
 
-name: iban
+name: lexiban
 
 services:
   reverse-proxy:
     image: nginx:1.27-alpine
-    container_name: iban-reverse-proxy
+    container_name: lexiban-reverse-proxy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -27,7 +27,7 @@ services:
 
   certbot:
     image: certbot/certbot:v2.11.0
-    container_name: iban-certbot
+    container_name: lexiban-certbot
     restart: unless-stopped
     volumes:
       - certbot-challenges:/var/www/certbot

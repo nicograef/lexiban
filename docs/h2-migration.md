@@ -87,21 +87,21 @@ The schema is now derived from JPA annotations in `Iban.java` rather than from S
 Remove the `postgres` service and the `postgres-data` volume. Remove `depends_on` and DB environment variables from the backend:
 
 ```yaml
-name: iban
+name: lexiban
 
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: iban-backend
+    container_name: lexiban-backend
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: iban-frontend
+    container_name: lexiban-frontend
     restart: unless-stopped
     ports:
       - "80:80"

@@ -1,4 +1,4 @@
-# IBAN Validator — Präsentations-Skript
+# Lexiban — Präsentations-Skript
 
 > Skript für die Vorstellung der Coding-Challenge im Bewerbungsgespräch.
 > Zielgruppe: Technische Interviewer. Dauer: ca. 10–15 Minuten.
@@ -420,7 +420,7 @@ _(Zeigt Weitblick, auch wenn es nicht Scope der Challenge ist)_
 
 ## 15. Abschluss
 
-- **Projekt:** IBAN Validator — React + Spring Boot + PostgreSQL + Docker
+- **Projekt:** Lexiban — React + Spring Boot + PostgreSQL + Docker
 - **Eigene Modulo-97-Implementierung** nach ISO 13616
 - **54 Backend-Tests + 29 Frontend-Tests**, alle grün
 - **DDD-Elemente**: IbanNumber Value Object, Mod97Validator, Service-Orchestrierung

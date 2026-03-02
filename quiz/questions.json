@@ -524,7 +524,7 @@
       "Eine .war-Datei für einen externen Anwendungsserver"
     ],
     "answer": 1,
-    "explanation": "`mvn package` kompiliert, testet und erzeugt eine **Fat-JAR** (Self-contained Archiv mit eingebettetem Tomcat + allen Dependencies). Aufruf: `java -jar target/iban-validator-0.0.1-SNAPSHOT.jar`.\n\n≈ `pnpm build` erzeugt ein `dist/`-Verzeichnis. Go-Analogie: `go build` erzeugt ein einzelnes Binary.\n\nDer Unterschied: Go-Binary = nativer Maschinencode (kein Runtime nötig). Java `.jar` = Bytecode (JVM als Runtime nötig). Aber beide sind **self-contained** und deployfähig als einzelne Datei."
+    "explanation": "`mvn package` kompiliert, testet und erzeugt eine **Fat-JAR** (Self-contained Archiv mit eingebettetem Tomcat + allen Dependencies). Aufruf: `java -jar target/lexiban-0.0.1-SNAPSHOT.jar`.\n\n≈ `pnpm build` erzeugt ein `dist/`-Verzeichnis. Go-Analogie: `go build` erzeugt ein einzelnes Binary.\n\nDer Unterschied: Go-Binary = nativer Maschinencode (kein Runtime nötig). Java `.jar` = Bytecode (JVM als Runtime nötig). Aber beide sind **self-contained** und deployfähig als einzelne Datei."
   },
   {
     "id": 47,

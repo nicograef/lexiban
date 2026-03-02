@@ -1,4 +1,4 @@
-# IBAN Validator
+# Lexiban
 
 Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als Bewerbungsprojekt.
 

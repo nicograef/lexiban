@@ -294,7 +294,7 @@ Liefert:
 
 ## 12. Relevanz für dieses Projekt
 
-Dieses Wissensdokument bildet die fachliche Grundlage für die IBAN-Validator-SPA:
+Dieses Wissensdokument bildet die fachliche Grundlage für Lexiban:
 
 | Fachliches Konzept                    | Umsetzung im Projekt                                             |
 | ------------------------------------- | ---------------------------------------------------------------- |

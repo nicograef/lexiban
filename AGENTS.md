@@ -1,4 +1,4 @@
-# AGENTS.md — IBAN Validator SPA
+# AGENTS.md — Lexiban
 
 > Kontext-Datei für Coding-Agents (GitHub Copilot, Cursor, etc.).
 > Projektfakten (Setup, API, Struktur) stehen in der [README.md](README.md) — hier nicht dupliziert.

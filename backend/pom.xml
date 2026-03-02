@@ -20,7 +20,7 @@
   ≈ corepack + pnpm (pinned version in package.json).
 
   The .jar file is a self-contained archive with embedded Tomcat — just run:
-  java -jar target/iban-validator-0.0.1-SNAPSHOT.jar
+  java -jar target/lexiban-0.0.1-SNAPSHOT.jar
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -39,12 +39,12 @@
     </parent>
 
     <!-- Project coordinates — uniquely identify this artifact.
-    groupId + artifactId ≈ npm package scope + name (@iban/validator). -->
+    groupId + artifactId ≈ npm package scope + name (@nicograef/lexiban). -->
     <groupId>de.nicograef</groupId>
-    <artifactId>iban-validator</artifactId>
+    <artifactId>lexiban</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>iban-validator</name>
-    <description>IBAN Validator SPA Backend</description>
+    <name>lexiban</name>
+    <description>Lexiban — IBAN Validator SPA Backend</description>
 
     <properties>
         <java.version>21</java.version>
