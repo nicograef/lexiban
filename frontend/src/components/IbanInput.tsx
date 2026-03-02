@@ -1,7 +1,6 @@
 import { XIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,14 +10,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { cleanIban, formatIban, getExpectedLength } from '@/lib/utils'
-import {
-  getAllIbans,
-  type IbanListEntry,
-  type IbanValidationResponse,
-  validateIban,
-} from '@/services/api'
+import { type IbanValidationResponse, validateIban } from '@/services/api'
 
 interface ValidationState {
   loading: boolean
@@ -77,37 +70,47 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>IBAN prüfen</CardTitle>
+        <CardTitle>
+          IBAN Validierung für Selbstständige und kleine Unternehmen.
+        </CardTitle>
         <CardDescription>
-          IBAN eingeben — unterstützt alle IBAN-Länder (DE, AT, CH, GB, FR,
-          ...). Leerzeichen und Trennzeichen werden automatisch formatiert.
+          Unterstützt alle IBAN-Länder und Formate. Leerzeichen und Trennzeichen
+          werden automatisch formatiert. Gib einfach deine IBAN ein.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="iban-input">IBAN</Label>
-          <div className="relative">
-            <Input
-              id="iban-input"
-              type="text"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="DE89 3704 0044 0532 0130 00"
-              className="font-mono text-lg tracking-wider pr-8"
-              maxLength={42}
-              autoFocus
-            />
-            {input && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label="Eingabe löschen"
-              >
-                <XIcon className="size-4" />
-              </button>
-            )}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                id="iban-input"
+                type="text"
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="DE89 3704 0044 0532 0130 00"
+                className="font-mono text-lg tracking-wider pr-8"
+                maxLength={42}
+                autoFocus
+              />
+              {input && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Eingabe löschen"
+                >
+                  <XIcon className="size-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              onClick={() => void handleValidate()}
+              disabled={validation.loading || !input.trim()}
+              className="cursor-pointer select-none"
+            >
+              {validation.loading ? 'Prüfe...' : 'IBAN Prüfen'}
+            </Button>
           </div>
           {currentLength > 0 && (
             <p
@@ -127,13 +130,6 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
             </p>
           )}
         </div>
-
-        <Button
-          onClick={() => void handleValidate()}
-          disabled={validation.loading || !input.trim()}
-        >
-          {validation.loading ? 'Prüfe...' : 'Prüfen'}
-        </Button>
 
         {validation.error && (
           <div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm ring-1 ring-destructive/20">
@@ -165,81 +161,6 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
             </CardContent>
           </Card>
         )}
-      </CardContent>
-    </Card>
-  )
-}
-
-export function IbanList({ refreshKey }: { refreshKey?: number }) {
-  const [ibans, setIbans] = useState<IbanListEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchIbans = useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = await getAllIbans()
-      setIbans(data)
-      setError(null)
-    } catch {
-      setError('IBANs konnten nicht geladen werden')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void fetchIbans()
-  }, [fetchIbans, refreshKey])
-
-  if (loading) {
-    return (
-      <p className="text-muted-foreground text-sm">
-        Lade gespeicherte IBANs...
-      </p>
-    )
-  }
-
-  if (error) {
-    return <p className="text-destructive text-sm">{error}</p>
-  }
-
-  if (ibans.length === 0) {
-    return (
-      <p className="text-muted-foreground text-sm">
-        Noch keine IBANs gespeichert.
-      </p>
-    )
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gespeicherte IBANs</CardTitle>
-        <CardDescription>
-          {ibans.length.toString()} {ibans.length === 1 ? 'IBAN' : 'IBANs'}{' '}
-          gespeichert
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {ibans.map((entry) => (
-          <div
-            key={entry.iban}
-            className="flex items-center justify-between rounded-lg border p-3"
-          >
-            <div>
-              <p className="font-mono text-sm">{formatIban(entry.iban)}</p>
-              {entry.bankName && (
-                <p className="text-xs text-muted-foreground">
-                  {entry.bankName}
-                </p>
-              )}
-            </div>
-            <Badge variant={entry.valid ? 'success' : 'destructive'}>
-              {entry.valid ? 'gültig' : 'ungültig'}
-            </Badge>
-          </div>
-        ))}
       </CardContent>
     </Card>
   )

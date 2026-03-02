@@ -2,7 +2,8 @@ import './index.css'
 
 import { useState } from 'react'
 
-import { IbanInput, IbanList } from '@/components/IbanInput'
+import { IbanInput } from '@/components/IbanInput'
+import { IbanList } from '@/components/IbanList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function App() {
@@ -12,12 +13,7 @@ export default function App() {
     <div className="min-h-screen bg-background">
       <ThemeToggle />
       <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-        <div className="flex flex-col items-center justify-between">
-          <img src="/lexiban.svg" alt="Lexiban Logo" />
-          <h1 className="text-2xl font-bold text-foreground">
-            IBAN Validierung für Selbstständige und kleine Unternehmen.
-          </h1>
-        </div>
+        <img src="/lexiban.svg" alt="Lexiban Logo" />
         <IbanInput
           onSaved={() => {
             setRefreshKey((k) => k + 1)
