@@ -11,7 +11,7 @@ export interface IbanListProps {
 
 function IbanListItem({ entry }: { entry: IbanListEntry }) {
   return (
-    <li className="flex items-center justify-between rounded-md border bg-card p-3 transition-colors hover:bg-muted/50">
+    <li className="flex items-center justify-between rounded-md border bg-card p-3 transition-colors hover:bg-muted/50 animate-slide-in">
       <div className="min-w-0">
         <p className="truncate font-mono text-sm tracking-wide">
           {formatIban(entry.iban)}

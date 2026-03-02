@@ -1,5 +1,5 @@
-import { XIcon } from 'lucide-react'
-import { useState } from 'react'
+import { CheckIcon, Loader2Icon, XIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 import { validateIban } from './api'
 import { getExpectedLength } from './constants'
@@ -67,11 +68,12 @@ function ValidationResult({ result }: { result: IbanValidationResponse }) {
 
   return (
     <Card
-      className={
+      className={cn(
+        'animate-fade-in',
         isValid
           ? 'ring-success/30 bg-success/5'
-          : 'ring-destructive/30 bg-destructive/5'
-      }
+          : 'ring-destructive/30 bg-destructive/5',
+      )}
     >
       <CardContent className="space-y-1">
         <p className="font-medium">
@@ -80,7 +82,7 @@ function ValidationResult({ result }: { result: IbanValidationResponse }) {
         {!isValid && result.reason && (
           <p className="text-sm text-destructive">{result.reason}</p>
         )}
-        {result.bankName && <p className="text-sm">Bank: {result.bankName}</p>}
+        {result.bankName && <p>{result.bankName}</p>}
       </CardContent>
     </Card>
   )
@@ -96,6 +98,15 @@ export function IbanInput({ onSaved }: IbanInputProps) {
   const [input, setInput] = useState('')
   const [validation, setValidation] =
     useState<ValidationState>(INITIAL_VALIDATION)
+  const [successFlash, setSuccessFlash] = useState(false)
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current)
+    }
+  }, [])
 
   const cleaned = cleanIban(input)
   const countryCode = cleaned.length >= 2 ? cleaned.substring(0, 2) : ''
@@ -118,6 +129,12 @@ export function IbanInput({ onSaved }: IbanInputProps) {
     try {
       const result = await validateIban(input)
       setValidation({ loading: false, result, error: null })
+      if (result.valid) {
+        setSuccessFlash(true)
+        flashTimer.current = setTimeout(() => {
+          setSuccessFlash(false)
+        }, 2000)
+      }
       onSaved?.()
     } catch {
       setValidation({
@@ -178,9 +195,24 @@ export function IbanInput({ onSaved }: IbanInputProps) {
             <Button
               type="submit"
               disabled={validation.loading || !input.trim()}
-              className="cursor-pointer select-none"
+              className={cn(
+                'select-none transition-colors duration-300',
+                successFlash && 'bg-success text-white hover:bg-success/90',
+              )}
             >
-              {validation.loading ? 'Prüfe...' : 'IBAN Prüfen'}
+              {validation.loading ? (
+                <>
+                  <Loader2Icon className="size-4 animate-spin" />
+                  Prüfe…
+                </>
+              ) : successFlash ? (
+                <>
+                  <CheckIcon className="size-4" />
+                  Gültig
+                </>
+              ) : (
+                'IBAN Prüfen'
+              )}
             </Button>
           </div>
           <CharCounter
