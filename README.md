@@ -29,6 +29,7 @@ Single-Page-App zur Validierung und Speicherung von IBANs. Coding-Challenge als 
 ├── frontend/      # React SPA (Vite + TypeScript + shadcn/ui)
 ├── docs/          # Weitere Dokumentation (ADRs, Fachliches, Lernguide)
 ├── quiz/          # Quiz-App (Single-Choice-Fragen zu IBAN, Java, Spring Boot, DDD)
+├── Makefile       # Developer-Shortcuts (make db, make be, make fe, ...)
 └── docker-compose.yml
 ```
 
@@ -36,21 +37,16 @@ Das Backend folgt einer klassischen Schichtenarchitektur: Controller (REST-Endpu
 
 ## Lokale Entwicklung
 
+Alle Shortcuts sind im `Makefile` definiert (`make help` zeigt alle Targets).
+Das Makefile lädt `.env` automatisch — kein manuelles `source .env` nötig.
+
 ```bash
-# 1. Datenbank starten
-docker compose up postgres
+# Je ein Terminal:
+make db          # 1. PostgreSQL starten
+make be          # 2. Backend starten (Spring Boot, dev profile)
+make fe          # 3. Frontend starten (Vite dev server → http://localhost:5173)
 
-# 2. Backend starten (neues Terminal, vom Projekt-Root)
-#    .env exportieren → Spring liest POSTGRES_USER/PASSWORD daraus (Single Source of Truth)
-set -a && source .env && set +a
-cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# 3. Frontend starten (neues Terminal)
-cd frontend && pnpm install && pnpm dev
-# Frontend: http://localhost:5173 | API: http://localhost:8080/api
-
-# SQL-Queries direkt in der Datenbank ausführen
-docker compose exec postgres psql -U iban_user -d iban
+make db-shell    # SQL-Shell im laufenden Postgres-Container öffnen
 ```
 
 ## Produktion
@@ -67,23 +63,18 @@ Kein separater Reverse-Proxy-Container — die Frontend-Nginx übernimmt beides.
 ## Tests & Code-Qualität
 
 ```bash
-# Backend — Tests (JUnit 5 + MockMvc)
-cd backend && ./mvnw test
+make check       # Backend + Frontend komplett (≈ CI lokal)
+make be-check    # Backend: Spotless + Checkstyle + Tests (mvnw verify)
+make fe-check    # Frontend: ESLint + Vitest
+```
 
-# Backend — Formatting + Linting + Tests (alles auf einmal)
-cd backend && ./mvnw verify -B
+Einzelne Backend-Checks bei Bedarf direkt:
 
-# Backend — nur Formatting prüfen (≈ prettier --check)
-cd backend && ./mvnw spotless:check
-
-# Backend — Formatting auto-fix (≈ prettier --write)
-cd backend && ./mvnw spotless:apply
-
-# Backend — nur Linting (≈ eslint .)
-cd backend && ./mvnw checkstyle:check
-
-# Frontend (Vitest + React Testing Library)
-cd frontend && pnpm lint && pnpm test
+```bash
+cd backend && ./mvnw test            # Nur Tests (JUnit 5 + MockMvc)
+cd backend && ./mvnw spotless:check  # Nur Formatting prüfen (≈ prettier --check)
+cd backend && ./mvnw spotless:apply  # Formatting auto-fix (≈ prettier --write)
+cd backend && ./mvnw checkstyle:check # Nur Linting (≈ eslint .)
 ```
 
 `./mvnw verify` führt automatisch Spotless + Checkstyle + Tests aus.

@@ -1,5 +1,0 @@
-alias backend='(cd backend && mvn verify -B)'
-alias frontend='(cd frontend && pnpm format && pnpm lint && pnpm build)'
-alias up='docker compose -f docker-compose.dev.yml up --build'
-alias down='docker compose -f docker-compose.dev.yml down'
-alias logs='docker compose -f docker-compose.dev.yml logs'
