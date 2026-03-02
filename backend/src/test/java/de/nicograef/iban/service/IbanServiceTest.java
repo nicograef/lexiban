@@ -39,13 +39,13 @@ class IbanServiceTest {
 
     @Mock private LocalIbanValidator localValidator;
 
-    @Mock private ExternalIbanValidator externalValidator;
+    @Mock private OpenIbanValidator openIbanValidator;
 
     @Mock private IbanRepository ibanRepository;
 
     @BeforeEach
     void setUp() {
-        service = new IbanService(localValidator, externalValidator, ibanRepository);
+        service = new IbanService(localValidator, openIbanValidator, ibanRepository);
     }
 
     // ── Structural errors (IbanFormatException) ──
@@ -83,7 +83,7 @@ class IbanServiceTest {
         assertEquals("Commerzbank", result.bankName());
         // Validators should not be called when cache hits
         verify(localValidator, never()).validate(any());
-        verify(externalValidator, never()).validate(any());
+        verify(openIbanValidator, never()).validate(any());
     }
 
     // ── Local validator returns definitive result ──
@@ -104,7 +104,7 @@ class IbanServiceTest {
 
         assertFalse(result.valid());
         // External should NOT be called — local gave a definitive answer
-        verify(externalValidator, never()).validate(any());
+        verify(openIbanValidator, never()).validate(any());
     }
 
     @Test
@@ -120,7 +120,7 @@ class IbanServiceTest {
 
         assertTrue(result.valid());
         assertEquals("Deutsche Bank", result.bankName());
-        verify(externalValidator, never()).validate(any());
+        verify(openIbanValidator, never()).validate(any());
     }
 
     // ── Local returns empty → external fallback ──
@@ -129,7 +129,7 @@ class IbanServiceTest {
     void fallsBackToExternalWhenLocalReturnsEmpty() {
         when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.empty());
         when(localValidator.validate(any())).thenReturn(Optional.empty());
-        when(externalValidator.validate(any()))
+        when(openIbanValidator.validate(any()))
                 .thenReturn(
                         Optional.of(
                                 new ValidationResult(
@@ -139,14 +139,14 @@ class IbanServiceTest {
 
         assertTrue(result.valid());
         assertEquals("Commerzbank", result.bankName());
-        verify(externalValidator).validate(any());
+        verify(openIbanValidator).validate(any());
     }
 
     @Test
     void externalInvalidResultIsUsed() {
         when(ibanRepository.findById("GB29NWBK60161331926819")).thenReturn(Optional.empty());
         when(localValidator.validate(any())).thenReturn(Optional.empty());
-        when(externalValidator.validate(any()))
+        when(openIbanValidator.validate(any()))
                 .thenReturn(
                         Optional.of(
                                 new ValidationResult(
@@ -166,7 +166,7 @@ class IbanServiceTest {
     void fallbackWhenBothValidatorsReturnEmpty() {
         when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.empty());
         when(localValidator.validate(any())).thenReturn(Optional.empty());
-        when(externalValidator.validate(any())).thenReturn(Optional.empty());
+        when(openIbanValidator.validate(any())).thenReturn(Optional.empty());
 
         var result = service.validateOrLookup("DE89370400440532013000");
 
@@ -209,7 +209,7 @@ class IbanServiceTest {
     void normalizesInputBeforeProcessing() {
         when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.empty());
         when(localValidator.validate(any())).thenReturn(Optional.empty());
-        when(externalValidator.validate(any())).thenReturn(Optional.empty());
+        when(openIbanValidator.validate(any())).thenReturn(Optional.empty());
 
         var result = service.validateOrLookup("de89 3704 0044 0532 0130 00");
 

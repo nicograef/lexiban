@@ -16,24 +16,21 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 /**
- * Unit tests for ExternalIbanValidator using MockRestServiceServer to intercept
- * HTTP calls.
+ * Unit tests for OpenIbanValidator using MockRestServiceServer to intercept HTTP calls.
  *
- * <p>
- * Verifies correct mapping of the openiban.com JSON response to
- * ValidationResult, including edge
+ * <p>Verifies correct mapping of the openiban.com JSON response to ValidationResult, including edge
  * cases (null bankData, API errors, invalid IBANs).
  */
-class ExternalIbanValidatorTest {
+class OpenIbanValidatorTest {
 
     private MockRestServiceServer mockServer;
-    private ExternalIbanValidator validator;
+    private OpenIbanValidator validator;
 
     @BeforeEach
     void setUp() {
         var builder = RestClient.builder();
         mockServer = MockRestServiceServer.bindTo(builder).build();
-        validator = new ExternalIbanValidator(builder);
+        validator = new OpenIbanValidator(builder);
     }
 
     @Test
@@ -41,7 +38,7 @@ class ExternalIbanValidatorTest {
         mockServer
                 .expect(
                         requestTo(
-                                ExternalIbanValidator.BASE_URL
+                                OpenIbanValidator.BASE_URL
                                         + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
                 .andRespond(
                         withSuccess(
@@ -77,7 +74,7 @@ class ExternalIbanValidatorTest {
         mockServer
                 .expect(
                         requestTo(
-                                ExternalIbanValidator.BASE_URL
+                                OpenIbanValidator.BASE_URL
                                         + "DE00370400440532013000?getBIC=true&validateBankCode=true"))
                 .andRespond(
                         withSuccess(
@@ -106,7 +103,7 @@ class ExternalIbanValidatorTest {
         mockServer
                 .expect(
                         requestTo(
-                                ExternalIbanValidator.BASE_URL
+                                OpenIbanValidator.BASE_URL
                                         + "GB29NWBK60161331926819?getBIC=true&validateBankCode=true"))
                 .andRespond(
                         withSuccess(
@@ -128,7 +125,7 @@ class ExternalIbanValidatorTest {
         mockServer
                 .expect(
                         requestTo(
-                                ExternalIbanValidator.BASE_URL
+                                OpenIbanValidator.BASE_URL
                                         + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
                 .andRespond(withServerError());
 
@@ -143,7 +140,7 @@ class ExternalIbanValidatorTest {
         mockServer
                 .expect(
                         requestTo(
-                                ExternalIbanValidator.BASE_URL
+                                OpenIbanValidator.BASE_URL
                                         + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
                 .andRespond(
                         withSuccess(

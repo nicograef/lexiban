@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
  * order (Strategy Pattern). 4. Persists the result.
  *
  * <p>The validators implement the IbanValidator interface: - LocalIbanValidator: length + Mod-97 +
- * local BLZ map - ExternalIbanValidator: openiban.com API fallback
+ * local BLZ map - OpenIbanValidator: openiban.com API fallback
  *
  * <p>If both validators return Optional.empty() (unknown bank + API unreachable), the service falls
  * back to a valid-without-bank-name result — because the local validator already confirmed length +
@@ -33,7 +33,7 @@ public class IbanService {
     private static final Logger log = LoggerFactory.getLogger(IbanService.class);
 
     private final LocalIbanValidator localValidator;
-    private final ExternalIbanValidator externalValidator;
+    private final OpenIbanValidator openIbanValidator;
     private final IbanRepository ibanRepository;
 
     /**
@@ -42,10 +42,10 @@ public class IbanService {
      */
     public IbanService(
             LocalIbanValidator localValidator,
-            ExternalIbanValidator externalValidator,
+            OpenIbanValidator openIbanValidator,
             IbanRepository ibanRepository) {
         this.localValidator = localValidator;
-        this.externalValidator = externalValidator;
+        this.openIbanValidator = openIbanValidator;
         this.ibanRepository = ibanRepository;
     }
 
@@ -76,10 +76,10 @@ public class IbanService {
         // Returns definitive invalid, definitive valid+bankName, or empty.
         Optional<ValidationResult> result = localValidator.validate(ibanNumber);
 
-        // Step 4: External fallback — only called if local returned empty
+        // Step 4: OpenIBAN fallback — only called if local returned empty
         // (= IBAN passed checks but bank is unknown to local validator).
         if (result.isEmpty()) {
-            result = externalValidator.validate(ibanNumber);
+            result = openIbanValidator.validate(ibanNumber);
         }
 
         // Step 5: Fallback — both validators couldn't produce a result.

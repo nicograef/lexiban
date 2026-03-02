@@ -19,14 +19,14 @@ import org.springframework.web.client.RestClient;
  * @see <a href="https://github.com/fourcube/goiban-service">goiban-service (Go source)</a>
  */
 @Service
-public class ExternalIbanValidator implements IbanValidator {
+public class OpenIbanValidator implements IbanValidator {
 
-    private static final Logger log = LoggerFactory.getLogger(ExternalIbanValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenIbanValidator.class);
     static final String BASE_URL = "https://openiban.com/validate/";
 
     private final RestClient restClient;
 
-    public ExternalIbanValidator(RestClient.Builder restClientBuilder) {
+    public OpenIbanValidator(RestClient.Builder restClientBuilder) {
         this.restClient = restClientBuilder.baseUrl(BASE_URL).build();
     }
 
