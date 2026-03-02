@@ -48,6 +48,9 @@ cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 # 3. Frontend starten (neues Terminal)
 cd frontend && pnpm install && pnpm dev
 # Frontend: http://localhost:5173 | API: http://localhost:8080/api
+
+# SQL-Queries direkt in der Datenbank ausführen
+docker compose exec postgres psql -U iban_user -d iban
 ```
 
 ## Produktion
