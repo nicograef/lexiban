@@ -10,16 +10,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Global error handler for all REST controllers — consistent JSON error
- * responses.
- */
+/** Global error handler for all REST controllers — consistent JSON error responses. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** @Valid failures (e.g. @NotBlank) → 400. */
+    /**
+     * @Valid failures (e.g. @NotBlank) → 400.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationErrors(MethodArgumentNotValidException ex) {
@@ -34,8 +33,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Structurally malformed IBAN → 400. Response shape matches IbanResponse for
-     * frontend compatibility.
+     * Structurally malformed IBAN → 400. Response shape matches IbanResponse for frontend
+     * compatibility.
      */
     @ExceptionHandler(IbanFormatException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

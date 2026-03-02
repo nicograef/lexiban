@@ -11,23 +11,22 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * AWS Lambda entry point — bridges API Gateway HTTP API v2 events into Spring
- * Boot's
+ * AWS Lambda entry point — bridges API Gateway HTTP API v2 events into Spring Boot's
  * DispatcherServlet via aws-serverless-java-container.
  *
- * <p>
- * The static initializer boots Spring Boot once (captured by SnapStart). Each
- * invocation proxies
+ * <p>The static initializer boots Spring Boot once (captured by SnapStart). Each invocation proxies
  * the Lambda event stream into the running Spring context.
  */
 public class StreamLambdaHandler implements RequestStreamHandler {
 
-    private static final SpringBootLambdaContainerHandler<HttpApiV2ProxyRequest, AwsProxyResponse> handler;
+    private static final SpringBootLambdaContainerHandler<HttpApiV2ProxyRequest, AwsProxyResponse>
+            HANDLER;
 
     static {
         try {
-            handler = SpringBootLambdaContainerHandler.getHttpApiV2ProxyHandler(
-                    IbanApplication.class);
+            HANDLER =
+                    SpringBootLambdaContainerHandler.getHttpApiV2ProxyHandler(
+                            IbanApplication.class);
         } catch (ContainerInitializationException e) {
             throw new IllegalStateException("Failed to initialize Spring Boot Lambda handler", e);
         }
@@ -36,6 +35,6 @@ public class StreamLambdaHandler implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context)
             throws IOException {
-        handler.proxyStream(input, output, context);
+        HANDLER.proxyStream(input, output, context);
     }
 }

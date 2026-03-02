@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for the IbanNumber value object — normalization, structural
- * validation, derived properties.
+ * Unit tests for the IbanNumber value object — normalization, structural validation, derived
+ * properties.
  */
 class IbanNumberTest {
 

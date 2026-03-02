@@ -15,32 +15,29 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-/**
- * Unit tests for OpenIbanValidator using MockRestServiceServer to intercept
- * HTTP calls.
- */
+/** Unit tests for OpenIbanValidator using MockRestServiceServer to intercept HTTP calls. */
 class OpenIbanValidatorTest {
 
-        private MockRestServiceServer mockServer;
-        private OpenIbanValidator validator;
+    private MockRestServiceServer mockServer;
+    private OpenIbanValidator validator;
 
-        @BeforeEach
-        void setUp() {
-                var builder = RestClient.builder();
-                mockServer = MockRestServiceServer.bindTo(builder).build();
-                validator = new OpenIbanValidator(builder);
-        }
+    @BeforeEach
+    void setUp() {
+        var builder = RestClient.builder();
+        mockServer = MockRestServiceServer.bindTo(builder).build();
+        validator = new OpenIbanValidator(builder);
+    }
 
-        @Test
-        void validIbanWithBankData() {
-                mockServer
-                                .expect(
-                                                requestTo(
-                                                                OpenIbanValidator.BASE_URL
-                                                                                + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
-                                .andRespond(
-                                                withSuccess(
-                                                                """
+    @Test
+    void validIbanWithBankData() {
+        mockServer
+                .expect(
+                        requestTo(
+                                OpenIbanValidator.BASE_URL
+                                        + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
+                .andRespond(
+                        withSuccess(
+                                """
                                                                                 {
                                                                                   "valid": true,
                                                                                   "messages": ["Bank code valid: 37040044"],
@@ -55,28 +52,28 @@ class OpenIbanValidatorTest {
                                                                                   "checkResults": {"bankCode": true}
                                                                                 }
                                                                                 """,
-                                                                MediaType.APPLICATION_JSON));
+                                MediaType.APPLICATION_JSON));
 
-                var result = validator.validate(new IbanNumber("DE89370400440532013000"));
+        var result = validator.validate(new IbanNumber("DE89370400440532013000"));
 
-                assertTrue(result.isPresent());
-                assertTrue(result.get().valid());
-                assertEquals("DE89370400440532013000", result.get().iban());
-                assertEquals("Commerzbank", result.get().bankName());
-                assertNull(result.get().reason());
-                mockServer.verify();
-        }
+        assertTrue(result.isPresent());
+        assertTrue(result.get().valid());
+        assertEquals("DE89370400440532013000", result.get().iban());
+        assertEquals("Commerzbank", result.get().bankName());
+        assertNull(result.get().reason());
+        mockServer.verify();
+    }
 
-        @Test
-        void invalidIbanReturnsJoinedMessages() {
-                mockServer
-                                .expect(
-                                                requestTo(
-                                                                OpenIbanValidator.BASE_URL
-                                                                                + "DE00370400440532013000?getBIC=true&validateBankCode=true"))
-                                .andRespond(
-                                                withSuccess(
-                                                                """
+    @Test
+    void invalidIbanReturnsJoinedMessages() {
+        mockServer
+                .expect(
+                        requestTo(
+                                OpenIbanValidator.BASE_URL
+                                        + "DE00370400440532013000?getBIC=true&validateBankCode=true"))
+                .andRespond(
+                        withSuccess(
+                                """
                                                                                 {
                                                                                   "valid": false,
                                                                                   "messages": ["Validation failed", "Checksum mismatch"],
@@ -85,64 +82,64 @@ class OpenIbanValidatorTest {
                                                                                   "checkResults": {}
                                                                                 }
                                                                                 """,
-                                                                MediaType.APPLICATION_JSON));
+                                MediaType.APPLICATION_JSON));
 
-                var result = validator.validate(new IbanNumber("DE00370400440532013000"));
+        var result = validator.validate(new IbanNumber("DE00370400440532013000"));
 
-                assertTrue(result.isPresent());
-                assertFalse(result.get().valid());
-                assertEquals("Validation failed; Checksum mismatch", result.get().reason());
-                assertNull(result.get().bankName());
-                mockServer.verify();
-        }
+        assertTrue(result.isPresent());
+        assertFalse(result.get().valid());
+        assertEquals("Validation failed; Checksum mismatch", result.get().reason());
+        assertNull(result.get().bankName());
+        mockServer.verify();
+    }
 
-        @Test
-        void nullBankDataReturnsNullBankName() {
-                mockServer
-                                .expect(
-                                                requestTo(
-                                                                OpenIbanValidator.BASE_URL
-                                                                                + "GB29NWBK60161331926819?getBIC=true&validateBankCode=true"))
-                                .andRespond(
-                                                withSuccess(
-                                                                """
+    @Test
+    void nullBankDataReturnsNullBankName() {
+        mockServer
+                .expect(
+                        requestTo(
+                                OpenIbanValidator.BASE_URL
+                                        + "GB29NWBK60161331926819?getBIC=true&validateBankCode=true"))
+                .andRespond(
+                        withSuccess(
+                                """
                                                                                 {"valid": true, "messages": [], "iban": "GB29NWBK60161331926819", "bankData": null}
                                                                                 """,
-                                                                MediaType.APPLICATION_JSON));
+                                MediaType.APPLICATION_JSON));
 
-                var result = validator.validate(new IbanNumber("GB29NWBK60161331926819"));
+        var result = validator.validate(new IbanNumber("GB29NWBK60161331926819"));
 
-                assertTrue(result.isPresent());
-                assertTrue(result.get().valid());
-                assertNull(result.get().bankName());
-                mockServer.verify();
-        }
+        assertTrue(result.isPresent());
+        assertTrue(result.get().valid());
+        assertNull(result.get().bankName());
+        mockServer.verify();
+    }
 
-        @Test
-        void apiErrorReturnsEmpty() {
-                mockServer
-                                .expect(
-                                                requestTo(
-                                                                OpenIbanValidator.BASE_URL
-                                                                                + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
-                                .andRespond(withServerError());
+    @Test
+    void apiErrorReturnsEmpty() {
+        mockServer
+                .expect(
+                        requestTo(
+                                OpenIbanValidator.BASE_URL
+                                        + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
+                .andRespond(withServerError());
 
-                var result = validator.validate(new IbanNumber("DE89370400440532013000"));
+        var result = validator.validate(new IbanNumber("DE89370400440532013000"));
 
-                assertTrue(result.isEmpty());
-                mockServer.verify();
-        }
+        assertTrue(result.isEmpty());
+        mockServer.verify();
+    }
 
-        @Test
-        void validIbanWithEmptyMessages() {
-                mockServer
-                                .expect(
-                                                requestTo(
-                                                                OpenIbanValidator.BASE_URL
-                                                                                + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
-                                .andRespond(
-                                                withSuccess(
-                                                                """
+    @Test
+    void validIbanWithEmptyMessages() {
+        mockServer
+                .expect(
+                        requestTo(
+                                OpenIbanValidator.BASE_URL
+                                        + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
+                .andRespond(
+                        withSuccess(
+                                """
                                                                                 {
                                                                                   "valid": true,
                                                                                   "messages": [],
@@ -150,14 +147,14 @@ class OpenIbanValidatorTest {
                                                                                   "bankData": {"bankCode": "", "name": ""}
                                                                                 }
                                                                                 """,
-                                                                MediaType.APPLICATION_JSON));
+                                MediaType.APPLICATION_JSON));
 
-                var result = validator.validate(new IbanNumber("DE89370400440532013000"));
+        var result = validator.validate(new IbanNumber("DE89370400440532013000"));
 
-                assertTrue(result.isPresent());
-                assertTrue(result.get().valid());
-                assertEquals("", result.get().bankName());
-                assertNull(result.get().reason());
-                mockServer.verify();
-        }
+        assertTrue(result.isPresent());
+        assertTrue(result.get().valid());
+        assertEquals("", result.get().bankName());
+        assertNull(result.get().reason());
+        mockServer.verify();
+    }
 }

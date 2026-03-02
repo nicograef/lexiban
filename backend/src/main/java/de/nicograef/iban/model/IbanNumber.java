@@ -8,30 +8,20 @@ import org.springframework.lang.NonNull;
 /**
  * DDD Value Object for a normalized, structurally valid IBAN string.
  *
- * <p>
- * Normalizes raw input (strip non-alphanumeric, uppercase), validates
- * structural format, and
+ * <p>Normalizes raw input (strip non-alphanumeric, uppercase), validates structural format, and
  * exposes derived properties (countryCode, checkDigits, bban, bankIdentifier).
  *
- * <p>
- * Throws {@link IbanFormatException} with a German-language message if input is
- * structurally
- * invalid. A valid instance is guaranteed to be normalized — essential since
- * the IBAN is the
+ * <p>Throws {@link IbanFormatException} with a German-language message if input is structurally
+ * invalid. A valid instance is guaranteed to be normalized — essential since the IBAN is the
  * database primary key.
  */
 public record IbanNumber(@NonNull String value) {
 
-    /**
-     * ISO 13616 structural pattern: 2 letters + 2 digits + 11–30 alphanumeric
-     * (BBAN).
-     */
-    private static final Pattern IBAN_STRUCTURE = Pattern.compile("^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$");
+    /** ISO 13616 structural pattern: 2 letters + 2 digits + 11–30 alphanumeric (BBAN). */
+    private static final Pattern IBAN_STRUCTURE =
+            Pattern.compile("^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$");
 
-    /**
-     * Strip non-alphanumeric characters and uppercase. Public for use in error
-     * handlers.
-     */
+    /** Strip non-alphanumeric characters and uppercase. Public for use in error handlers. */
     public static @NonNull String normalize(String raw) {
         if (raw == null || raw.isBlank()) {
             return "";
@@ -52,9 +42,7 @@ public record IbanNumber(@NonNull String value) {
         }
     }
 
-    /**
-     * Returns a specific German-language reason for a structural format failure.
-     */
+    /** Returns a specific German-language reason for a structural format failure. */
     private static String describeStructuralError(String iban) {
         if (iban.isEmpty()) {
             return "IBAN ist leer";
@@ -89,9 +77,7 @@ public record IbanNumber(@NonNull String value) {
         return value.substring(2, 4);
     }
 
-    /**
-     * BBAN (Basic Bank Account Number) — everything after the first 4 characters.
-     */
+    /** BBAN (Basic Bank Account Number) — everything after the first 4 characters. */
     public String bban() {
         return value.substring(4);
     }

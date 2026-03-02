@@ -10,8 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Orchestrator for IBAN validation — coordinates parsing, DB caching, and the
- * validator chain
+ * Orchestrator for IBAN validation — coordinates parsing, DB caching, and the validator chain
  * (local → external → fallback). Contains no validation logic itself.
  */
 @Service
@@ -33,11 +32,9 @@ public class IbanService {
     }
 
     /**
-     * Validate or look up an IBAN. Pipeline: Parse → Cache → Local → External →
-     * Fallback → Persist.
+     * Validate or look up an IBAN. Pipeline: Parse → Cache → Local → External → Fallback → Persist.
      *
-     * @throws de.nicograef.iban.model.IbanFormatException if structurally not an
-     *                                                     IBAN (→ HTTP 400)
+     * @throws de.nicograef.iban.model.IbanFormatException if structurally not an IBAN (→ HTTP 400)
      */
     public ValidationResult validateOrLookup(String rawIban) {
         IbanNumber ibanNumber = new IbanNumber(rawIban);
@@ -66,7 +63,8 @@ public class IbanService {
                     "No validator produced a result for {} — falling back to valid without bank name",
                     ibanNumber.value());
         }
-        ValidationResult finalResult = result.orElse(new ValidationResult(true, ibanNumber.value(), null, null));
+        ValidationResult finalResult =
+                result.orElse(new ValidationResult(true, ibanNumber.value(), null, null));
 
         // Persist
         ibanRepository.save(

@@ -10,10 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for LocalIbanValidator — three possible outcomes: definitive
- * invalid, valid + bankName,
- * or empty (needs external). Uses a real Mod97Validator (pure algorithm, no
- * mocks).
+ * Unit tests for LocalIbanValidator — three possible outcomes: definitive invalid, valid +
+ * bankName, or empty (needs external). Uses a real Mod97Validator (pure algorithm, no mocks).
  */
 class LocalIbanValidatorTest {
 

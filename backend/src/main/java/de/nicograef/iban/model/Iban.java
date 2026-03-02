@@ -9,9 +9,7 @@ import java.time.Instant;
 /**
  * JPA Entity — maps to the "ibans" table. IBAN string as natural primary key.
  *
- * <p>
- * Each IBAN exists exactly once (cache). Mutable class required by Hibernate
- * (reflection +
+ * <p>Each IBAN exists exactly once (cache). Mutable class required by Hibernate (reflection +
  * no-arg constructor).
  */
 @Entity
@@ -35,8 +33,7 @@ public class Iban {
     private Instant createdAt;
 
     // Required by JPA/Hibernate (reflection-based instantiation).
-    protected Iban() {
-    }
+    protected Iban() {}
 
     public Iban(String iban, String bankName, boolean valid, String reason) {
         this.iban = iban;

@@ -9,9 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 /**
- * Fallback IBAN validator — calls the openiban.com REST API when
- * LocalIbanValidator cannot produce a
- * result. Returns {@code Optional.empty()} if the API is unreachable.
+ * Fallback IBAN validator — calls the openiban.com REST API when LocalIbanValidator cannot produce
+ * a result. Returns {@code Optional.empty()} if the API is unreachable.
  *
  * @see <a href="https://openiban.com/">openiban.com</a>
  */
@@ -30,11 +29,12 @@ public class OpenIbanValidator implements IbanValidator {
     @Override
     public Optional<ValidationResult> validate(IbanNumber iban) {
         try {
-            var response = restClient
-                    .get()
-                    .uri("{iban}?getBIC=true&validateBankCode=true", iban.value())
-                    .retrieve()
-                    .body(OpenIbanResponse.class);
+            var response =
+                    restClient
+                            .get()
+                            .uri("{iban}?getBIC=true&validateBankCode=true", iban.value())
+                            .retrieve()
+                            .body(OpenIbanResponse.class);
 
             if (response == null) {
                 return Optional.empty();
@@ -52,9 +52,7 @@ public class OpenIbanValidator implements IbanValidator {
     }
 
     /** Relevant subset of the openiban.com JSON response. */
-    record OpenIbanResponse(boolean valid, String[] messages, BankData bankData) {
-    }
+    record OpenIbanResponse(boolean valid, String[] messages, BankData bankData) {}
 
-    record BankData(String name) {
-    }
+    record BankData(String name) {}
 }
