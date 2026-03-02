@@ -2,7 +2,6 @@
 # Usage: make <target>   |   make help
 
 # Load .env variables (DB credentials) for all targets.
-# ≈ dotenv in Node.js — makes POSTGRES_USER etc. available to subprocesses.
 include .env
 export
 
@@ -19,7 +18,7 @@ be:            ## Start backend (Spring Boot, dev profile)
 fe:            ## Start frontend (Vite dev server)
 	cd frontend && pnpm install && pnpm dev
 
-# ── Code Quality Checks (≈ CI locally) ──
+# ── Code Quality Checks ──
 
 .PHONY: be-check fe-check check
 

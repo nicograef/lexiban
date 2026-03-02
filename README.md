@@ -63,7 +63,7 @@ Kein separater Reverse-Proxy-Container — die Frontend-Nginx übernimmt beides.
 ## Tests & Code-Qualität
 
 ```bash
-make check       # Backend + Frontend komplett (≈ CI lokal)
+make check       # Backend + Frontend komplett
 make be-check    # Backend: Spotless + Checkstyle + Tests (mvnw verify)
 make fe-check    # Frontend: ESLint + Vitest
 ```
@@ -72,9 +72,9 @@ Einzelne Backend-Checks bei Bedarf direkt:
 
 ```bash
 cd backend && ./mvnw test            # Nur Tests (JUnit 5 + MockMvc)
-cd backend && ./mvnw spotless:check  # Nur Formatting prüfen (≈ prettier --check)
-cd backend && ./mvnw spotless:apply  # Formatting auto-fix (≈ prettier --write)
-cd backend && ./mvnw checkstyle:check # Nur Linting (≈ eslint .)
+cd backend && ./mvnw spotless:check  # Nur Formatting prüfen
+cd backend && ./mvnw spotless:apply  # Formatting auto-fix
+cd backend && ./mvnw checkstyle:check # Nur Linting
 ```
 
 `./mvnw verify` führt automatisch Spotless + Checkstyle + Tests aus.

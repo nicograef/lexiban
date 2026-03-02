@@ -1,26 +1,4 @@
 -- ── Flyway migration V1: Initial schema for Lexiban ──
---
--- Flyway is a database migration tool (≈ Prisma Migrate or golang-migrate).
--- It runs SQL files in version order (V1__, V2__, ...) on application startup.
---
--- How it works:
--- 1. Spring Boot starts → Flyway checks the "flyway_schema_history" table
--- 2. If V1 hasn't been applied yet, Flyway runs this script
--- 3. Flyway records V1 as applied (won't run again on next startup)
---
--- Naming convention: V{number}__{description}.sql
--- The double underscore (__) separates the version from the description.
--- Files live in: src/main/resources/db/migration/
---
--- This is the ONLY place where the DB schema is defined.
--- The JPA entity (Iban.java) must match this schema exactly because
--- we set spring.jpa.hibernate.ddl-auto=validate (Hibernate validates
--- but never modifies the schema).
---
--- Design: The IBAN itself is the natural primary key. Each IBAN exists
--- exactly once — the table acts as a lookup cache for validation results.
--- Repeated requests for the same IBAN return the cached result instantly.
--- See docs/iban-as-entity-refactoring.md for the full rationale.
 CREATE TABLE
     IF NOT EXISTS ibans (
         iban VARCHAR(34) PRIMARY KEY,

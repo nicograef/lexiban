@@ -4,43 +4,35 @@
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-  Checkstyle Config — ≈ .eslintrc for Java.
-
-  Based on Google Java Style, adjusted for this project:
-  - 4-space indent (AOSP style, matching Spotless config)
-  - 120-char line width (more practical than Google's 100)
-  - No mandatory Javadoc (this is a learning project, not a library)
-
-  Full module reference: https://checkstyle.org/checks.html
+  Checkstyle Config — based on Google Java Style, adjusted:
+  - 4-space indent (AOSP style, matching Spotless)
+  - 120-char line width
+  - No mandatory Javadoc
 -->
 <module name="Checker">
-    <!-- File-level checks (run on every .java file) -->
 
-    <!-- No tab characters — use spaces only (≈ EditorConfig indent_style=space) -->
+    <!-- No tab characters -->
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
     </module>
 
-    <!-- Files must end with a newline (≈ EditorConfig insert_final_newline=true) -->
+    <!-- Files must end with a newline -->
     <module name="NewlineAtEndOfFile"/>
 
-    <!-- Max line length: 120 chars. Enough for readable code without horizontal scrolling.
-         Ignore import statements and URLs — they can be long. -->
+    <!-- Max line length: 120 chars. Ignore imports and URLs. -->
     <module name="LineLength">
         <property name="max" value="120"/>
         <property name="ignorePattern" value="^import |^package |https?://"/>
     </module>
 
-    <!-- ── AST-level checks (inside the TreeWalker) ── -->
     <module name="TreeWalker">
 
-        <!-- ═══ Naming Conventions ═══
-             ≈ ESLint naming-convention rule -->
+        <!-- ═══ Naming Conventions ═══ -->
 
-        <!-- Classes/Interfaces: PascalCase (e.g., IbanService, IbanNumber) -->
+        <!-- Classes/Interfaces: PascalCase -->
         <module name="TypeName"/>
 
-        <!-- Methods: camelCase (e.g., validateIban, findById) -->
+        <!-- Methods: camelCase -->
         <module name="MethodName"/>
 
         <!-- Local variables: camelCase -->
@@ -49,42 +41,39 @@
         <!-- Parameters: camelCase -->
         <module name="ParameterName"/>
 
-        <!-- Member variables: camelCase (e.g., ibanService, not m_ibanService) -->
+        <!-- Member variables: camelCase -->
         <module name="MemberName"/>
 
-        <!-- Constants (static final): UPPER_SNAKE_CASE (e.g., MAX_IBAN_LENGTH).
-             Exception: loggers are conventionally lowercase (log, logger). -->
+        <!-- Constants (static final): UPPER_SNAKE_CASE (exception: loggers) -->
         <module name="ConstantName">
             <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$|^log(ger)?$"/>
         </module>
 
-        <!-- Package names: all lowercase (e.g., de.nicograef.iban.service) -->
+        <!-- Package names: all lowercase -->
         <module name="PackageName">
             <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
         </module>
 
         <!-- ═══ Imports ═══ -->
 
-        <!-- No wildcard imports like "import java.util.*" (≈ ESLint no-restricted-imports) -->
+        <!-- No wildcard imports -->
         <module name="AvoidStarImport"/>
 
         <!-- No redundant imports -->
         <module name="RedundantImport"/>
 
-        <!-- No unused imports (≈ ESLint no-unused-vars for imports) -->
+        <!-- No unused imports -->
         <module name="UnusedImports"/>
 
         <!-- ═══ Code Style ═══ -->
 
-        <!-- Require braces for if/for/while/do — even one-liners
-             ≈ ESLint curly: "all" -->
+        <!-- Require braces for if/for/while/do — even one-liners -->
         <module name="NeedBraces"/>
 
-        <!-- Opening brace on same line: if (x) { not if (x)\n{
-             ≈ ESLint brace-style: "1tbs" -->
+        <!-- Opening brace on same line -->
         <module name="LeftCurly"/>
 
-        <!-- Closing brace rules (else on same line as }) -->
+        <!-- Closing brace rules -->
         <module name="RightCurly"/>
 
         <!-- ═══ Whitespace ═══ -->
@@ -108,16 +97,15 @@
 
         <!-- ═══ Best Practices ═══ -->
 
-        <!-- No empty catch blocks (≈ ESLint no-empty) -->
+        <!-- No empty catch blocks -->
         <module name="EmptyCatchBlock">
             <property name="exceptionVariableName" value="expected|ignored"/>
         </module>
 
-        <!-- One top-level class per file (standard Java convention) -->
+        <!-- One top-level class per file -->
         <module name="OneTopLevelClass"/>
 
-        <!-- Modifier order: public static final, not final public static
-             (≈ standard Java convention) -->
+        <!-- Modifier order: public static final, not final public static -->
         <module name="ModifierOrder"/>
 
         <!-- No multiple statements on same line -->
