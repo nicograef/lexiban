@@ -1,3 +1,4 @@
+import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -101,10 +102,10 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label="Eingabe löschen"
               >
-                ✕
+                <XIcon className="size-4" />
               </button>
             )}
           </div>
@@ -135,7 +136,7 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
         </Button>
 
         {validation.error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-destructive text-sm">
+          <div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm ring-1 ring-destructive/20">
             {validation.error}
           </div>
         )}
@@ -144,16 +145,16 @@ export function IbanInput({ onSaved }: { onSaved?: () => void }) {
           <Card
             className={
               validation.result.valid
-                ? 'border-green-300 bg-green-50'
-                : 'border-red-300 bg-red-50'
+                ? 'ring-green-500/30 bg-green-50 dark:bg-green-950/20'
+                : 'ring-destructive/30 bg-destructive/5'
             }
           >
-            <CardContent className="space-y-1 pt-4">
+            <CardContent className="space-y-1">
               <p className="font-medium">
                 {validation.result.valid ? '✓ IBAN gültig' : '✗ IBAN ungültig'}
               </p>
               {!validation.result.valid && validation.result.reason && (
-                <p className="text-sm text-red-700">
+                <p className="text-sm text-destructive">
                   {validation.result.reason}
                 </p>
               )}
