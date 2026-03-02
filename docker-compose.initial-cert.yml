@@ -1,0 +1,49 @@
+# ── Docker Compose — Initial Certificate Request ──
+# Minimal stack to obtain the first Let's Encrypt certificate.
+# Only runs nginx (for ACME challenges) and certbot.
+#
+# Usage:
+#   1. Replace YOURDOMAIN.COM in reverse-proxy/nginx.initial-cert.conf
+#   2. make cert-init
+#   3. Follow the certbot prompts / check logs
+#   4. make cert-down
+#   5. make prod-up   ← start the full production stack
+
+name: iban
+
+services:
+  reverse-proxy:
+    image: nginx:1.27-alpine
+    container_name: iban-reverse-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./reverse-proxy/nginx.initial-cert.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-challenges:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot:v2.11.0
+    container_name: iban-certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-challenges:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    networks:
+      - app-network
+    depends_on:
+      reverse-proxy:
+        condition: service_started
+    entrypoint: /bin/sh
+    command: -c "while true; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  certbot-challenges:
+  letsencrypt:

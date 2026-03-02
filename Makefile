@@ -31,18 +31,37 @@ fe-check:      ## Frontend: lint + test
 
 check: be-check fe-check  ## Run all checks (backend + frontend)
 
-# ── Production ──
+# ── Local Stack (docker-compose.yml — no TLS) ──
 
 .PHONY: up down logs
 
-up:            ## Start all services (production build)
+up:            ## Start all services locally (no TLS)
 	docker compose up --build
 
-down:          ## Stop all services
+down:          ## Stop local services
 	docker compose down
 
-logs:          ## Follow logs of all services
+logs:          ## Follow logs (local)
 	docker compose logs -f
+
+# ── Production (docker-compose.prod.yml — HTTPS on VPS) ──
+
+.PHONY: prod-up prod-down prod-logs cert-init cert-down
+
+prod-up:       ## Start production stack (HTTPS)
+	docker compose -f docker-compose.prod.yml up --build -d
+
+prod-down:     ## Stop production stack
+	docker compose -f docker-compose.prod.yml down
+
+prod-logs:     ## Follow production logs
+	docker compose -f docker-compose.prod.yml logs -f
+
+cert-init:     ## Bootstrap initial Let's Encrypt certificate
+	docker compose -f docker-compose.initial-cert.yml up -d
+
+cert-down:     ## Stop cert-init stack
+	docker compose -f docker-compose.initial-cert.yml down
 
 # ── Utilities ──
 

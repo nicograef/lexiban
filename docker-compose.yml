@@ -1,14 +1,13 @@
-# ── Docker Compose — Production Configuration ──
-# Starts all services needed to run the full application.
+# ── Docker Compose — Local Development / Preview ──
+# Starts all services for local testing without TLS.
+# For production deployment on a VPS, use docker-compose.prod.yml instead.
 #
-# Architecture (simplified — no separate reverse-proxy):
+# Architecture (simplified — no TLS, no separate reverse-proxy):
 #   Browser → :80 → frontend (nginx: static files + /api proxy) → backend:8080
 #   backend → postgres:5432
 #
 # The frontend's nginx serves the SPA AND proxies /api/* to the backend.
-# This eliminates the need for a separate reverse-proxy container.
-# In a real-world product, a cloud load balancer (ALB, Cloud Run, Traefik)
-# would handle routing instead of a hand-rolled nginx proxy.
+# This eliminates the need for a separate reverse-proxy container in local dev.
 
 name: iban
 
