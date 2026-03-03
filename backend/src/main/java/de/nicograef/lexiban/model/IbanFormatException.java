@@ -1,4 +1,4 @@
-package de.nicograef.iban.model;
+package de.nicograef.lexiban.model;
 
 /**
  * Thrown when raw input is structurally not an IBAN (empty, too short/long, wrong character

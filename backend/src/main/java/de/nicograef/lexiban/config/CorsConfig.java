@@ -1,4 +1,4 @@
-package de.nicograef.iban.config;
+package de.nicograef.lexiban.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

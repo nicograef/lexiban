@@ -1,11 +1,11 @@
-package de.nicograef.iban.service;
+package de.nicograef.lexiban.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.nicograef.iban.model.IbanNumber;
+import de.nicograef.lexiban.model.IbanNumber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

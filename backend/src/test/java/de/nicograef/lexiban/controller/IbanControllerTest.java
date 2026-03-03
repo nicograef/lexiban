@@ -1,4 +1,4 @@
-package de.nicograef.iban.controller;
+package de.nicograef.lexiban.controller;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -7,11 +7,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import de.nicograef.iban.model.Iban;
-import de.nicograef.iban.model.IbanFormatException;
-import de.nicograef.iban.model.ValidationResult;
-import de.nicograef.iban.repository.IbanRepository;
-import de.nicograef.iban.service.IbanService;
+import de.nicograef.lexiban.model.Iban;
+import de.nicograef.lexiban.model.IbanFormatException;
+import de.nicograef.lexiban.model.ValidationResult;
+import de.nicograef.lexiban.repository.IbanRepository;
+import de.nicograef.lexiban.service.IbanService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

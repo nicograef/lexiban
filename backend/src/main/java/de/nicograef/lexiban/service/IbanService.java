@@ -1,9 +1,9 @@
-package de.nicograef.iban.service;
+package de.nicograef.lexiban.service;
 
-import de.nicograef.iban.model.Iban;
-import de.nicograef.iban.model.IbanNumber;
-import de.nicograef.iban.model.ValidationResult;
-import de.nicograef.iban.repository.IbanRepository;
+import de.nicograef.lexiban.model.Iban;
+import de.nicograef.lexiban.model.IbanNumber;
+import de.nicograef.lexiban.model.ValidationResult;
+import de.nicograef.lexiban.repository.IbanRepository;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ public class IbanService {
     /**
      * Validate or look up an IBAN. Pipeline: Parse → Cache → Local → External → Fallback → Persist.
      *
-     * @throws de.nicograef.iban.model.IbanFormatException if structurally not an IBAN (→ HTTP 400)
+     * @throws de.nicograef.lexiban.model.IbanFormatException if structurally not an IBAN (→ HTTP 400)
      */
     public ValidationResult validateOrLookup(String rawIban) {
         IbanNumber ibanNumber = new IbanNumber(rawIban);

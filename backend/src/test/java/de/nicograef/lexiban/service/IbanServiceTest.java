@@ -1,4 +1,4 @@
-package de.nicograef.iban.service;
+package de.nicograef.lexiban.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,10 +10,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.nicograef.iban.model.Iban;
-import de.nicograef.iban.model.IbanFormatException;
-import de.nicograef.iban.model.ValidationResult;
-import de.nicograef.iban.repository.IbanRepository;
+import de.nicograef.lexiban.model.Iban;
+import de.nicograef.lexiban.model.IbanFormatException;
+import de.nicograef.lexiban.model.ValidationResult;
+import de.nicograef.lexiban.repository.IbanRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

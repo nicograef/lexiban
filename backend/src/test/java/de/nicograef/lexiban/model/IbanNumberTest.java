@@ -1,4 +1,4 @@
-package de.nicograef.iban.model;
+package de.nicograef.lexiban.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

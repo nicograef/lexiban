@@ -1,4 +1,4 @@
-package de.nicograef.iban.service;
+package de.nicograef.lexiban.service;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

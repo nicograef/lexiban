@@ -1,4 +1,4 @@
-package de.nicograef.iban.model;
+package de.nicograef.lexiban.model;
 
 import java.util.Objects;
 import java.util.Optional;

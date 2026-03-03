@@ -1,6 +1,6 @@
-package de.nicograef.iban.repository;
+package de.nicograef.lexiban.repository;
 
-import de.nicograef.iban.model.Iban;
+import de.nicograef.lexiban.model.Iban;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

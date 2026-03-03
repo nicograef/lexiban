@@ -1,4 +1,4 @@
-package de.nicograef.iban.model;
+package de.nicograef.lexiban.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

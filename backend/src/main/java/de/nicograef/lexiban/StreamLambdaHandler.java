@@ -1,4 +1,4 @@
-package de.nicograef.iban;
+package de.nicograef.lexiban;
 
 import com.amazonaws.serverless.exceptions.ContainerInitializationException;
 import com.amazonaws.serverless.proxy.model.AwsProxyResponse;

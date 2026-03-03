@@ -1,6 +1,6 @@
-package de.nicograef.iban.config;
+package de.nicograef.lexiban.config;
 
-import de.nicograef.iban.model.IbanFormatException;
+import de.nicograef.lexiban.model.IbanFormatException;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -31,7 +31,7 @@ export class BackendStack extends Stack {
     // Lambda function running Spring Boot via aws-serverless-java-container
     const backendFn = new lambda.Function(this, "BackendFn", {
       runtime: lambda.Runtime.JAVA_21,
-      handler: "de.nicograef.iban.StreamLambdaHandler",
+      handler: "de.nicograef.lexiban.StreamLambdaHandler",
       code: lambda.Code.fromAsset(
         "../backend/target/lexiban-0.0.1-SNAPSHOT.jar",
       ),

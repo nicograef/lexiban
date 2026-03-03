@@ -1,4 +1,4 @@
-package de.nicograef.iban.service;
+package de.nicograef.lexiban.service;
 
 import java.math.BigInteger;
 import org.springframework.stereotype.Service;
