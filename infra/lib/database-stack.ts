@@ -5,6 +5,7 @@ import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import { Construct } from "constructs";
 
 export interface DatabaseStackProps extends StackProps {
+  isProd: boolean;
   vpc: ec2.IVpc;
   /** RDS instance class — e.g. ec2.InstanceClass.T4G */
   instanceClass?: ec2.InstanceClass;
@@ -27,57 +28,55 @@ export class DatabaseStack extends Stack {
   constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
 
-    const { vpc } = props;
-    const removalPolicy = props.removalPolicy ?? RemovalPolicy.DESTROY;
-    const deletionProtection = props.deletionProtection ?? false;
-    const instanceClass = props.instanceClass ?? ec2.InstanceClass.T4G;
-    const instanceSize = props.instanceSize ?? ec2.InstanceSize.MICRO;
+    const { vpc, isProd } = props;
 
     // Auto-generated credentials stored in Secrets Manager
-    const dbSecret = new secretsmanager.Secret(this, "DbSecret", {
+    this.secret = new secretsmanager.Secret(this, "DbSecret", {
       generateSecretString: {
         secretStringTemplate: JSON.stringify({ username: "lexiban" }),
         generateStringKey: "password",
         excludePunctuation: true,
       },
     });
-    this.secret = dbSecret;
 
     // Security group for the RDS instance
-    const dbSg = new ec2.SecurityGroup(this, "DbSg", {
+    const securityGroup = new ec2.SecurityGroup(this, "PostgresSecurityGroup", {
       vpc,
       description: "Allow inbound PostgreSQL from VPC",
       allowAllOutbound: false,
     });
-    dbSg.addIngressRule(
+    securityGroup.addIngressRule(
       ec2.Peer.ipv4(vpc.vpcCidrBlock),
       ec2.Port.tcp(5432),
       "PostgreSQL from VPC",
     );
 
-    const db = new rds.DatabaseInstance(this, "Db", {
+    const db = new rds.DatabaseInstance(this, "PostgresInstance", {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_17,
       }),
-      instanceType: ec2.InstanceType.of(instanceClass, instanceSize),
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T4G,
+        ec2.InstanceSize.MICRO,
+      ),
       vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [dbSg],
-      credentials: rds.Credentials.fromSecret(dbSecret),
+      securityGroups: [securityGroup],
+      credentials: rds.Credentials.fromSecret(this.secret),
       databaseName: "lexiban",
-      removalPolicy,
-      deletionProtection,
-      backupRetention: Duration.days(deletionProtection ? 7 : 0),
+      removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      deletionProtection: isProd,
+      backupRetention: Duration.days(isProd ? 7 : 0),
       storageEncrypted: true,
     });
 
     // RDS Proxy — pools Lambda connections to avoid exhausting DB connections
-    this.proxy = new rds.DatabaseProxy(this, "DbProxy", {
+    this.proxy = new rds.DatabaseProxy(this, "PostgresProxy", {
       proxyTarget: rds.ProxyTarget.fromInstance(db),
-      secrets: [dbSecret],
+      secrets: [this.secret],
       vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [dbSg],
+      securityGroups: [securityGroup],
       requireTLS: true,
     });
   }

@@ -2,10 +2,7 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 
-export interface NetworkStackProps extends StackProps {
-  /** Number of NAT Gateways (1 for dev, 2 for prod HA). */
-  natGateways?: number;
-}
+export interface NetworkStackProps extends StackProps {}
 
 /**
  * VPC with public + private subnets across 2 AZs.
@@ -19,7 +16,7 @@ export class NetworkStack extends Stack {
 
     this.vpc = new ec2.Vpc(this, "Vpc", {
       maxAzs: 2,
-      natGateways: props.natGateways ?? 1,
+      natGateways: 1,
       subnetConfiguration: [
         {
           name: "public",

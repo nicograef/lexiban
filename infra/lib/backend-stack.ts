@@ -11,8 +11,6 @@ export interface BackendStackProps extends StackProps {
   vpc: ec2.IVpc;
   dbProxy: rds.DatabaseProxy;
   dbSecret: secretsmanager.ISecret;
-  /** Lambda memory in MB (512 for dev, 1024 for prod). */
-  lambdaMemory?: number;
 }
 
 /**
@@ -26,16 +24,15 @@ export class BackendStack extends Stack {
     super(scope, id, props);
 
     const { vpc, dbProxy, dbSecret } = props;
-    const lambdaMemory = props.lambdaMemory ?? 1024;
 
     // Lambda function running Spring Boot via aws-serverless-java-container
-    const backendFn = new lambda.Function(this, "BackendFn", {
+    const backend = new lambda.Function(this, "Backend", {
       runtime: lambda.Runtime.JAVA_21,
       handler: "de.nicograef.lexiban.StreamLambdaHandler",
       code: lambda.Code.fromAsset(
         "../backend/target/lexiban-0.0.1-SNAPSHOT.jar",
       ),
-      memorySize: lambdaMemory,
+      memorySize: 512,
       timeout: Duration.seconds(30),
       snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
       vpc,
@@ -48,16 +45,16 @@ export class BackendStack extends Stack {
     });
 
     // Lambda reads DB credentials from Secrets Manager at runtime
-    dbSecret.grantRead(backendFn);
+    dbSecret.grantRead(backend);
     // Lambda connects to RDS via RDS Proxy
-    dbProxy.grantConnect(backendFn);
+    dbProxy.grantConnect(backend);
 
     // HTTP API (cheaper and simpler than REST API for proxying to Lambda)
     this.api = new HttpApi(this, "Api");
     this.api.addRoutes({
       path: "/api/{proxy+}",
       methods: [HttpMethod.ANY],
-      integration: new HttpLambdaIntegration("BackendIntegration", backendFn),
+      integration: new HttpLambdaIntegration("BackendIntegration", backend),
     });
   }
 }

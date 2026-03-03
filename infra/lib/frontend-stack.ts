@@ -9,8 +9,6 @@ import { Construct } from "constructs";
 
 export interface FrontendStackProps extends StackProps {
   api: HttpApi;
-  /** CloudFront price class (PRICE_CLASS_100 for dev, PRICE_CLASS_200 for prod). */
-  priceClass?: cloudfront.PriceClass;
 }
 
 /**
@@ -22,8 +20,6 @@ export class FrontendStack extends Stack {
     super(scope, id, props);
 
     const { api } = props;
-    const priceClass =
-      props.priceClass ?? cloudfront.PriceClass.PRICE_CLASS_100;
 
     // S3 bucket for static SPA assets (private — served via CloudFront OAC)
     const siteBucket = new s3.Bucket(this, "SiteBucket", {
@@ -50,7 +46,7 @@ export class FrontendStack extends Stack {
         },
       },
       defaultRootObject: "index.html",
-      priceClass,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
       errorResponses: [
         {
           httpStatus: 403,
