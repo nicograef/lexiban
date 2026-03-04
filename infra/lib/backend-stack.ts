@@ -50,8 +50,6 @@ export class BackendStack extends Stack {
     dbSecret.grantRead(backend);
     // Lambda connects to RDS via RDS Proxy
     dbProxy.grantConnect(backend);
-    // Allow Lambda → RDS Proxy on port 5432 (grantConnect only sets IAM policy)
-    dbProxy.connections.allowFrom(backend, ec2.Port.tcp(5432));
 
     // Publish a version (required for SnapStart + Provisioned Concurrency)
     const version = backend.currentVersion;
