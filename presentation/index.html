@@ -56,52 +56,76 @@
       }
 
       .reveal .highlight-green {
-        color: #50fa7b;
+        color: #1a9642;
       }
 
       .reveal .highlight-orange {
-        color: #ffb86c;
+        color: #d4760a;
       }
 
       .reveal .highlight-pink {
-        color: #ff79c6;
+        color: #c4256a;
       }
 
       .reveal .highlight-cyan {
-        color: #8be9fd;
+        color: #0b7285;
       }
     </style>
   </head>
   <body>
     <div class="reveal">
       <div class="slides">
-        <!-- ============================================================ -->
-        <!-- TITLE                                                        -->
-        <!-- ============================================================ -->
+    
         <section>
           <h1>Lexiban</h1>
-          <h3>IBAN-Validierung als Full-Stack-Projekt</h3>
-          <p><small>nico gräf</small></p>
+          <h6>IBAN Validierung für Selbstständige und kleine Unternehmen</h6>
+          <br />
+          <p><small>Nico Gräf // 2026</small></p>
         </section>
 
-        <!-- ============================================================ -->
-        <!-- 1. AUFGABE & ANFORDERUNGEN                                   -->
-        <!-- ============================================================ -->
-        <section>
           <section>
             <h3>Aufgabe</h3>
             <p>
-              Eine SPA mit Frontend und Backend, die eine IBAN-Eingabe
-              validiert.
+              Eine <strong>React SPA</strong>, die über eine <strong>REST-API</strong> mit einem <strong>Java Spring Boot Backend</strong> kommuniziert, um <strong>IBANs
+              zu validieren</strong>.
             </p>
-            <br />
-            <ul>
-              <li>Java / Spring Boot (Backend)</li>
-              <li>React SPA (Frontend)</li>
-              <li>REST-Kommunikation</li>
-              <li>Cloud-Betrieb</li>
-            </ul>
           </section>
+
+          <section>
+            <h3>IBAN Fachlichkeit</h3>
+            <ul>
+              <li>Internationale Kontonummer (max. 34 Zeichen)</li>
+              <li>Definiert im ISO 13616 Standard</li>
+              <li>Länderkennung nach ISO 3166-1</li>
+              <li>Prüfziffern zur Validierung (Modulo 97 nach ISO 7064)</li>
+              <li>BBAN individuell je Land</li>
+            </ul>
+            <br />
+            <br />
+<div class="iban-structure fragment">
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-cyan">D E</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-green">6 8</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-orange">2 1 0 5&nbsp;&nbsp;0 1 7 0</span>&nbsp;&nbsp;&nbsp;<span class="highlight-pink">0 0 1 2&nbsp;&nbsp;3 4 5 6&nbsp;&nbsp;7 8</span><br/>
+&nbsp;&nbsp;<span class="highlight-cyan">├─────┤</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-green">├─────┤</span>&nbsp;&nbsp;<span class="highlight-orange">├────────────────┤</span> <span class="highlight-pink">├─────────────────────┤</span><br/>
+<span class="highlight-cyan">Ländercode</span>&nbsp;&nbsp;<span class="highlight-green">Prüfziffern</span>&nbsp;&nbsp;&nbsp;<span class="highlight-orange">Bankleitzahl</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-pink">Kontonummer</span>
+            </div>
+          </section>
+          
+          <section>
+            <h3>IBAN Validierung</h3>
+            <ul>
+              <li>Bereinigen und Normalisieren</li>
+              <li>Strukturprüfung: Länge, erlaubte Zeichen, Länderspezifika</li>
+              <li>Modulo 97 Algorithmus für Prüfziffern</li>
+              <li>Banknamen-Auflösung über BLZ oder externe API</li>
+            </ul>
+            <div class="mermaid fragment">
+              flowchart LR
+                A["DE6821..."] --> |"4 Zeichen ans Ende"| B["21...DE68"]
+                B -->|"Buchstaben → Zahlen"| C["21...131468"]
+                C -->|"mod 97"| D{"= 1?"}
+                D -->|Ja| E["✅ Gültig"]
+                D -->|Nein| F["❌ Ungültig"]
+            </div>
+            </section>
 
           <section>
             <h3>Umgesetzte Anforderungen</h3>
@@ -128,64 +152,7 @@
               </li>
             </ol>
           </section>
-        </section>
 
-        <!-- ============================================================ -->
-        <!-- 2. FACHLICHKEIT: WAS IST EINE IBAN?                          -->
-        <!-- ============================================================ -->
-        <section>
-          <section>
-            <h3>Was ist eine IBAN?</h3>
-            <ul>
-              <li>Internationale Kontonummer (max. 34 Zeichen)</li>
-              <li>Identifiziert Bankverbindungen weltweit eindeutig</li>
-              <li>ISO 13616 Standard</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>Aufbau einer deutschen IBAN</h3>
-            <p style="font-size: 0.7em">22 Stellen</p>
-            <pre class="iban-structure"><code class="hljs nohighlight" style="font-size: 1.1em">D E 6 8 2 1 0 5 0 1 7 0 0 0 1 2 3 4 5 6 7 8
-├─┤ ├─┤ ├───────────────┤ ├─────────────────────┤
- │   │    BLZ (8 Stellen)   Kontonummer (10 Stellen)
- │   Prüfziffern
- Ländercode</code></pre>
-          </section>
-
-          <section>
-            <h3>Modulo-97-Algorithmus</h3>
-            <div class="mermaid">
-              flowchart LR
-                A["DE68 2105 ..."] -->|Bereinigen| B["DE68210501..."]
-                B -->|"Länge = 22?"| C{"✓"}
-                C -->|"4 Zeichen ans Ende"| D["210501...DE68"]
-                D -->|"Buchstaben → Zahlen"| E["210501...131468"]
-                E -->|"mod 97"| F{"= 1?"}
-                F -->|Ja| G["✅ Gültig"]
-                F -->|Nein| H["❌ Ungültig"]
-            </div>
-          </section>
-
-          <section>
-            <h3>Warum Modulo 97?</h3>
-            <p>
-              Erkennt <span class="highlight-green"><strong>100 %</strong></span>
-              aller einzelnen Tippfehler und Zahlendreher —
-              <em>mathematisch beweisbar</em>.
-            </p>
-            <br />
-            <p style="font-size: 0.8em">
-              Im Code via <code>BigInteger</code>, weil die Zahl 30+ Stellen
-              haben kann.
-            </p>
-          </section>
-        </section>
-
-        <!-- ============================================================ -->
-        <!-- 3. ARCHITEKTUR & ENTSCHEIDUNGEN                              -->
-        <!-- ============================================================ -->
-        <section>
           <section>
             <h3>Architektur</h3>
             <div class="mermaid">
@@ -225,12 +192,7 @@
               | **IBAN als natürlicher PK** | Jede IBAN existiert genau einmal — Cache-Hit bei Wiederholung |
             </script>
           </section>
-        </section>
 
-        <!-- ============================================================ -->
-        <!-- 4. LIVE-DEMO                                                 -->
-        <!-- ============================================================ -->
-        <section>
           <section>
             <h1>Live-Demo</h1>
           </section>
@@ -254,12 +216,7 @@
               <li class="fragment"><strong>Wiederholte Anfrage</strong> → kein erneuter Validierungslauf</li>
             </ul>
           </section>
-        </section>
 
-        <!-- ============================================================ -->
-        <!-- 5. BACKEND-DESIGN                                            -->
-        <!-- ============================================================ -->
-        <section>
           <section>
             <h3>Schichtenarchitektur</h3>
             <div class="mermaid">
@@ -373,12 +330,7 @@
                 Ctrl-->>FE: JSON Response
             </div>
           </section>
-        </section>
 
-        <!-- ============================================================ -->
-        <!-- 6. TESTING-STRATEGIE                                         -->
-        <!-- ============================================================ -->
-        <section>
           <section>
             <h3>Testing-Strategie</h3>
           </section>
@@ -413,12 +365,7 @@
             <pre><code class="hljs bash">make check   # Backend: Spotless + Checkstyle + Tests
              # Frontend: ESLint + Tests</code></pre>
           </section>
-        </section>
 
-        <!-- ============================================================ -->
-        <!-- 7. DEPLOYMENT — DREI WEGE                                    -->
-        <!-- ============================================================ -->
-        <section>
           <section>
             <h3>Deployment — Drei Wege</h3>
             <ol>
@@ -484,11 +431,7 @@
               | **Skalierung** | Einzelner Rechner | Vertikale Skalierung | Auto-Scaling (Lambda) |
             </script>
           </section>
-        </section>
 
-        <!-- ============================================================ -->
-        <!-- FRAGEN                                                       -->
-        <!-- ============================================================ -->
         <section>
           <h2>Fragen?</h2>
         </section>
