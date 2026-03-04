@@ -1,0 +1,17 @@
+{
+  "name": "lexiban-presentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "mermaid": "^11",
+    "reveal.js": "^5.2.1"
+  },
+  "devDependencies": {
+    "vite": "^6"
+  }
+}
