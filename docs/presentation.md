@@ -367,15 +367,37 @@ graph TB
 
 **4 CDK-Stacks (TypeScript):** NetworkStack, DatabaseStack, BackendStack, FrontendStack.
 
-**Backend-Änderungen für AWS — nur 3 Dateien:**
+**Backend-Änderungen für AWS — nur 4 Dateien:**
 
-1. `pom.xml` — Dependency: `aws-serverless-java-container-springboot3`
+1. `pom.xml` — Dependency `aws-serverless-java-container-springboot3` + Maven-Profil `aws` mit `maven-shade-plugin`
 2. `StreamLambdaHandler.java` — Bridged API-Gateway-Events in Spring Boot
 3. `application-aws.properties` — RDS-Proxy-Verbindung, `maximum-pool-size=1`
+4. `Makefile` / `deploy.yml` — Build mit `-Paws` für Lambda-kompatibles JAR
 
 **Frontend: Null Änderungen.** Relative Pfade (`/api/ibans`), CloudFront routet `/api/*` an API Gateway.
 
 **CI/CD:** GitHub Actions mit OIDC-Auth — keine statischen AWS-Credentials.
+
+#### Fat JAR (Docker) vs. Shaded JAR (Lambda)
+
+Derselbe Spring-Boot-Code wird je nach Deployment-Ziel **unterschiedlich verpackt:**
+
+|                     | Docker (Fat JAR)                                   | Lambda (Shaded JAR)                                                      |
+| ------------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Maven-Plugin**    | `spring-boot-maven-plugin`                         | `maven-shade-plugin` (`-Paws`)                                           |
+| **JAR-Struktur**    | Nested: `BOOT-INF/classes/`, `BOOT-INF/lib/`       | Flat: alle Klassen direkt im Root                                        |
+| **Start**           | `java -jar app.jar` → Tomcat startet auf Port 8080 | Lambda ruft `StreamLambdaHandler.handleRequest()`                        |
+| **HTTP-Server**     | Embedded Tomcat (lauscht auf Port)                 | Kein Server — API Gateway empfängt HTTP                                  |
+| **Request-Weg**     | Client → Nginx → Tomcat → DispatcherServlet        | Client → CloudFront → API Gateway → Lambda → Adapter → DispatcherServlet |
+| **Adapter**         | Keiner nötig                                       | `aws-serverless-java-container` fälscht Servlet-Objekte                  |
+| **Connection Pool** | HikariCP (Standard: 10 Connections)                | HikariCP `max=1` — RDS Proxy übernimmt das Pooling                       |
+| **Lebenszyklus**    | Long-Running Container (24/7)                      | Ephemeral: Cold Start + Warm Reuse                                       |
+
+**Warum zwei JAR-Formate?** Spring Boots `BOOT-INF/`-Layout nutzt einen eigenen Classloader — Lambdas Classloader kann das nicht lesen (`ClassNotFoundException`). Das Shade-Plugin löst alles flach auf.
+
+**Tomcat im Lambda?** Die Tomcat-Klassen sind im JAR enthalten (weil `spring-boot-starter-web` sie einzieht), werden aber **nie als Server gestartet**. Der `aws-serverless-java-container`-Adapter übersetzt Lambda-Events direkt in Servlet-Calls an Springs `DispatcherServlet` — Tomcat wird komplett umgangen.
+
+**Gleicher Anwendungscode.** Controller, Services, Repositories — alles identisch. Nur der äußere Rahmen ändert sich: wer den HTTP-Request empfängt (Tomcat vs. API Gateway + Adapter).
 
 ### Vergleich
 
