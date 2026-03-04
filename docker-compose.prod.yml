@@ -10,8 +10,8 @@
 #
 # Prerequisites:
 #   1. DNS A record pointing to the VPS IP
-#   2. Initial certificate obtained via docker-compose.initial-cert.yml
-#   3. .env file with POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#   2. .env file with POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#   3. TLS certificate obtained (run `make prod-init` for automated first-time setup)
 
 name: lexiban
 

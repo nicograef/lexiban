@@ -45,7 +45,10 @@ logs:          ## Follow logs (local)
 
 # ── Production (docker-compose.prod.yml — HTTPS on VPS) ──
 
-.PHONY: prod-up prod-down prod-logs cert-init cert-down
+.PHONY: prod-init prod-up prod-down prod-logs cert-init cert-down
+
+prod-init:     ## First-time prod setup (cert + stack)
+	./scripts/prod-init.sh
 
 prod-up:       ## Start production stack (HTTPS)
 	docker compose -f docker-compose.prod.yml up --build -d
@@ -56,7 +59,7 @@ prod-down:     ## Stop production stack
 prod-logs:     ## Follow production logs
 	docker compose -f docker-compose.prod.yml logs -f
 
-cert-init:     ## Bootstrap initial Let's Encrypt certificate
+cert-init:     ## Start nginx for ACME challenges
 	docker compose -f docker-compose.initial-cert.yml up -d
 
 cert-down:     ## Stop cert-init stack

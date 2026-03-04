@@ -1,12 +1,22 @@
 # ── Docker Compose — Initial Certificate Request ──
-# Minimal stack to obtain the first Let's Encrypt certificate.
-# Only runs nginx (for ACME challenges) and certbot.
+# Minimal nginx that only serves ACME challenges.
+# Used by scripts/prod-init.sh (or manually) to obtain the first
+# Let's Encrypt certificate before the full prod stack can start.
 #
-# Usage:
+# Automated (recommended):
+#   make prod-init          ← handles everything in one step
+#
+# Manual:
 #   1. make cert-init
-#   2. Follow the certbot prompts / check logs
+#   2. docker run --rm \
+#        -v lexiban_certbot-challenges:/var/www/certbot \
+#        -v lexiban_letsencrypt:/etc/letsencrypt \
+#        certbot/certbot:v2.11.0 certonly \
+#          --webroot -w /var/www/certbot \
+#          -d lexiban.nicograef.de -d www.lexiban.nicograef.de \
+#          --agree-tos --email your@email.com --non-interactive
 #   3. make cert-down
-#   4. make prod-up   ← start the full production stack
+#   4. make prod-up
 
 name: lexiban
 
@@ -23,21 +33,6 @@ services:
       - letsencrypt:/etc/letsencrypt
     networks:
       - app-network
-
-  certbot:
-    image: certbot/certbot:v2.11.0
-    container_name: lexiban-certbot
-    restart: unless-stopped
-    volumes:
-      - certbot-challenges:/var/www/certbot
-      - letsencrypt:/etc/letsencrypt
-    networks:
-      - app-network
-    depends_on:
-      reverse-proxy:
-        condition: service_started
-    entrypoint: /bin/sh
-    command: -c "while true; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"
 
 networks:
   app-network:
