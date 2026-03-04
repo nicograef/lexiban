@@ -34,7 +34,8 @@ public class IbanService {
     /**
      * Validate or look up an IBAN. Pipeline: Parse → Cache → Local → External → Fallback → Persist.
      *
-     * @throws de.nicograef.lexiban.model.IbanFormatException if structurally not an IBAN (→ HTTP 400)
+     * @throws de.nicograef.lexiban.model.IbanFormatException if structurally not an IBAN (→ HTTP
+     *     400)
      */
     public ValidationResult validateOrLookup(String rawIban) {
         IbanNumber ibanNumber = new IbanNumber(rawIban);
