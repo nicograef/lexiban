@@ -40,6 +40,8 @@ export class BackendStack extends Stack {
       environment: {
         DB_HOST: dbProxy.endpoint,
         DB_NAME: "lexiban",
+        DB_USERNAME: dbSecret.secretValueFromJson("username").unsafeUnwrap(),
+        DB_PASSWORD: dbSecret.secretValueFromJson("password").unsafeUnwrap(),
         SPRING_PROFILES_ACTIVE: "aws",
       },
     });
