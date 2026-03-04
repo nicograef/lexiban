@@ -96,6 +96,9 @@ prod-release:  ## Tag current main commit and push → triggers prod deploy
 db-shell:      ## Open psql shell in running PostgreSQL container
 	docker compose exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
+ssh-prod:      ## SSH into production server (VPS)
+	 ssh nico@152.53.130.100
+
 help:          ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 

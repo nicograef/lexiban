@@ -1,5 +1,6 @@
 import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as rds from "aws-cdk-lib/aws-rds";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import { Construct } from "constructs";
@@ -29,6 +30,13 @@ export class DatabaseStack extends Stack {
     super(scope, id, props);
 
     const { vpc, isProd } = props;
+
+    // Ensure the RDS service-linked role exists before creating the proxy.
+    // On first deployment, the auto-created SLR may not propagate in time,
+    // causing the DBProxy to fail with a 403 on sts:AssumeRole.
+    const rdsSlr = new iam.CfnServiceLinkedRole(this, "RdsServiceLinkedRole", {
+      awsServiceName: "rds.amazonaws.com",
+    });
 
     // Auto-generated credentials stored in Secrets Manager
     this.secret = new secretsmanager.Secret(this, "DbSecret", {
@@ -79,5 +87,8 @@ export class DatabaseStack extends Stack {
       securityGroups: [securityGroup],
       requireTLS: true,
     });
+
+    // Proxy must wait for the service-linked role to be fully created
+    this.proxy.node.addDependency(rdsSlr);
   }
 }
