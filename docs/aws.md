@@ -55,6 +55,44 @@ cdk destroy --all -c stage=dev   # teardown
 - **Flyway**: runs on first Lambda invocation (~5-10s cold start)
 - **NAT Gateway**: required for openiban.com calls from VPC Lambda
 
+## Lokale AWS-Credentials (Codespaces / Dev Container)
+
+`aws sso login` funktioniert in Codespaces **nicht** (OAuth-Callback kann den Container nicht erreichen → 403). Stattdessen: IAM Access Key + `aws configure`.
+
+### Einrichtung
+
+1. **IAM User mit Access Key erstellen** (einmalig in der AWS Console):
+   - → **IAM → Users → Create user** (z. B. `lexiban-dev`)
+   - Permissions: `AdministratorAccess` (oder eingeschränkt nach Bedarf)
+   - → **Security credentials → Create access key** → Use case: "Command Line Interface"
+   - Access Key ID + Secret Access Key kopieren
+
+2. **Credentials im Codespace konfigurieren:**
+
+   ```bash
+   aws configure
+   ```
+
+   Eingaben:
+   | Prompt | Wert |
+   | ----------------------- | ----------------------------- |
+   | AWS Access Key ID | `AKIA...` (aus Schritt 1) |
+   | AWS Secret Access Key | `wJal...` (aus Schritt 1) |
+   | Default region name | `eu-central-1` |
+   | Default output format | `json` |
+
+   Das schreibt `~/.aws/credentials` und `~/.aws/config`. Alternativ kann eine projektlokale `.aws/credentials`-Datei genutzt werden (ist bereits in `.gitignore`).
+
+3. **Verbindung testen:**
+
+   ```bash
+   aws sts get-caller-identity
+   ```
+
+> **Hinweis:** Codespaces-Instanzen sind kurzlebig — nach Rebuild muss `aws configure` erneut ausgeführt werden. Tipp: Credentials als **Codespaces Secrets** hinterlegen (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), dann sind sie automatisch als Umgebungsvariablen verfügbar.
+
+---
+
 ## CI/CD Setup (GitHub Actions → AWS)
 
 Die Pipeline (`.github/workflows/deploy.yml`) deployt automatisch bei Push auf `main`. Voraussetzung: einmalige Einrichtung von OIDC, IAM-Rolle und CDK Bootstrap.
@@ -167,13 +205,19 @@ gh secret set AWS_ROLE_ARN \
 
 CDK benötigt einmalig einen Bootstrap-Stack im Ziel-Account/Region.
 
+**Wichtig:** CDK synthetisiert beim Bootstrap alle Stacks und benötigt dabei die Build-Artefakte (Backend-JAR + Frontend-Dist). Der Makefile-Target erledigt beides automatisch:
+
 ```bash
-# Lokal oder in AWS CloudShell (AWS-Credentials müssen konfiguriert sein)
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-npx cdk bootstrap aws://${ACCOUNT_ID}/eu-central-1
+make aws-bootstrap
 ```
 
-> **Hinweis:** `aws configure` muss vorher mit gültigen Credentials eingerichtet sein (Access Key + Secret Key), oder AWS CloudShell verwenden.
+Das führt nacheinander aus:
+
+1. `cd backend && ./mvnw package -DskipTests -B` — baut `target/lexiban-0.0.1-SNAPSHOT.jar`
+2. `cd frontend && pnpm install && pnpm build` — baut `dist/`
+3. `cd infra && npx cdk bootstrap aws://<ACCOUNT_ID>/eu-central-1`
+
+> **Hinweis:** AWS-Credentials müssen vorher eingerichtet sein (siehe Abschnitt „Lokale AWS-Credentials" oben), oder AWS CloudShell verwenden.
 
 ### 5. Deploy auslösen
 

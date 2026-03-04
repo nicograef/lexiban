@@ -62,6 +62,25 @@ cert-init:     ## Bootstrap initial Let's Encrypt certificate
 cert-down:     ## Stop cert-init stack
 	docker compose -f docker-compose.initial-cert.yml down
 
+# ── AWS Deployment ──
+
+.PHONY: be-build fe-build build aws-bootstrap aws-deploy
+
+be-build:      ## Build backend JAR (skip tests)
+	cd backend && ./mvnw package -DskipTests -B
+
+fe-build:      ## Build frontend (Vite production build)
+	cd frontend && pnpm install && pnpm build
+
+build: be-build fe-build  ## Build backend + frontend artifacts
+
+aws-bootstrap: build  ## CDK bootstrap (builds artifacts first)
+	cd infra && npm ci && ACCOUNT_ID=$$(aws sts get-caller-identity --query Account --output text) && \
+	npx cdk bootstrap aws://$$ACCOUNT_ID/eu-central-1
+
+aws-deploy: build  ## CDK deploy (builds artifacts first)
+	cd infra && npm ci && npx cdk deploy --all -c stage=dev --require-approval never
+
 # ── Utilities ──
 
 .PHONY: db-shell help
