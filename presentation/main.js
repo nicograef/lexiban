@@ -1,6 +1,6 @@
 import "reveal.js/dist/reset.css";
 import "reveal.js/dist/reveal.css";
-import "reveal.js/dist/theme/dracula.css";
+import "./theme-lexware-light.css";
 import "reveal.js/plugin/highlight/monokai.css";
 
 import Reveal from "reveal.js";
@@ -24,9 +24,17 @@ await deck.initialize();
 // Render mermaid diagrams after Reveal is ready
 mermaid.initialize({
   startOnLoad: false,
-  theme: "dark",
+  theme: "base",
   securityLevel: "loose",
-  fontFamily: "inherit",
+  fontFamily: "Urbanist, sans-serif",
+  themeVariables: {
+    primaryColor: "#f3f1f1",
+    primaryTextColor: "#131010",
+    primaryBorderColor: "#ff4554",
+    lineColor: "#ff4554",
+    secondaryColor: "#eae6e6",
+    tertiaryColor: "#fcfafa",
+  },
   flowchart: { useMaxWidth: true },
   sequence: { useMaxWidth: true },
 });

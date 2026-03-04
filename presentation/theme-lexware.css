@@ -1,0 +1,92 @@
+/* Import Reveal's black theme as base (provides the CSS rules that apply --r-* variables) */
+@import "reveal.js/dist/theme/black.css";
+
+/*
+ * Lexware theme for Reveal.js
+ * Mirrors the frontend's dark-mode palette from frontend/src/index.css
+ *
+ * Palette reference:
+ *   primary       #ff4554  (Lexware Red 500)
+ *   primary-light #ff6a76  (red-400, for dark-bg readability)
+ *   accent/info   #03acf4  (blue-500)
+ *   success       #1c865a
+ *   warning       #ffdb5c
+ *   destructive   #d93845
+ *   neutral-12    #131010  (background)
+ *   neutral-11    #2c2525
+ *   neutral-10    #483c3c
+ *   neutral-8     #7a6666
+ *   neutral-6     #a79595
+ *   neutral-1     #fcfafa  (foreground)
+ *   neutral-0     #ffffff
+ */
+
+@font-face {
+  font-family: "Urbanist";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Urbanist-400.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Urbanist";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/Urbanist-500.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Urbanist";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/Urbanist-600.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Urbanist";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/Urbanist-800.ttf") format("truetype");
+}
+
+:root {
+  /* backgrounds */
+  --r-background-color: #131010;
+  --r-main-color: #fcfafa;
+
+  /* headings */
+  --r-heading-color: #ff4554;
+  --r-heading-font: "Urbanist", sans-serif;
+  --r-heading-font-weight: 800;
+  --r-heading-text-transform: none;
+  --r-heading-letter-spacing: -0.02em;
+  --r-heading1-size: 2em;
+  --r-heading2-size: 1.6em;
+  --r-heading3-size: 1.2em;
+  --r-heading4-size: 1em;
+
+  /* body */
+  --r-main-font: "Urbanist", sans-serif;
+  --r-main-font-size: 32px;
+
+  /* links */
+  --r-link-color: #ff6a76;
+  --r-link-color-hover: #ff4554;
+  --r-link-color-dark: #b2303b;
+
+  /* code */
+  --r-code-font: "JetBrains Mono", monospace;
+
+  /* selection */
+  --r-selection-background-color: rgba(255, 69, 84, 0.3);
+  --r-selection-color: #fcfafa;
+
+  /* controls & progress */
+  --r-controls-color: #ff4554;
+  --r-progress-color: #ff4554;
+}
+
+.reveal {
+  font-weight: 500;
+}
