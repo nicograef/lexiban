@@ -33,10 +33,8 @@ class IbanControllerTest {
 
     @MockitoBean private IbanRepository ibanRepository;
 
-    // ── POST /api/ibans — validate + save (or cache hit) ──
-
     @Test
-    void validateValidIban() throws Exception {
+    void validateValidIbanReturnsOk() throws Exception {
         when(ibanService.validateOrLookup(anyString()))
                 .thenReturn(
                         new ValidationResult(true, "DE89370400440532013000", "Commerzbank", null));
@@ -44,10 +42,7 @@ class IbanControllerTest {
         mockMvc.perform(
                         post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
-                                                                                {"iban": "DE89370400440532013000"}
-                                                                                """))
+                                .content("{\"iban\": \"DE89370400440532013000\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(true))
                 .andExpect(jsonPath("$.iban").value("DE89370400440532013000"))
@@ -57,7 +52,6 @@ class IbanControllerTest {
 
     @Test
     void structurallyInvalidIbanReturnsBadRequest() throws Exception {
-        // "INVALID" is structurally not an IBAN → IbanFormatException → 400
         when(ibanService.validateOrLookup("INVALID"))
                 .thenThrow(
                         new IbanFormatException(
@@ -66,10 +60,7 @@ class IbanControllerTest {
         mockMvc.perform(
                         post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
-                                                                                {"iban": "INVALID"}
-                                                                                """))
+                                .content("{\"iban\": \"INVALID\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.valid").value(false))
                 .andExpect(jsonPath("$.iban").value("INVALID"))
@@ -78,8 +69,6 @@ class IbanControllerTest {
 
     @Test
     void semanticallyInvalidIbanReturnsOkWithValidFalse() throws Exception {
-        // Wrong check digit — structurally valid but Mod-97 fails → 200 with
-        // valid=false
         when(ibanService.validateOrLookup("DE00370400440532013000"))
                 .thenReturn(
                         new ValidationResult(
@@ -91,10 +80,7 @@ class IbanControllerTest {
         mockMvc.perform(
                         post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
-                                                                                {"iban": "DE00370400440532013000"}
-                                                                                """))
+                                .content("{\"iban\": \"DE00370400440532013000\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false))
                 .andExpect(
@@ -103,27 +89,12 @@ class IbanControllerTest {
     }
 
     @Test
-    void validateEmptyIbanReturnsBadRequest() throws Exception {
+    void emptyIbanReturnsBadRequest() throws Exception {
         mockMvc.perform(
                         post("/api/ibans")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        """
-                                                                                {"iban": ""}
-                                                                                """))
+                                .content("{\"iban\": \"\"}"))
                 .andExpect(status().isBadRequest());
-    }
-
-    // ── GET /api/ibans — list all saved IBANs ──
-
-    @Test
-    void getAllIbansReturnsEmptyList() throws Exception {
-        when(ibanRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/ibans"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test

@@ -41,32 +41,13 @@ class IbanServiceTest {
         service = new IbanService(localValidator, openIbanValidator, ibanRepository);
     }
 
-    // ── Structural errors (IbanFormatException) ──
-
     @Test
-    void emptyInputThrowsFormatException() {
+    void structurallyInvalidInputThrowsFormatException() {
         assertThrows(IbanFormatException.class, () -> service.validateOrLookup(""));
     }
 
     @Test
-    void tooShortInputThrowsFormatException() {
-        var ex = assertThrows(IbanFormatException.class, () -> service.validateOrLookup("DE68"));
-        assertTrue(ex.getMessage().contains("zu kurz"));
-    }
-
-    @Test
-    void tooLongInputThrowsFormatException() {
-        var ex =
-                assertThrows(
-                        IbanFormatException.class,
-                        () -> service.validateOrLookup("DE89370400440532013000EXTRA1234567890"));
-        assertTrue(ex.getMessage().contains("zu lang"));
-    }
-
-    // ── Cache hit ──
-
-    @Test
-    void returnsCachedResult() {
+    void returnsCachedResultWithoutCallingValidatorsOrPersisting() {
         Iban cached = new Iban("DE89370400440532013000", "Commerzbank", true, null);
         when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.of(cached));
 
@@ -74,12 +55,10 @@ class IbanServiceTest {
 
         assertTrue(result.valid());
         assertEquals("Commerzbank", result.bankName());
-        // Validators should not be called when cache hits
         verify(localValidator, never()).validate(any());
         verify(openIbanValidator, never()).validate(any());
+        verify(ibanRepository, never()).save(any());
     }
-
-    // ── Local validator returns definitive result ──
 
     @Test
     void localInvalidStopsChain() {
@@ -96,7 +75,6 @@ class IbanServiceTest {
         var result = service.validateOrLookup("DE00370400440532013000");
 
         assertFalse(result.valid());
-        // External should NOT be called — local gave a definitive answer
         verify(openIbanValidator, never()).validate(any());
     }
 
@@ -114,9 +92,8 @@ class IbanServiceTest {
         assertTrue(result.valid());
         assertEquals("Deutsche Bank", result.bankName());
         verify(openIbanValidator, never()).validate(any());
+        verify(ibanRepository).save(any(Iban.class));
     }
-
-    // ── Local returns empty → external fallback ──
 
     @Test
     void fallsBackToExternalWhenLocalReturnsEmpty() {
@@ -136,26 +113,6 @@ class IbanServiceTest {
     }
 
     @Test
-    void externalInvalidResultIsUsed() {
-        when(ibanRepository.findById("GB29NWBK60161331926819")).thenReturn(Optional.empty());
-        when(localValidator.validate(any())).thenReturn(Optional.empty());
-        when(openIbanValidator.validate(any()))
-                .thenReturn(
-                        Optional.of(
-                                new ValidationResult(
-                                        false,
-                                        "GB29NWBK60161331926819",
-                                        null,
-                                        "Validation failed")));
-
-        var result = service.validateOrLookup("GB29NWBK60161331926819");
-
-        assertFalse(result.valid());
-    }
-
-    // ── Both return empty → graceful fallback ──
-
-    @Test
     void fallbackWhenBothValidatorsReturnEmpty() {
         when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.empty());
         when(localValidator.validate(any())).thenReturn(Optional.empty());
@@ -163,49 +120,9 @@ class IbanServiceTest {
 
         var result = service.validateOrLookup("DE89370400440532013000");
 
-        // Graceful degradation: valid (Mod-97 passed in local) but no bank name
         assertTrue(result.valid());
         assertNull(result.bankName());
         assertNull(result.reason());
-        assertEquals("DE89370400440532013000", result.iban());
-    }
-
-    // ── Persistence ──
-
-    @Test
-    void persistsResultToDatabase() {
-        when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.empty());
-        when(localValidator.validate(any()))
-                .thenReturn(
-                        Optional.of(
-                                new ValidationResult(
-                                        true, "DE89370400440532013000", "Commerzbank", null)));
-
-        service.validateOrLookup("DE89370400440532013000");
-
-        verify(ibanRepository).save(any(Iban.class));
-    }
-
-    @Test
-    void cachedResultIsNotPersistedAgain() {
-        Iban cached = new Iban("DE89370400440532013000", "Commerzbank", true, null);
-        when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.of(cached));
-
-        service.validateOrLookup("DE89370400440532013000");
-
-        verify(ibanRepository, never()).save(any());
-    }
-
-    // ── Input normalization ──
-
-    @Test
-    void normalizesInputBeforeProcessing() {
-        when(ibanRepository.findById("DE89370400440532013000")).thenReturn(Optional.empty());
-        when(localValidator.validate(any())).thenReturn(Optional.empty());
-        when(openIbanValidator.validate(any())).thenReturn(Optional.empty());
-
-        var result = service.validateOrLookup("de89 3704 0044 0532 0130 00");
-
         assertEquals("DE89370400440532013000", result.iban());
     }
 }

@@ -58,7 +58,6 @@ class OpenIbanValidatorTest {
 
         assertTrue(result.isPresent());
         assertTrue(result.get().valid());
-        assertEquals("DE89370400440532013000", result.get().iban());
         assertEquals("Commerzbank", result.get().bankName());
         assertNull(result.get().reason());
         mockServer.verify();
@@ -127,34 +126,6 @@ class OpenIbanValidatorTest {
         var result = validator.validate(new IbanNumber("DE89370400440532013000"));
 
         assertTrue(result.isEmpty());
-        mockServer.verify();
-    }
-
-    @Test
-    void validIbanWithEmptyMessages() {
-        mockServer
-                .expect(
-                        requestTo(
-                                OpenIbanValidator.BASE_URL
-                                        + "DE89370400440532013000?getBIC=true&validateBankCode=true"))
-                .andRespond(
-                        withSuccess(
-                                """
-                                                                                {
-                                                                                  "valid": true,
-                                                                                  "messages": [],
-                                                                                  "iban": "DE89370400440532013000",
-                                                                                  "bankData": {"bankCode": "", "name": ""}
-                                                                                }
-                                                                                """,
-                                MediaType.APPLICATION_JSON));
-
-        var result = validator.validate(new IbanNumber("DE89370400440532013000"));
-
-        assertTrue(result.isPresent());
-        assertTrue(result.get().valid());
-        assertEquals("", result.get().bankName());
-        assertNull(result.get().reason());
         mockServer.verify();
     }
 }

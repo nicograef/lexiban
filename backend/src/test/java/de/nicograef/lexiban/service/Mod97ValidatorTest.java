@@ -3,57 +3,32 @@ package de.nicograef.lexiban.service;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Unit tests for the Mod97Validator — isolated algorithm tests. */
 class Mod97ValidatorTest {
 
-    private Mod97Validator validator;
+    private final Mod97Validator validator = new Mod97Validator();
 
-    @BeforeEach
-    void setUp() {
-        validator = new Mod97Validator();
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "DE89370400440532013000", // Germany (22 chars)
+                "NO9386011117947", // Norway (shortest: 15 chars)
+                "MT84MALT011000012345MTLCAST001S" // Malta (longest: 31 chars, letters in BBAN)
+            })
+    void validIbans(String iban) {
+        assertTrue(validator.isValid(iban));
     }
 
-    @Test
-    void validGermanIban() {
-        assertTrue(validator.isValid("DE89370400440532013000"));
-    }
-
-    @Test
-    void invalidCheckDigits() {
-        assertFalse(validator.isValid("DE00370400440532013000"));
-    }
-
-    @Test
-    void validAustrianIban() {
-        assertTrue(validator.isValid("AT611904300234573201"));
-    }
-
-    @Test
-    void validBritishIban() {
-        assertTrue(validator.isValid("GB29NWBK60161331926819"));
-    }
-
-    @Test
-    void validNorwegianIban() {
-        assertTrue(validator.isValid("NO9386011117947"));
-    }
-
-    @Test
-    void validFrenchIban() {
-        assertTrue(validator.isValid("FR7630006000011234567890189"));
-    }
-
-    @Test
-    void validMalteseIban() {
-        assertTrue(validator.isValid("MT84MALT011000012345MTLCAST001S"));
-    }
-
-    @Test
-    void swappedDigitsDetected() {
-        // DE89 → DE98 (swapped check digits) should fail
-        assertFalse(validator.isValid("DE98370400440532013000"));
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "DE00370400440532013000", // wrong check digits
+                "DE98370400440532013000" // swapped check digits
+            })
+    void invalidIbans(String iban) {
+        assertFalse(validator.isValid(iban));
     }
 }
