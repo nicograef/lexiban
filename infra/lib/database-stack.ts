@@ -1,7 +1,9 @@
 import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as rds from "aws-cdk-lib/aws-rds";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import { TriggerFunction } from "aws-cdk-lib/triggers";
 import { Construct } from "constructs";
 
 export interface DatabaseStackProps extends StackProps {
@@ -84,5 +86,29 @@ export class DatabaseStack extends Stack {
     // Force the proxy to wait until the instance is fully created so the
     // SLR is propagated — otherwise the proxy fails with a 403 on first deploy.
     this.proxy.node.addDependency(db);
+
+    // ── Flyway migration Lambda ──
+    // Runs Flyway migrations once per deployment via CDK Trigger (Custom Resource).
+    // Uses the same shaded JAR as the app Lambda (contains Flyway + SQL migrations).
+    const migrationLambda = new TriggerFunction(this, "FlywayMigration", {
+      runtime: lambda.Runtime.JAVA_21,
+      handler: "de.nicograef.lexiban.FlywayMigrationHandler",
+      code: lambda.Code.fromAsset(
+        "../backend/target/lexiban-0.0.1-SNAPSHOT.jar",
+      ),
+      memorySize: 512,
+      timeout: Duration.minutes(2),
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      environment: {
+        DB_HOST: this.proxy.endpoint,
+        DB_NAME: "lexiban",
+        DB_USERNAME: this.secret.secretValueFromJson("username").unsafeUnwrap(),
+        DB_PASSWORD: this.secret.secretValueFromJson("password").unsafeUnwrap(),
+      },
+      // Run after the DB + proxy are ready
+      executeAfter: [this.proxy],
+    });
+    this.secret.grantRead(migrationLambda);
   }
 }
