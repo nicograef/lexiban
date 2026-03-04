@@ -3,11 +3,10 @@
 # Only runs nginx (for ACME challenges) and certbot.
 #
 # Usage:
-#   1. Replace YOURDOMAIN.COM in reverse-proxy/nginx.initial-cert.conf
-#   2. make cert-init
-#   3. Follow the certbot prompts / check logs
-#   4. make cert-down
-#   5. make prod-up   ← start the full production stack
+#   1. make cert-init
+#   2. Follow the certbot prompts / check logs
+#   3. make cert-down
+#   4. make prod-up   ← start the full production stack
 
 name: lexiban
 
