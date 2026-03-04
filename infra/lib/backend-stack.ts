@@ -50,13 +50,25 @@ export class BackendStack extends Stack {
     dbSecret.grantRead(backend);
     // Lambda connects to RDS via RDS Proxy
     dbProxy.grantConnect(backend);
+    // Allow Lambda → RDS Proxy on port 5432 (grantConnect only sets IAM policy)
+    dbProxy.connections.allowDefaultPortFrom(backend);
+
+    // Publish a version (required for SnapStart + Provisioned Concurrency)
+    const version = backend.currentVersion;
+
+    // Alias with provisioned concurrency — keeps 1 instance always warm (no cold starts)
+    const alias = new lambda.Alias(this, "BackendAlias", {
+      aliasName: "live",
+      version,
+      provisionedConcurrentExecutions: 1,
+    });
 
     // HTTP API (cheaper and simpler than REST API for proxying to Lambda)
     this.api = new HttpApi(this, "Api");
     this.api.addRoutes({
       path: "/api/{proxy+}",
       methods: [HttpMethod.ANY],
-      integration: new HttpLambdaIntegration("BackendIntegration", backend),
+      integration: new HttpLambdaIntegration("BackendIntegration", alias),
     });
   }
 }
