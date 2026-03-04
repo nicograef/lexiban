@@ -67,7 +67,7 @@ cert-down:     ## Stop cert-init stack
 .PHONY: be-build fe-build build aws-bootstrap aws-deploy
 
 be-build:      ## Build backend JAR (skip tests)
-	cd backend && ./mvnw package -DskipTests -B
+	cd backend && ./mvnw package -Paws -DskipTests -B
 
 fe-build:      ## Build frontend (Vite production build)
 	cd frontend && pnpm install && pnpm build

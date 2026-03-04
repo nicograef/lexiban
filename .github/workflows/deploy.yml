@@ -66,7 +66,7 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - run: cd backend && ./mvnw package -DskipTests -B
+      - run: cd backend && ./mvnw package -Paws -DskipTests -B
 
       # Build frontend
       - uses: pnpm/action-setup@v4
