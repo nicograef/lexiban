@@ -51,14 +51,14 @@ export class BackendStack extends Stack {
     // Lambda connects to RDS via RDS Proxy
     dbProxy.grantConnect(backend);
 
-    // Publish a version (required for SnapStart + Provisioned Concurrency)
+    // Publish a version (required for SnapStart)
     const version = backend.currentVersion;
 
-    // Alias with provisioned concurrency — keeps 1 instance always warm (no cold starts)
+    // Alias pointing to the latest version — SnapStart handles fast cold starts,
+    // so Provisioned Concurrency is neither needed nor supported alongside it.
     const alias = new lambda.Alias(this, "BackendAlias", {
       aliasName: "live",
       version,
-      provisionedConcurrentExecutions: 1,
     });
 
     // HTTP API (cheaper and simpler than REST API for proxying to Lambda)
