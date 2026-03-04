@@ -1,0 +1,3 @@
+# Mermaid-Diagramme in <div class="mermaid"> sind Whitespace-sensitiv.
+# Prettier reformatiert den Inhalt und bricht die Mermaid-Syntax.
+presentation/
