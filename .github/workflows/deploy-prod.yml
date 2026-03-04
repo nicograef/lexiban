@@ -1,8 +1,9 @@
-name: Deploy to AWS (Dev)
+name: Deploy to AWS (Prod)
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "prod-*"
 
 permissions:
   id-token: write
@@ -12,7 +13,7 @@ env:
   AWS_REGION: eu-central-1
 
 jobs:
-  # ── CI (reuse existing checks) ──
+  # ── CI (same checks as dev) ──
   backend-ci:
     runs-on: ubuntu-latest
     defaults:
@@ -48,7 +49,7 @@ jobs:
       - run: pnpm run build
       - run: pnpm run test
 
-  # ── Deploy (only after CI passes) ──
+  # ── Deploy prod (only after CI passes) ──
   deploy:
     needs: [backend-ci, frontend-ci]
     runs-on: ubuntu-latest
@@ -80,5 +81,5 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: cd frontend && pnpm install --frozen-lockfile && pnpm build
 
-      # CDK deploy
-      - run: cd infra && npm ci && npx cdk deploy --all -c stage=dev --require-approval never
+      # CDK deploy (prod stage)
+      - run: cd infra && npm ci && npx cdk deploy --all -c stage=prod --require-approval never

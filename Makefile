@@ -78,8 +78,16 @@ aws-bootstrap: build  ## CDK bootstrap (builds artifacts first)
 	cd infra && npm ci && ACCOUNT_ID=$$(aws sts get-caller-identity --query Account --output text) && \
 	npx cdk bootstrap aws://$$ACCOUNT_ID/eu-central-1
 
-aws-deploy: build  ## CDK deploy (builds artifacts first)
+aws-deploy: build  ## CDK deploy dev stage (builds artifacts first)
 	cd infra && npm ci && npx cdk deploy --all -c stage=dev --require-approval never
+
+prod-release:  ## Tag current main commit and push → triggers prod deploy
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" != "main" ]; then echo "Error: must be on main (currently on $$BRANCH)"; exit 1; fi
+	@TAG=prod-$$(date +%Y%m%d-%H%M) && \
+	git tag $$TAG && \
+	git push origin $$TAG && \
+	echo "✓ Pushed tag $$TAG — prod deploy triggered"
 
 # ── Utilities ──
 
