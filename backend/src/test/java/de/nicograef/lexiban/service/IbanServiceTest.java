@@ -3,7 +3,6 @@ package de.nicograef.lexiban.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -11,8 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.nicograef.lexiban.model.Iban;
-import de.nicograef.lexiban.model.IbanFormatException;
-import de.nicograef.lexiban.model.ValidationResult;
 import de.nicograef.lexiban.repository.IbanRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +39,12 @@ class IbanServiceTest {
     }
 
     @Test
-    void structurallyInvalidInputThrowsFormatException() {
-        assertThrows(IbanFormatException.class, () -> service.validateOrLookup(""));
+    void structurallyInvalidInputReturnsInvalid() {
+        var result = service.validateOrLookup("1");
+        assertFalse(result.valid());
+        assertEquals("1", result.iban());
+        assertNull(result.bankName());
+        assertEquals("IBAN zu kurz: 1 Zeichen (Minimum: 15)", result.reason());
     }
 
     @Test

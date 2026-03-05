@@ -1,15 +1,15 @@
 import { Badge } from '@/components/ui/badge'
 
-import { IbanListEntry } from './types'
+import { ValidationResult } from './types'
 import { formatIban } from './utils'
 
 export interface IbanListProps {
   loading: boolean
   error: string | null
-  ibans: IbanListEntry[] | null
+  ibans: ValidationResult[] | null
 }
 
-function IbanListItem({ entry }: { entry: IbanListEntry }) {
+function IbanListItem({ entry }: { entry: ValidationResult }) {
   return (
     <li className="flex items-center justify-between rounded-md border bg-card p-3 transition-colors hover:bg-muted/50 animate-slide-in">
       <div className="min-w-0">

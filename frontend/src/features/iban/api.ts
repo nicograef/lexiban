@@ -2,43 +2,27 @@ import { z } from 'zod'
 
 import { cleanIban } from '@/features/iban/utils'
 
-import type { IbanListEntry } from './types'
-import {
-  IbanListEntrySchema,
-  type IbanValidationResponse,
-  IbanValidationResponseSchema,
-} from './types'
+import { type ValidationResult, ValidationResultSchema } from './types'
 
-// Base path for API calls. In dev, Vite/nginx proxies /api/* to the backend.
+// path for API caSchemalls. In dev, Vite/nginx proxies /api/* to the backend.
 // In production, the nginx reverse proxy routes /api/* to backend:8080.
 // This means no absolute URLs needed — just relative paths.
 const API_BASE = '/api/ibans'
 
 /**
  * POST /api/ibans — Validate and save IBAN.
- * Calls IbanController.validateAndSaveIban() on the backend.
  * The IBAN is cleaned (non-alphanumeric chars removed) before sending.
- *
- * HTTP status semantics:
- * - 200: structurally valid IBAN → response has valid=true/false.
- * - 400: structurally malformed input → response has the same shape
- *         (valid=false, iban, reason) so the UI can display it uniformly.
- * - Other errors: network failure etc. → thrown as Error.
  */
-export async function validateIban(
-  rawIban: string,
-): Promise<IbanValidationResponse> {
+export async function validateIban(rawIban: string): Promise<ValidationResult> {
   const response = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ iban: cleanIban(rawIban) }),
   })
 
-  // Both 200 (semantic result) and 400 (structural format error) return
-  // the same JSON shape { valid, iban, reason } — parse and return both.
-  if (response.ok || response.status === 400) {
+  if (response.ok) {
     const json: unknown = await response.json()
-    return IbanValidationResponseSchema.parse(json)
+    return ValidationResultSchema.parse(json)
   }
 
   throw new Error(`Validation failed: ${response.status.toString()}`)
@@ -46,13 +30,12 @@ export async function validateIban(
 
 /**
  * GET /api/ibans — List all saved IBANs.
- * Calls IbanController.getAllIbans() on the backend.
  */
-export async function getAllIbans(): Promise<IbanListEntry[]> {
+export async function getAllIbans(): Promise<ValidationResult[]> {
   const response = await fetch(API_BASE)
   if (!response.ok) {
     throw new Error(`Fetch failed: ${response.status.toString()}`)
   }
   const json: unknown = await response.json()
-  return z.array(IbanListEntrySchema).parse(json)
+  return z.array(ValidationResultSchema).parse(json)
 }

@@ -1,13 +1,9 @@
 import { cn } from '@/lib/utils'
 
-import type { IbanValidationResponse } from './types'
+import type { ValidationResult } from './types'
 
 /** Shows the validation result (success or failure). */
-export function ValidationResult({
-  result,
-}: {
-  result: IbanValidationResponse
-}) {
+export function ValidationResult({ result }: { result: ValidationResult }) {
   const isValid = result.valid
 
   return (

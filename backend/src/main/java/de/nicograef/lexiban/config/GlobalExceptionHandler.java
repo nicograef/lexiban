@@ -1,6 +1,5 @@
 package de.nicograef.lexiban.config;
 
-import de.nicograef.lexiban.model.IbanFormatException;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,19 +29,6 @@ public class GlobalExceptionHandler {
                         .map(e -> e.getDefaultMessage())
                         .reduce((a, b) -> a + "; " + b)
                         .orElse("Unknown validation error"));
-    }
-
-    /**
-     * Structurally malformed IBAN → 400. Response shape matches IbanResponse for frontend
-     * compatibility.
-     */
-    @ExceptionHandler(IbanFormatException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleIbanFormatError(IbanFormatException ex) {
-        return Map.of(
-                "valid", false,
-                "iban", ex.getNormalizedIban(),
-                "reason", ex.getMessage());
     }
 
     /** Catch-all → 500. Never exposes internal details. */

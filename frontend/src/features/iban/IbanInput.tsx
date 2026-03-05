@@ -12,7 +12,7 @@ import { cleanIban, formatIban } from './utils'
 import { ValidationResult } from './ValidationResult'
 
 interface IbanInputProps {
-  onSaved?: () => void
+  onSaved: () => void
 }
 
 export function IbanInput({ onSaved }: IbanInputProps) {
@@ -47,6 +47,7 @@ export function IbanInput({ onSaved }: IbanInputProps) {
         break
       }
     }
+
     // If we deleted chars and lengthBefore is 0, cursor stays at 0
     if (lengthBefore === 0) newPos = 0
 

@@ -1,7 +1,6 @@
 package de.nicograef.lexiban.service;
 
 import de.nicograef.lexiban.model.IbanNumber;
-import de.nicograef.lexiban.model.ValidationResult;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

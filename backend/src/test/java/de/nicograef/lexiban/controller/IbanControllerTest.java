@@ -8,10 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import de.nicograef.lexiban.model.Iban;
-import de.nicograef.lexiban.model.IbanFormatException;
-import de.nicograef.lexiban.model.ValidationResult;
 import de.nicograef.lexiban.repository.IbanRepository;
 import de.nicograef.lexiban.service.IbanService;
+import de.nicograef.lexiban.service.ValidationResult;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,23 +47,6 @@ class IbanControllerTest {
                 .andExpect(jsonPath("$.iban").value("DE89370400440532013000"))
                 .andExpect(jsonPath("$.bankName").value("Commerzbank"))
                 .andExpect(jsonPath("$.reason").isEmpty());
-    }
-
-    @Test
-    void structurallyInvalidIbanReturnsBadRequest() throws Exception {
-        when(ibanService.validateOrLookup("INVALID"))
-                .thenThrow(
-                        new IbanFormatException(
-                                "IBAN zu kurz: 7 Zeichen (Minimum: 15)", "INVALID"));
-
-        mockMvc.perform(
-                        post("/api/ibans")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"iban\": \"INVALID\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.valid").value(false))
-                .andExpect(jsonPath("$.iban").value("INVALID"))
-                .andExpect(jsonPath("$.reason").value("IBAN zu kurz: 7 Zeichen (Minimum: 15)"));
     }
 
     @Test

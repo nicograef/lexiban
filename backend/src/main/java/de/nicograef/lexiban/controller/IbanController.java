@@ -1,8 +1,8 @@
 package de.nicograef.lexiban.controller;
 
-import de.nicograef.lexiban.model.ValidationResult;
 import de.nicograef.lexiban.repository.IbanRepository;
 import de.nicograef.lexiban.service.IbanService;
+import de.nicograef.lexiban.service.ValidationResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;

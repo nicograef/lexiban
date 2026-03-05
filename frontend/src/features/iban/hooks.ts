@@ -3,18 +3,18 @@ import { useState } from 'react'
 import { useFetch } from '@/hooks/useFetch'
 
 import { getAllIbans, validateIban } from './api'
-import type { IbanListEntry, IbanValidationResponse } from './types'
+import type { ValidationResult } from './types'
 
 /**
  * Hook to fetch all saved IBANs.
  */
 export function useIbanList() {
-  return useFetch<IbanListEntry[]>(getAllIbans, [])
+  return useFetch<ValidationResult[]>(getAllIbans, [])
 }
 
 export interface ValidationState {
   loading: boolean
-  result: IbanValidationResponse | null
+  result: ValidationResult | null
   error: string | null
 }
 
@@ -28,7 +28,7 @@ const INITIAL_VALIDATION: ValidationState = {
  * Manages the IBAN validation lifecycle (idle → loading → result/error).
  * Delegates the actual API call to `validateIban`.
  */
-export function useIbanValidation(onSaved?: () => void) {
+export function useIbanValidation(onSaved: () => void) {
   const [validation, setValidation] =
     useState<ValidationState>(INITIAL_VALIDATION)
 
@@ -39,15 +39,17 @@ export function useIbanValidation(onSaved?: () => void) {
   const validate = async (input: string) => {
     if (!input.trim()) return
     setValidation({ loading: true, result: null, error: null })
+
     try {
       const result = await validateIban(input)
       setValidation({ loading: false, result, error: null })
-      onSaved?.()
+      onSaved()
     } catch {
       setValidation({
         loading: false,
         result: null,
-        error: 'Validierung fehlgeschlagen',
+        error:
+          'Validierung fehlgeschlagen. Überprüfe eine Eingabe und deine Netzwerkverbindung.',
       })
     }
   }

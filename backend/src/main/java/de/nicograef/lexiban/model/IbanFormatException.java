@@ -2,7 +2,7 @@ package de.nicograef.lexiban.model;
 
 /**
  * Thrown when raw input is structurally not an IBAN (empty, too short/long, wrong character
- * positions). Maps to HTTP 400. Semantic errors (wrong check digit) produce 200 with valid=false.
+ * positions).
  */
 public class IbanFormatException extends IllegalArgumentException {
 

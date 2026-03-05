@@ -7,7 +7,7 @@ import { IbanInput } from './IbanInput'
 describe('IbanInput', () => {
   it('formats input into 4-char groups while typing', async () => {
     const user = userEvent.setup()
-    render(<IbanInput />)
+    render(<IbanInput onSaved={() => void 0} />)
     const input = screen.getByPlaceholderText('DE89 3704 0044 0532 0130 00')
     await user.type(input, 'DE89370400440532013000')
     expect(input).toHaveValue('DE89 3704 0044 0532 0130 00')
@@ -15,7 +15,7 @@ describe('IbanInput', () => {
 
   it('shows character counter with country info', async () => {
     const user = userEvent.setup()
-    render(<IbanInput />)
+    render(<IbanInput onSaved={() => void 0} />)
     await user.type(
       screen.getByPlaceholderText('DE89 3704 0044 0532 0130 00'),
       'DE89',
@@ -27,7 +27,7 @@ describe('IbanInput', () => {
 
   it('shows clear button that resets input', async () => {
     const user = userEvent.setup()
-    render(<IbanInput />)
+    render(<IbanInput onSaved={() => void 0} />)
     const input = screen.getByPlaceholderText('DE89 3704 0044 0532 0130 00')
     expect(screen.queryByLabelText('Eingabe löschen')).not.toBeInTheDocument()
     await user.type(input, 'DE89')
@@ -38,7 +38,7 @@ describe('IbanInput', () => {
 
   it('disables button when empty, enables with input', async () => {
     const user = userEvent.setup()
-    render(<IbanInput />)
+    render(<IbanInput onSaved={() => void 0} />)
     expect(screen.getByText('IBAN Prüfen')).toBeDisabled()
     await user.type(
       screen.getByPlaceholderText('DE89 3704 0044 0532 0130 00'),
