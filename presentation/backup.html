@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Lexiban &mdash; nico gräf</title>
+
+    <style>
+      :root {
+        --r-heading1-size: 2em;
+      }
+
+      [data-markdown] table {
+        font-size: 22px;
+        border: 1px solid white;
+      }
+
+      .reveal pre {
+        width: 100%;
+      }
+
+      .reveal .mermaid svg {
+        max-height: 520px;
+      }
+
+      .reveal .iban-structure {
+        font-family: monospace;
+        font-size: 0.8em;
+        line-height: 1.6;
+        text-align: left;
+        display: inline-block;
+      }
+
+      .reveal .small-list li {
+        font-size: 0.85em;
+        margin-bottom: 0.3em;
+        list-style-type: none;
+      }
+
+      .reveal .decision-table td,
+      .reveal .decision-table th {
+        font-size: 0.55em;
+        padding: 0.4em 0.6em;
+      }
+
+      .reveal .comparison-table td,
+      .reveal .comparison-table th {
+        font-size: 0.5em;
+        padding: 0.35em 0.5em;
+      }
+
+      .reveal .principle-title {
+        color: #bd93f9;
+      }
+
+      .reveal .highlight-green {
+        color: #1a9642;
+      }
+
+      .reveal .highlight-orange {
+        color: #d4760a;
+      }
+
+      .reveal .highlight-pink {
+        color: #c4256a;
+      }
+
+      .reveal .highlight-cyan {
+        color: #0b7285;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+          <section>
+            <h3>Backup Slides</h3>
+        </section>
+
+        <section data-markdown>
+            <script type="text/template">
+              ### Vergleich
+
+              | Aspekt | Lokal (Makefile) | Docker Compose (VPS) | AWS CDK (Serverless) |
+              | --- | --- | --- | --- |
+              | **Zielgruppe** | Entwicklung | Self-hosted Production | Cloud Production |
+              | **Start** | `make db be fe` | `make prod-up` | `cdk deploy --all` |
+              | **HTTPS** | Nein | Let's Encrypt | CloudFront |
+              | **Skalierung** | Einzelner Rechner | Vertikale Skalierung | Auto-Scaling (Lambda) |
+            </script>
+          </section>
+
+          <section>
+            <h3>Happy Path</h3>
+            <ol>
+              <li class="fragment">IBAN eingeben → automatische 4er-Formatierung</li>
+              <li class="fragment"><strong>„Prüfen"</strong> → Ergebnis: gültig, Bankname und BLZ</li>
+              <li class="fragment">IBAN erscheint in der gespeicherten Liste</li>
+              <li class="fragment"><strong>Gleiche IBAN erneut</strong> → Cache-Hit, sofortige Antwort</li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>Edge Cases</h3>
+            <ul>
+              <li class="fragment"><strong>Ungültige IBAN</strong> → Fehlermeldung</li>
+              <li class="fragment"><strong>Leere Eingabe</strong> → HTTP 400</li>
+              <li class="fragment"><strong>Unbekannte Bank</strong> → Fallback auf openiban.com</li>
+              <li class="fragment"><strong>Wiederholte Anfrage</strong> → kein erneuter Validierungslauf</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Backend — JUnit</h3>
+            <ul>
+              <li class="fragment">Unit-Tests für jede Schicht</li>
+              <li class="fragment">Service-Orchestrierung, Validatoren, Mod-97-Algorithmus</li>
+              <li class="fragment">Value Object <code>IbanNumber</code></li>
+              <li class="fragment">Integrationstests: <code>@WebMvcTest</code> für Controller</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Frontend — Vitest + Testing Library</h3>
+            <ul>
+              <li class="fragment">Utility-Funktionen</li>
+              <li class="fragment">Komponenten-Rendering</li>
+              <li class="fragment">Custom Hooks</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Testbarkeit durch Design</h3>
+            <p>
+              Jede Klasse isoliert testbar durch<br />
+              <span class="highlight-cyan">Constructor Injection</span> und
+              <span class="highlight-cyan">Interface-basierte Abhängigkeiten</span>.
+            </p>
+            <br />
+            <pre><code class="hljs bash">make check   # Backend: Spotless + Checkstyle + Tests
+             # Frontend: ESLint + Tests</code></pre>
+          </section>
+
+          <section>
+            <h3>Request-Ablauf</h3>
+            <div class="mermaid">
+              sequenceDiagram
+                participant FE as Frontend
+                participant Ctrl as Controller
+                participant Svc as Service
+                participant DB as PostgreSQL
+                participant LV as LocalValidator
+                participant OV as OpenIbanValidator
+                participant API as openiban.com
+
+                FE->>Ctrl: POST /api/ibans
+                Ctrl->>Svc: validateOrLookup(rawIban)
+                Svc->>DB: findById(iban)
+
+                alt Cache-Hit
+                  DB-->>Svc: Cached result
+                else Cache-Miss
+                  DB-->>Svc: empty
+                  Svc->>LV: validate(IbanNumber)
+                  alt Bank lokal bekannt
+                    LV-->>Svc: ValidationResult
+                  else Bank unbekannt
+                    LV-->>Svc: empty
+                    Svc->>OV: validate(IbanNumber)
+                    OV->>API: GET /validate/{iban}
+                    OV-->>Svc: ValidationResult
+                  end
+                  Svc->>DB: save(entity)
+                end
+
+                Svc-->>Ctrl: ValidationResult
+                Ctrl-->>FE: JSON Response
+            </div>
+          </section>
+      </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

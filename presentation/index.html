@@ -2,6 +2,7 @@
 <html lang="de">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
@@ -28,15 +29,16 @@
 
       .reveal .iban-structure {
         font-family: monospace;
-        font-size: 0.55em;
+        font-size: 0.8em;
         line-height: 1.6;
         text-align: left;
         display: inline-block;
       }
 
-      .reveal .small-list li {
+      .reveal .no-list-style li {
         font-size: 0.85em;
         margin-bottom: 0.3em;
+        list-style-type: none;
       }
 
       .reveal .decision-table td,
@@ -77,7 +79,8 @@
       <div class="slides">
     
         <section>
-          <h1>Lexiban</h1>
+          <!-- <h1>Lexiban</h1> -->
+          <img src="/img/lexiban.svg" alt="Lexiban Logo" style="width: 400px; margin: 20px 0;" />
           <h6>IBAN Validierung für Selbstständige und kleine Unternehmen</h6>
           <br />
           <p><small>Nico Gräf // 2026</small></p>
@@ -86,7 +89,7 @@
           <section>
             <h3>Aufgabe</h3>
             <p>
-              Eine <strong>React SPA</strong>, die über eine <strong>REST-API</strong> mit einem <strong>Java Spring Boot Backend</strong> kommuniziert, um <strong>IBANs
+              Eine <strong>React SPA</strong>, die über eine <strong>REST-API</strong><br />mit einem <strong>Java Spring Boot Backend</strong> kommuniziert,<br />um <strong>IBANs
               zu validieren</strong>.
             </p>
           </section>
@@ -103,9 +106,9 @@
             <br />
             <br />
 <div class="iban-structure fragment">
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-cyan">D E</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-green">6 8</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-orange">2 1 0 5&nbsp;&nbsp;0 1 7 0</span>&nbsp;&nbsp;&nbsp;<span class="highlight-pink">0 0 1 2&nbsp;&nbsp;3 4 5 6&nbsp;&nbsp;7 8</span><br/>
-&nbsp;&nbsp;<span class="highlight-cyan">├─────┤</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-green">├─────┤</span>&nbsp;&nbsp;<span class="highlight-orange">├────────────────┤</span> <span class="highlight-pink">├─────────────────────┤</span><br/>
-<span class="highlight-cyan">Ländercode</span>&nbsp;&nbsp;<span class="highlight-green">Prüfziffern</span>&nbsp;&nbsp;&nbsp;<span class="highlight-orange">Bankleitzahl</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-pink">Kontonummer</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-cyan">D E</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-green">6 8</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-orange">2 1 0 5&nbsp;&nbsp;0 1 7 0</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-pink">0 0 1 2&nbsp;&nbsp;3 4 5 6&nbsp;&nbsp;7 8</span><br/>
+&nbsp;&nbsp;<span class="highlight-cyan">├─────┤</span>&nbsp;&nbsp;&nbsp;<span class="highlight-green">├─────┤</span>&nbsp;&nbsp;<span class="highlight-orange">├────────────────┤</span>&nbsp;&nbsp;<span class="highlight-pink">├─────────────────────┤</span><br/>
+<span class="highlight-cyan">Ländercode</span>&nbsp;<span class="highlight-green">Prüfziffern</span>&nbsp;&nbsp;&nbsp;<span class="highlight-orange">Bankleitzahl</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-pink">Kontonummer</span>
             </div>
           </section>
           
@@ -113,7 +116,7 @@
             <h3>IBAN Validierung</h3>
             <ul>
               <li>Bereinigen und Normalisieren</li>
-              <li>Strukturprüfung: Länge, erlaubte Zeichen, Länderspezifika</li>
+              <li>Länge & Struktur prüfen</li>
               <li>Modulo 97 Algorithmus für Prüfziffern</li>
               <li>Banknamen-Auflösung über BLZ oder externe API</li>
             </ul>
@@ -128,97 +131,80 @@
             </section>
 
           <section>
-            <h3>Umgesetzte Anforderungen</h3>
-            <ol class="small-list">
-              <li class="fragment">
+            <h3>Umsetzung</h3>
+            <ul class="no-list-style">
+              <li>
                 <strong>Freie IBAN-Eingabe</strong> — Leerzeichen erlaubt,
-                automatische 4er-Gruppierung
+                automatische 4er-Gruppierung nach DIN 5008
               </li>
-              <li class="fragment">
+              <li>
                 <strong>Eigene Modulo-97-Validierung</strong> — keine Library,
                 eigene Implementierung nach ISO 13616
               </li>
-              <li class="fragment">
+              <li>
                 <strong>Banknamen-Auflösung</strong> — drei vordefinierte Banken
                 + Fallback auf externe API
               </li>
-              <li class="fragment">
+              <li>
                 <strong>Persistenz</strong> — validierte IBANs in PostgreSQL mit
                 Cache-Lookup
               </li>
-              <li class="fragment">
+              <li>
                 <strong>IBAN-Liste</strong> — gespeicherte IBANs im Frontend
                 anzeigen
               </li>
-            </ol>
+            </ul>
           </section>
 
           <section>
             <h3>Architektur</h3>
             <div class="mermaid">
               graph TB
-                subgraph dc ["Docker Compose"]
-                  direction TB
-                  subgraph fc ["Frontend-Container"]
-                    Nginx["Nginx"]
-                    SPA["React SPA<br/>(TypeScript, Vite)"]
-                  end
-                  subgraph bc ["Backend-Container"]
-                    Spring["Spring Boot<br/>(Java, Maven)"]
-                  end
-                  subgraph dbc ["DB-Container"]
-                    PG[("PostgreSQL")]
-                  end
-                end
-                Browser["🌐 Browser"] -->|":80"| Nginx
-                Nginx -->|"/ → SPA"| SPA
-                Nginx -->|"/api/* → Proxy"| Spring
-                Spring -->|"JDBC"| PG
+                Browser["🌐 Browser"] --> RProxy["Nginx / CloudFront"]
+                RProxy -->|"/"| SPA["React SPA"]
+                RProxy -->|"/api"| Spring["Spring Boot Backend"]
+                Spring -->|"JDBC"| PG["PostgreSQL"]
                 Spring -.->|"Fallback"| ExtAPI["openiban.com"]
             </div>
           </section>
-
-          <section data-markdown>
-            <script type="text/template">
-              ### Bewusste Entscheidungen
-
-              | Entscheidung | Begründung |
-              | --- | --- |
-              | **PostgreSQL statt H2** | Produktionsnah — Flyway-Migrations, Env-Variablen |
-              | **Flyway statt Hibernate ddl-auto** | Schema-Hoheit liegt in SQL, Hibernate validiert nur |
-              | **Java Records für DTOs** | Immutable, kein Lombok — plain Java |
-              | **Constructor Injection** | Explizite Abhängigkeiten, testbar ohne Spring-Kontext |
-              | **Nginx als Reverse Proxy** | SPA ausliefern + `/api`-Proxy in einem Container |
-              | **IBAN als natürlicher PK** | Jede IBAN existiert genau einmal — Cache-Hit bei Wiederholung |
-            </script>
-          </section>
-
+          
           <section>
-            <h1>Live-Demo</h1>
-          </section>
-
-          <section>
-            <h3>Happy Path</h3>
-            <ol>
-              <li class="fragment">IBAN eingeben → automatische 4er-Formatierung</li>
-              <li class="fragment"><strong>„Prüfen"</strong> → Ergebnis: gültig, Bankname und BLZ</li>
-              <li class="fragment">IBAN erscheint in der gespeicherten Liste</li>
-              <li class="fragment"><strong>Gleiche IBAN erneut</strong> → Cache-Hit, sofortige Antwort</li>
-            </ol>
-          </section>
-
-          <section>
-            <h3>Edge Cases</h3>
-            <ul>
-              <li class="fragment"><strong>Ungültige IBAN</strong> → Fehlermeldung</li>
-              <li class="fragment"><strong>Leere Eingabe</strong> → HTTP 400</li>
-              <li class="fragment"><strong>Unbekannte Bank</strong> → Fallback auf openiban.com</li>
-              <li class="fragment"><strong>Wiederholte Anfrage</strong> → kein erneuter Validierungslauf</li>
+            <h3>DevOps</h3>
+            <ul class="no-list-style">
+              <li>
+                <strong>Lokale Entwicklung</strong> — Makefile & Docker: PostgreSQL + Spring Boot + Vite Dev-Server 
+              </li>
+              <li><strong>VPS</strong> — Docker Compose mit Certbot für HTTPS</li>
+              <li><strong>AWS</strong> — Cloudfront + S3, RDS + Proxy, Lambda + API Gateway</li>
+              <li>
+                <strong>CI/CD</strong> — Github Actions: Build, Test, Validate, Deploy
+              </li>
             </ul>
           </section>
 
           <section>
-            <h3>Schichtenarchitektur</h3>
+            <h3>Backend</h3>
+             <ul class="no-list-style">
+              <li>
+                <strong>Flyway Schema Migration</strong> — Hibernate <code>ddl-auto=validate</code>
+              </li>
+              <li>
+                <strong>Java Records für DTOs</strong> — Request & Response, Immutable, kein Lombok, plain Java
+              </li>
+              <li>
+                <strong>Maven statt Gradle</strong> — Einfacher, kein custom Build notwendig
+              </li>
+              <li>
+                <strong>Constructor Injection</strong> — Explizite Abhängigkeiten, testbar ohne Spring-Kontext
+              </li>
+              <li>
+                <strong>IBAN als natürlicher PK</strong> — Jede IBAN existiert genau einmal, Cache-Hit bei Wiederholung
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Backend Schichtenarchitektur</h3>
             <div class="mermaid">
               graph LR
                 subgraph Controller ["HTTP-Schicht"]
@@ -251,189 +237,80 @@
           </section>
 
           <section>
-            <h3>Design-Prinzipien</h3>
-            <p class="principle-title"><strong>Dünner Controller</strong></p>
-            <p>Kein Business-Logik, nur HTTP ↔ Service Mapping.<br />Validierung via <code>@Valid</code>.</p>
-            <br />
-            <p class="principle-title"><strong>Value Object <code>IbanNumber</code></strong></p>
-            <p>
-              Self-normalizing Record: entfernt Sonderzeichen, Uppercase,
-              strukturelle Validierung.<br />
-              <em>Wer ein <code>IbanNumber</code> hat, weiß dass es normalisiert ist.</em>
-            </p>
-          </section>
-
-          <section>
-            <h3>Design-Prinzipien</h3>
-            <p class="principle-title"><strong>Strategy Pattern für Validierung</strong></p>
-            <p style="font-size: 0.85em">
-              Ein <code>IbanValidator</code>-Interface, zwei Implementierungen:
-            </p>
-            <ul class="small-list">
-              <li><code>LocalIbanValidator</code> — Länderlänge + Mod-97 + BLZ-Lookup</li>
-              <li><code>OpenIbanValidator</code> — REST-Call an openiban.com</li>
-            </ul>
-            <p style="font-size: 0.85em">
-              Beide geben <code>Optional&lt;ValidationResult&gt;</code> zurück —
-              <code>empty()</code> heißt <em>„nächster Validator ist dran"</em>.
-            </p>
-          </section>
-
-          <section>
-            <h3>Design-Prinzipien</h3>
-            <p class="principle-title"><strong>Graceful Degradation</strong></p>
-            <p>
-              Externer API-Call komplett in <code>try/catch</code>.<br />
-              Die App funktioniert immer, schlimmstenfalls ohne Banknamen.
-            </p>
-            <br />
-            <p class="principle-title"><strong>Zentrales Error Handling</strong></p>
-            <p>
-              <code>@RestControllerAdvice</code> mit konsistenten Error-Responses<br />
-              für Validierungsfehler (400) und unerwartete Fehler (500).
-            </p>
-          </section>
-
-          <section>
-            <h3>Request-Ablauf</h3>
-            <div class="mermaid">
-              sequenceDiagram
-                participant FE as Frontend
-                participant Ctrl as Controller
-                participant Svc as Service
-                participant DB as PostgreSQL
-                participant LV as LocalValidator
-                participant OV as OpenIbanValidator
-                participant API as openiban.com
-
-                FE->>Ctrl: POST /api/ibans
-                Ctrl->>Svc: validateOrLookup(rawIban)
-                Svc->>DB: findById(iban)
-
-                alt Cache-Hit
-                  DB-->>Svc: Cached result
-                else Cache-Miss
-                  DB-->>Svc: empty
-                  Svc->>LV: validate(IbanNumber)
-                  alt Bank lokal bekannt
-                    LV-->>Svc: ValidationResult
-                  else Bank unbekannt
-                    LV-->>Svc: empty
-                    Svc->>OV: validate(IbanNumber)
-                    OV->>API: GET /validate/{iban}
-                    OV-->>Svc: ValidationResult
-                  end
-                  Svc->>DB: save(entity)
-                end
-
-                Svc-->>Ctrl: ValidationResult
-                Ctrl-->>FE: JSON Response
-            </div>
-          </section>
-
-          <section>
-            <h3>Testing-Strategie</h3>
-          </section>
-
-          <section>
-            <h3>Backend — JUnit</h3>
-            <ul>
-              <li class="fragment">Unit-Tests für jede Schicht</li>
-              <li class="fragment">Service-Orchestrierung, Validatoren, Mod-97-Algorithmus</li>
-              <li class="fragment">Value Object <code>IbanNumber</code></li>
-              <li class="fragment">Integrationstests: <code>@WebMvcTest</code> für Controller</li>
+            <h3>Frontend</h3>
+            <ul class="no-list-style">
+              <li>
+                <strong>React 19 + TypeScript strict</strong> — Vite als Bundler, ESLint mit <code>--max-warnings=0</code>
+              </li>
+              <li>
+                <strong>Tailwind CSS + shadcn/ui</strong> — Utility-First Styling, vorgefertigte UI-Komponenten
+              </li>
+              <li>
+                <strong>Zod Schema-Validierung</strong> — API-Responses gegen Zod-Schemas validiert, Typen daraus abgeleitet
+              </li>
+              <li>
+                <strong>Feature-basierte Struktur</strong> — <code>features/iban/</code> bündelt Seite, Hooks, API, Utils, Types
+              </li>
+              <li>
+                <strong>Custom Hooks</strong> — <code>useFetch</code> für generisches Data-Fetching, <code>useIbanValidation</code> für Validierungs-Lifecycle
+              </li>
             </ul>
           </section>
 
           <section>
-            <h3>Frontend — Vitest + Testing Library</h3>
-            <ul>
-              <li class="fragment">Utility-Funktionen</li>
-              <li class="fragment">Komponenten-Rendering</li>
-              <li class="fragment">Custom Hooks</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>Testbarkeit durch Design</h3>
-            <p>
-              Jede Klasse isoliert testbar durch<br />
-              <span class="highlight-cyan">Constructor Injection</span> und
-              <span class="highlight-cyan">Interface-basierte Abhängigkeiten</span>.
-            </p>
-            <br />
-            <pre><code class="hljs bash">make check   # Backend: Spotless + Checkstyle + Tests
-             # Frontend: ESLint + Tests</code></pre>
-          </section>
-
-          <section>
-            <h3>Deployment — Drei Wege</h3>
-            <ol>
-              <li>Lokale Entwicklung</li>
-              <li>Docker Compose — VPS mit HTTPS</li>
-              <li>AWS Cloud-Native (CDK)</li>
-            </ol>
-          </section>
-
-          <section>
-            <h3>1. Lokale Entwicklung</h3>
-            <pre><code class="hljs bash">make db be fe   # PostgreSQL + Spring Boot + Vite Dev-Server</code></pre>
-            <br />
-            <ul class="small-list">
-              <li>Vite proxied <code>/api/*</code> ans Backend</li>
-              <li><code>.env</code> für DB-Credentials</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>2. Docker Compose — VPS</h3>
-            <div class="mermaid">
-              graph LR
-                Browser["🌐 Browser"] -->|":443 TLS"| RP["Reverse Proxy<br/>(Nginx)"]
-                RP -->|"/api/*"| Spring["Spring Boot"]
-                RP -->|"/*"| Nginx["Frontend<br/>(Nginx)"]
-                Spring -->|"JDBC"| PG[("PostgreSQL")]
-                Certbot["Certbot"] -.->|"Auto-Renewal"| RP
-            </div>
-            <p style="font-size: 0.7em">
-              Netzwerk-Isolation · Healthcheck-basiertes
-              <code>depends_on</code> · Let's Encrypt via Certbot
-            </p>
-          </section>
-
-          <section>
-            <h3>3. AWS Cloud-Native (CDK)</h3>
+            <h3>Frontend Komponentenarchitektur</h3>
             <div class="mermaid">
               graph TB
-                CF["CloudFront CDN"] -->|"/*"| S3["S3 Bucket<br/>(React SPA)"]
-                CF -->|"/api/*"| APIGW["API Gateway"]
-                APIGW --> Lambda["Lambda<br/>(Spring Boot)"]
-                Lambda --> Proxy["RDS Proxy"]
-                Proxy --> RDS[("RDS PostgreSQL")]
+                subgraph Components ["Components"]
+                   IP["IbanPage"]
+                    II["IbanInput"]
+                    IL["IbanList"]
+                    end
+                 VR["ValidationResult"]
+                subgraph Hooks ["Hooks"]
+                  UIV["useIbanValidation"]
+                  UF["useFetch / useIbanList"]
+                end
+                subgraph API ["API-Schicht"]
+                  VA["validateIban() "]
+                  GA["getAllIbans() "]
+                end
+
+                IP --> II
+                IP --> IL
+                II --> UIV
+                II --> VR
+                IP --> UF
+                UIV --> VA
+                UF --> GA
+                VA -->|"POST /api/ibans"| BE["Spring Boot Backend"]
+                GA -->|"GET /api/ibans"| BE
             </div>
-            <p style="font-size: 0.7em">
-              Derselbe Spring-Boot-Code, anderes Packaging: Fat JAR → Shaded JAR
-              (Lambda)<br />
-              Infrastruktur als Code: 4 CDK-Stacks (TypeScript) · CI/CD via
-              GitHub Actions mit OIDC
-            </p>
           </section>
 
-          <section data-markdown>
-            <script type="text/template">
-              ### Vergleich
-
-              | Aspekt | Lokal (Makefile) | Docker Compose (VPS) | AWS CDK (Serverless) |
-              | --- | --- | --- | --- |
-              | **Zielgruppe** | Entwicklung | Self-hosted Production | Cloud Production |
-              | **Start** | `make db be fe` | `make prod-up` | `cdk deploy --all` |
-              | **HTTPS** | Nein | Let's Encrypt | CloudFront |
-              | **Skalierung** | Einzelner Rechner | Vertikale Skalierung | Auto-Scaling (Lambda) |
-            </script>
+          <section>
+            <h3>Design-Prinzipien</h3>
+            <ul class="no-list-style">
+              <li>
+                <strong>Dünner Controller</strong> — kein Business-Logik, nur HTTP ↔ Service Mapping, Validierung via <code>@Valid</code>
+              </li>
+              <li>
+                <strong>Value Object <code>IbanNumber</code></strong> — self-normalizing Record, entfernt Sonderzeichen, Uppercase, strukturelle Validierung
+              </li>
+              <li>
+                <strong>Strategy Pattern</strong> — <code>IbanValidator</code>-Interface mit <code>LocalIbanValidator</code> und <code>OpenIbanValidator</code>, Fallback via <code>Optional&lt;ValidationResult&gt;</code>
+              </li>
+              <li>
+                <strong>Graceful Degradation</strong> — externer API-Call in <code>try/catch</code>, App funktioniert immer
+              </li>
+              <li>
+                <strong>Zentrales Error Handling</strong> — <code>@RestControllerAdvice</code> mit konsistenten Error-Responses (400/500)
+              </li>
+            </ul>
           </section>
 
         <section>
-          <h2>Fragen?</h2>
+          <h2>Fragen / Demo / Code</h2>
         </section>
       </div>
     </div>
